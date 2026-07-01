@@ -45,6 +45,7 @@ cp .env.example .env.local
 | `NEXT_PUBLIC_SUPABASE_URL`      | `.env.local` (this app) + Vercel | Public project API URL.                                   |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `.env.local` (this app) + Vercel | Publishable/anon key. Safe in the browser. RLS enforced.  |
 | `N8N_WEBHOOK_SECRET`            | `.env.local` (this app) + Vercel | Shared secret for the appointment webhook. Also into n8n. |
+| `SUPABASE_SERVICE_ROLE_KEY`     | `.env.local` (this app) + Vercel | **Server-only.** Used only by the appointment webhook.    |
 
 > **Where each Supabase key belongs**
 >
@@ -52,8 +53,13 @@ cp .env.example .env.local
 >   (and Vercel env). This app only ever uses the anon key; every table is
 >   protected by Row Level Security so the authenticated operator has full
 >   read/write and nothing is exposed publicly.
-> - **`service_role` key** → **NOT in this codebase, ever.** It bypasses RLS.
->   It goes **only** into n8n's Supabase node credentials (see *n8n Setup*).
+> - **`service_role` key** → **never committed to the repo**, never sent to the
+>   browser. It bypasses RLS, so it lives only in server-side env:
+>   - n8n's Supabase node credentials (lead sync), **and**
+>   - `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` / Vercel, used **only** by the
+>     appointment-booked webhook route (it has no user session, so it must use
+>     the service role to write). It is read server-side and never exposed to the
+>     client. Until you set it, the webhook returns `500 "Server not configured"`.
 
 ### 3. Run
 
@@ -132,6 +138,11 @@ status), so they go through this app's API route instead of a raw table write.
 
 In n8n, use an **HTTP Request** node (POST, JSON body) and add the
 `x-webhook-secret` header.
+
+> **Prerequisite:** set `SUPABASE_SERVICE_ROLE_KEY` in the app's env
+> (`.env.local` locally, Vercel in prod). The route uses it to write the
+> appointment and update the lead. Without it the route returns
+> `500 "Server not configured"`.
 
 ### 3. Campaign matching (to build in the lead-sync workflow)
 
