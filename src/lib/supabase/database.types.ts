@@ -14,6 +14,8 @@ export type Database = {
     Tables: {
       accounts: {
         Row: {
+          auto_pause_threshold: number | null;
+          cpa_alert_threshold: number | null;
           created_at: string;
           id: string;
           name: string;
@@ -24,6 +26,8 @@ export type Database = {
           type: Database["public"]["Enums"]["account_type"];
         };
         Insert: {
+          auto_pause_threshold?: number | null;
+          cpa_alert_threshold?: number | null;
           created_at?: string;
           id?: string;
           name: string;
@@ -34,6 +38,8 @@ export type Database = {
           type: Database["public"]["Enums"]["account_type"];
         };
         Update: {
+          auto_pause_threshold?: number | null;
+          cpa_alert_threshold?: number | null;
           created_at?: string;
           id?: string;
           name?: string;
@@ -44,6 +50,41 @@ export type Database = {
           type?: Database["public"]["Enums"]["account_type"];
         };
         Relationships: [];
+      };
+      alerts: {
+        Row: {
+          acknowledged: boolean;
+          campaign_id: string;
+          id: string;
+          message: string;
+          triggered_at: string;
+          type: Database["public"]["Enums"]["alert_type"];
+        };
+        Insert: {
+          acknowledged?: boolean;
+          campaign_id: string;
+          id?: string;
+          message: string;
+          triggered_at?: string;
+          type?: Database["public"]["Enums"]["alert_type"];
+        };
+        Update: {
+          acknowledged?: boolean;
+          campaign_id?: string;
+          id?: string;
+          message?: string;
+          triggered_at?: string;
+          type?: Database["public"]["Enums"]["alert_type"];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "alerts_campaign_id_fkey";
+            columns: ["campaign_id"];
+            isOneToOne: false;
+            referencedRelation: "campaigns";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       appointments: {
         Row: {
@@ -134,6 +175,7 @@ export type Database = {
           end_date: string | null;
           ghl_campaign_tag: string | null;
           id: string;
+          last_alert_sent_at: string | null;
           name: string;
           objective: string | null;
           platform: Database["public"]["Enums"]["campaign_platform"];
@@ -147,6 +189,7 @@ export type Database = {
           end_date?: string | null;
           ghl_campaign_tag?: string | null;
           id?: string;
+          last_alert_sent_at?: string | null;
           name: string;
           objective?: string | null;
           platform?: Database["public"]["Enums"]["campaign_platform"];
@@ -160,6 +203,7 @@ export type Database = {
           end_date?: string | null;
           ghl_campaign_tag?: string | null;
           id?: string;
+          last_alert_sent_at?: string | null;
           name?: string;
           objective?: string | null;
           platform?: Database["public"]["Enums"]["campaign_platform"];
@@ -216,7 +260,7 @@ export type Database = {
       };
       leads: {
         Row: {
-          campaign_id: string;
+          campaign_id: string | null;
           contact_info: string | null;
           created_at: string;
           creative_id: string | null;
@@ -227,7 +271,7 @@ export type Database = {
           status: Database["public"]["Enums"]["lead_status"];
         };
         Insert: {
-          campaign_id: string;
+          campaign_id?: string | null;
           contact_info?: string | null;
           created_at?: string;
           creative_id?: string | null;
@@ -238,7 +282,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["lead_status"];
         };
         Update: {
-          campaign_id?: string;
+          campaign_id?: string | null;
           contact_info?: string | null;
           created_at?: string;
           creative_id?: string | null;
@@ -261,6 +305,143 @@ export type Database = {
             columns: ["creative_id"];
             isOneToOne: false;
             referencedRelation: "creatives";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      outreach_contacts: {
+        Row: {
+          call_booked_at: string | null;
+          call_held_at: string | null;
+          channel: Database["public"]["Enums"]["outreach_channel"];
+          closed_at: string | null;
+          contact_info: string | null;
+          contacted_at: string | null;
+          created_at: string;
+          ghl_contact_id: string | null;
+          id: string;
+          lead_id: string | null;
+          name: string | null;
+          niche: string | null;
+          replied_at: string | null;
+          script_id: string | null;
+          source_batch: string | null;
+          status: Database["public"]["Enums"]["outreach_contact_status"];
+        };
+        Insert: {
+          call_booked_at?: string | null;
+          call_held_at?: string | null;
+          channel?: Database["public"]["Enums"]["outreach_channel"];
+          closed_at?: string | null;
+          contact_info?: string | null;
+          contacted_at?: string | null;
+          created_at?: string;
+          ghl_contact_id?: string | null;
+          id?: string;
+          lead_id?: string | null;
+          name?: string | null;
+          niche?: string | null;
+          replied_at?: string | null;
+          script_id?: string | null;
+          source_batch?: string | null;
+          status?: Database["public"]["Enums"]["outreach_contact_status"];
+        };
+        Update: {
+          call_booked_at?: string | null;
+          call_held_at?: string | null;
+          channel?: Database["public"]["Enums"]["outreach_channel"];
+          closed_at?: string | null;
+          contact_info?: string | null;
+          contacted_at?: string | null;
+          created_at?: string;
+          ghl_contact_id?: string | null;
+          id?: string;
+          lead_id?: string | null;
+          name?: string | null;
+          niche?: string | null;
+          replied_at?: string | null;
+          script_id?: string | null;
+          source_batch?: string | null;
+          status?: Database["public"]["Enums"]["outreach_contact_status"];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "outreach_contacts_lead_id_fkey";
+            columns: ["lead_id"];
+            isOneToOne: false;
+            referencedRelation: "leads";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "outreach_contacts_script_id_fkey";
+            columns: ["script_id"];
+            isOneToOne: false;
+            referencedRelation: "outreach_scripts";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      outreach_scripts: {
+        Row: {
+          channel: Database["public"]["Enums"]["outreach_channel"];
+          content: string | null;
+          created_at: string;
+          id: string;
+          name: string;
+          status: Database["public"]["Enums"]["outreach_script_status"];
+        };
+        Insert: {
+          channel?: Database["public"]["Enums"]["outreach_channel"];
+          content?: string | null;
+          created_at?: string;
+          id?: string;
+          name: string;
+          status?: Database["public"]["Enums"]["outreach_script_status"];
+        };
+        Update: {
+          channel?: Database["public"]["Enums"]["outreach_channel"];
+          content?: string | null;
+          created_at?: string;
+          id?: string;
+          name?: string;
+          status?: Database["public"]["Enums"]["outreach_script_status"];
+        };
+        Relationships: [];
+      };
+      report_shares: {
+        Row: {
+          account_id: string;
+          created_at: string;
+          date_from: string;
+          date_to: string;
+          expires_at: string;
+          id: string;
+          token: string;
+        };
+        Insert: {
+          account_id: string;
+          created_at?: string;
+          date_from: string;
+          date_to: string;
+          expires_at: string;
+          id?: string;
+          token: string;
+        };
+        Update: {
+          account_id?: string;
+          created_at?: string;
+          date_from?: string;
+          date_to?: string;
+          expires_at?: string;
+          id?: string;
+          token?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "report_shares_account_id_fkey";
+            columns: ["account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
             referencedColumns: ["id"];
           },
         ];
@@ -316,12 +497,22 @@ export type Database = {
     Enums: {
       account_status: "active" | "paused" | "churned";
       account_type: "internal" | "client";
+      alert_type: "cpa_warning" | "cpa_critical" | "zero_leads" | "other";
       appointment_status: "booked" | "showed" | "no_show" | "cancelled" | "closed";
       campaign_platform: "meta" | "google" | "other";
       campaign_status: "draft" | "active" | "paused" | "ended";
       creative_status: "testing" | "winning" | "retired";
       creative_type: "video" | "image" | "script" | "vsl";
       lead_status: "new" | "contacted" | "qualified" | "booked" | "dead";
+      outreach_channel: "sms" | "cold_call" | "dm" | "email";
+      outreach_contact_status:
+        | "contacted"
+        | "replied"
+        | "call_booked"
+        | "call_held"
+        | "closed"
+        | "dead";
+      outreach_script_status: "testing" | "winning" | "retired";
       spend_source: "manual" | "meta_api" | "google_api";
     };
     CompositeTypes: {
