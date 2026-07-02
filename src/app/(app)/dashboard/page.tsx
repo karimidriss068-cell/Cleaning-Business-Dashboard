@@ -54,7 +54,7 @@ export default async function DashboardPage() {
     if (t) stats[t].spend += Number(s.spend ?? 0);
   }
   for (const l of leads ?? []) {
-    const t = campaignType.get(l.campaign_id);
+    const t = l.campaign_id ? campaignType.get(l.campaign_id) : undefined;
     if (t) stats[t].leads++;
   }
   for (const a of appts ?? []) {

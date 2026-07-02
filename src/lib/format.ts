@@ -28,6 +28,19 @@ export function perUnit(
   return money(spend / count);
 }
 
+/** Format a 0..1 ratio as a whole-number percent, e.g. 0.42 -> "42%". */
+export function pct(ratio: number | null | undefined): string {
+  if (ratio === null || ratio === undefined || Number.isNaN(ratio)) return "—";
+  return `${Math.round(ratio * 100)}%`;
+}
+
+/** Format a duration in hours as "3.2h" (<48h) or "2.1d" otherwise. */
+export function duration(hours: number | null | undefined): string {
+  if (hours === null || hours === undefined || Number.isNaN(hours)) return "—";
+  if (hours < 48) return `${hours.toFixed(1)}h`;
+  return `${(hours / 24).toFixed(1)}d`;
+}
+
 /** Format an ISO date/timestamp string as e.g. "Jul 1, 2026". */
 export function shortDate(value: string | null | undefined): string {
   if (!value) return "—";
