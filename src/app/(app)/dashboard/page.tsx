@@ -84,9 +84,13 @@ export default async function DashboardPage() {
             </Link>
           </div>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-2">
-            <ContextSection title="MAKI (Internal)" ctx={stats.internal} />
-            <ContextSection title="Clients" ctx={stats.client} />
+          <div className="grid gap-8 lg:grid-cols-2 lg:gap-0">
+            <div className="lg:pr-10">
+              <ContextSection title="MAKI (Internal)" ctx={stats.internal} />
+            </div>
+            <div className="lg:border-l lg:border-border lg:pl-10">
+              <ContextSection title="Clients" ctx={stats.client} />
+            </div>
           </div>
         )}
       </div>
@@ -96,8 +100,10 @@ export default async function DashboardPage() {
 
 function ContextSection({ title, ctx }: { title: string; ctx: Ctx }) {
   return (
-    <section className="rounded-xl border border-border bg-card/40 p-5">
-      <h2 className="mb-4 text-lg font-semibold tracking-tight">{title}</h2>
+    <section>
+      <h2 className="mb-5 font-heading text-xl font-medium tracking-tight">
+        {title}
+      </h2>
       <div className="grid grid-cols-2 gap-3">
         <Stat label="Active campaigns" value={num(ctx.activeCampaigns)} />
         <Stat label="Spend · this week" value={money(ctx.spend)} />
@@ -107,7 +113,7 @@ function ContextSection({ title, ctx }: { title: string; ctx: Ctx }) {
           label="Cost / appointment"
           value={perUnit(ctx.spend, ctx.appts)}
           sub="Spend ÷ appts booked (this week)"
-          accent
+          hero
           className="col-span-2"
         />
       </div>

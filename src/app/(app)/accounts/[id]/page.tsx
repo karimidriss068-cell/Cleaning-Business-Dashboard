@@ -101,7 +101,8 @@ export default async function AccountDetailPage({
               label="Margin"
               value={money(margin)}
               sub="Revenue − spend"
-              accent
+              hero
+              className="col-span-2"
             />
           </div>
         </section>

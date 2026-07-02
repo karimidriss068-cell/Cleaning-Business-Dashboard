@@ -113,8 +113,8 @@ export default async function CampaignDetailPage({
         <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Stat label="Total spend" value={money(totalSpend)} />
           <Stat label="Leads" value={num(leadsTotal)} />
-          <Stat label="CPL" value={perUnit(totalSpend, leadsTotal)} sub="Cost per lead" accent />
-          <Stat label="CPA" value={perUnit(totalSpend, apptTotal)} sub="Cost per appointment" accent />
+          <Stat label="CPL" value={perUnit(totalSpend, leadsTotal)} sub="Cost per lead" />
+          <Stat label="CPA" value={perUnit(totalSpend, apptTotal)} sub="Cost per appointment" hero />
         </section>
 
         {/* Funnel */}

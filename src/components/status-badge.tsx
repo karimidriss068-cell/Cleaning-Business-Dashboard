@@ -1,49 +1,32 @@
 import { cn } from "@/lib/utils";
 
-type Tone = "good" | "active" | "warn" | "bad" | "muted";
+type Tone = "good" | "bad" | "muted";
 
+// Restraint: sage (good) is reserved for showed/closed; crimson (bad) only for
+// genuine negatives; cream-tan (muted) carries everything else.
 const STATUS_TONE: Record<string, Tone> = {
-  // accounts
-  active: "good",
-  paused: "muted",
-  churned: "bad",
-  // campaigns
-  draft: "muted",
-  ended: "muted",
-  // creatives
-  testing: "active",
-  winning: "good",
-  retired: "muted",
-  // leads
-  new: "active",
-  contacted: "active",
-  qualified: "warn",
-  booked: "good",
-  dead: "bad",
-  // appointments
+  // positive completion
   showed: "good",
+  closed: "good",
+  // negatives
+  dead: "bad",
   no_show: "bad",
   cancelled: "bad",
-  closed: "good",
+  churned: "bad",
+  // neutral / in-progress — active, paused, draft, ended, testing, winning,
+  // retired, new, contacted, qualified, booked all fall through to muted.
 };
 
 const TONE_CLASS: Record<Tone, string> = {
-  good: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
-  active: "border-sky-500/30 bg-sky-500/10 text-sky-400",
-  warn: "border-primary/40 bg-primary/10 text-primary",
-  bad: "border-red-500/30 bg-red-500/10 text-red-400",
-  muted: "border-border bg-secondary text-muted-foreground",
+  good: "badge-good",
+  bad: "badge-bad",
+  muted: "badge-muted",
 };
 
 export function StatusBadge({ status }: { status: string }) {
   const tone = STATUS_TONE[status] ?? "muted";
   return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium capitalize",
-        TONE_CLASS[tone],
-      )}
-    >
+    <span className={cn("badge", TONE_CLASS[tone])}>
       {status.replace(/_/g, " ")}
     </span>
   );

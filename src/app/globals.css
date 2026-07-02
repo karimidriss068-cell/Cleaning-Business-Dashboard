@@ -10,6 +10,9 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-heading: var(--font-heading);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-accent-bright: var(--accent-bright);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -39,50 +42,65 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
+  --radius-sm: calc(var(--radius) * 0.8);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) * 1.2);
   --radius-xl: calc(var(--radius) * 1.4);
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* MAKI brand: gold (#E8C46A) accent on near-black (#0A0A0A), dark by default. */
+/*
+ * MAKI Ops design system — boutique trading terminal / luxury oxblood.
+ * Every color in the app derives from these brand tokens. No ad hoc hex.
+ */
 :root,
 .dark {
-  --background: #0a0a0a;
-  --foreground: #ecebe6;
-  --card: #111111;
-  --card-foreground: #ecebe6;
-  --popover: #141414;
-  --popover-foreground: #ecebe6;
-  --primary: #e8c46a;
-  --primary-foreground: #0a0a0a;
-  --secondary: #1b1b1b;
-  --secondary-foreground: #ecebe6;
-  --muted: #171717;
-  --muted-foreground: #8d8d86;
-  --accent: #211c11;
-  --accent-foreground: #e8c46a;
-  --destructive: #e5484d;
-  --border: rgba(255, 255, 255, 0.09);
-  --input: rgba(255, 255, 255, 0.13);
-  --ring: #e8c46a;
-  --chart-1: #e8c46a;
-  --chart-2: #c9a24e;
-  --chart-3: #9c7c37;
-  --chart-4: #6f5726;
-  --chart-5: #453718;
-  --radius: 0.5rem;
-  --sidebar: #0d0d0d;
-  --sidebar-foreground: #ecebe6;
-  --sidebar-primary: #e8c46a;
-  --sidebar-primary-foreground: #0a0a0a;
-  --sidebar-accent: #1b1b1b;
-  --sidebar-accent-foreground: #e8c46a;
-  --sidebar-border: rgba(255, 255, 255, 0.09);
-  --sidebar-ring: #e8c46a;
+  /* Brand tokens */
+  --bg-base: #1a0e0e; /* near-black with red undertone */
+  --bg-surface: #2b1414; /* deep oxblood — cards, panels, rows */
+  --bg-surface-raised: #3a1a1a; /* modals, dropdowns, hover */
+  --accent-primary: #8b1e2e; /* muted wine-crimson */
+  --accent-bright: #b8293d; /* brighter crimson — hover/alerts only */
+  --text-primary: #f0e6d2; /* warm cream */
+  --text-muted: #b8a88c; /* dusty cream-tan */
+  --success: #6b8e5a; /* muted sage — showed/closed only */
+  --warning: #c48a3d; /* muted amber — at-risk */
+
+  /* shadcn semantic tokens mapped onto the brand palette */
+  --background: var(--bg-base);
+  --foreground: var(--text-primary);
+  --card: var(--bg-surface);
+  --card-foreground: var(--text-primary);
+  --popover: var(--bg-surface-raised);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--accent-primary);
+  --primary-foreground: var(--text-primary);
+  --secondary: var(--bg-surface-raised);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--bg-surface);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--bg-surface-raised);
+  --accent-foreground: var(--text-primary);
+  --destructive: var(--accent-bright);
+  --border: #3d2020; /* hairline dividers, table/card borders */
+  --input: #3d2020;
+  --ring: var(--accent-primary);
+  --chart-1: var(--accent-primary);
+  --chart-2: var(--accent-bright);
+  --chart-3: var(--warning);
+  --chart-4: var(--success);
+  --chart-5: var(--text-muted);
+  --radius: 0.3125rem; /* ~5px — precision instrument, not consumer app */
+  --sidebar: #170c0c;
+  --sidebar-foreground: var(--text-muted);
+  --sidebar-primary: var(--accent-primary);
+  --sidebar-primary-foreground: var(--text-primary);
+  --sidebar-accent: var(--bg-surface);
+  --sidebar-accent-foreground: var(--text-primary);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--accent-primary);
 }
 
 @layer base {
@@ -100,7 +118,88 @@
   }
 }
 
-/* Tabular figures for data-dense number columns. */
-.tabular-nums {
+/* Numbers you scan/compare (spend, CPA, counts, dates) render in IBM Plex Mono
+ * with tabular figures so columns line up. Applies anywhere `tabular-nums` is
+ * used — table cells, funnel counts, etc. (Hero KPI numerals use Fraunces via
+ * .kpi-number and are intentionally exempt.) */
+.tabular-nums,
+.font-data {
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/*
+ * Signature element — the "hero number". Large Fraunces numeral with a thin
+ * crimson underline that sits under the number itself (fountain-pen highlight),
+ * a small-caps letter-spaced label above, and a brief fade-in on load.
+ */
+.kpi-label {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+}
+.kpi-number {
+  display: inline-block;
+  font-family: var(--font-heading);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.015em;
+  color: var(--text-primary);
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--accent-primary);
+  animation: kpi-fade 150ms ease-out both;
+}
+.kpi-number--muted {
+  color: var(--text-muted);
+  border-bottom-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
+}
+
+@keyframes kpi-fade {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Status pills — cream/tan carries the UI; sage and amber are the only
+ * saturated status colors, crimson reserved for genuine negatives. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  padding: 2px 9px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+.badge-good {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 15%, transparent);
+  border-color: color-mix(in srgb, var(--success) 32%, transparent);
+}
+.badge-warn {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 15%, transparent);
+  border-color: color-mix(in srgb, var(--warning) 32%, transparent);
+}
+.badge-bad {
+  color: var(--accent-bright);
+  background: color-mix(in srgb, var(--accent-bright) 14%, transparent);
+  border-color: color-mix(in srgb, var(--accent-bright) 32%, transparent);
+}
+.badge-muted {
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--text-muted) 10%, transparent);
+  border-color: var(--border);
 }
