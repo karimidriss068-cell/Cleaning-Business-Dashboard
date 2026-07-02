@@ -37,7 +37,10 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isAuthRoute =
     pathname.startsWith("/login") || pathname.startsWith("/dev-login");
-  const isPublicApi = pathname.startsWith("/api/webhooks");
+  // Public routes with their own auth: webhooks (secret header) and shareable
+  // read-only client reports (unguessable token).
+  const isPublicApi =
+    pathname.startsWith("/api/webhooks") || pathname.startsWith("/reports");
 
   if (!user && !isAuthRoute && !isPublicApi) {
     const url = request.nextUrl.clone();

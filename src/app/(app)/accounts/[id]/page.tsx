@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { Stat } from "@/components/stat";
 import { StatusBadge } from "@/components/status-badge";
 import { AccountGuardrailsForm } from "@/components/forms/account-guardrails-form";
+import { GenerateReportDialog } from "@/components/forms/generate-report-dialog";
 import {
   Table,
   TableBody,
@@ -83,6 +84,7 @@ export default async function AccountDetailPage({
           account.niche ? ` · ${account.niche}` : ""
         }`}
       >
+        <GenerateReportDialog accountId={account.id} />
         <StatusBadge status={account.status} />
       </PageHeader>
 
