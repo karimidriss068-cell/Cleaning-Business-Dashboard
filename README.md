@@ -45,7 +45,8 @@ cp .env.example .env.local
 | `NEXT_PUBLIC_SUPABASE_URL`      | `.env.local` (this app) + Vercel | Public project API URL.                                   |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `.env.local` (this app) + Vercel | Publishable/anon key. Safe in the browser. RLS enforced.  |
 | `N8N_WEBHOOK_SECRET`            | `.env.local` (this app) + Vercel | Shared secret for the appointment webhook. Also into n8n. |
-| `SUPABASE_SERVICE_ROLE_KEY`     | `.env.local` (this app) + Vercel | **Server-only.** Used only by the appointment webhook.    |
+| `SUPABASE_SERVICE_ROLE_KEY`     | `.env.local` (this app) + Vercel | **Server-only.** Webhooks, threshold checker, reports.    |
+| `ANTHROPIC_API_KEY`             | `.env.local` (this app) + Vercel | **Server-only.** Powers the /insights AI page.            |
 
 > **Where each Supabase key belongs**
 >
@@ -152,11 +153,70 @@ In n8n, use an **HTTP Request** node (POST, JSON body) and add the
 > `campaign_id` onto the lead. Set `ghl_campaign_tag` on each campaign in the
 > app's **New Campaign** form so this lookup has something to match against.
 
+### 4. Outreach sync (V2 — Client Acquisition Engine)
+
+A workflow watches GHL for cold-outreach sequence events (SMS sent, reply
+received, call booked from a cold sequence) and writes/updates rows in
+**`outreach_contacts`** via the Supabase node (service role key, same pattern as
+lead sync — match/update on `ghl_contact_id`). Set the stage timestamps
+(`contacted_at`, `replied_at`, `call_booked_at`, `call_held_at`, `closed_at`)
+and `status` as the events fire.
+
+> **Script tagging (lookup step):** match the GHL campaign/sequence name to an
+> `outreach_scripts.name` and write the resulting `script_id` onto the contact —
+> same lookup pattern as `campaigns.ghl_campaign_tag`. Log each hook in the app's
+> **New Script** form first so there's something to match against.
+
+### 5. CPA threshold checker (V2 — every 4 hours)
+
+A **Schedule** trigger (every 4h) → **HTTP Request** node:
+
+- `POST https://<your-vercel-domain>/api/webhooks/check-thresholds`
+- Header `x-webhook-secret: <N8N_WEBHOOK_SECRET>`
+- The response is `{ count, alerts: [...] }`. **Loop** over `alerts` and send
+  yourself an SMS **via GHL**: a normal SMS for `type: "cpa_warning"`, and a more
+  urgent SMS for `type: "cpa_critical"` (the endpoint has already auto-paused that
+  campaign). `type: "zero_leads"` means an active campaign had no leads in 48h.
+- Requires `SUPABASE_SERVICE_ROLE_KEY` in the app env (it writes alerts + pauses
+  campaigns). Alerts are de-duped per campaign for 24h automatically.
+
+### 6. Weekly digest (V2 — Mondays 8am)
+
+A **Schedule** trigger (Mon 08:00) → **HTTP Request** node:
+
+- `GET https://<your-vercel-domain>/api/reports/weekly-digest`
+- Header `x-webhook-secret: <N8N_WEBHOOK_SECRET>`
+- Returns JSON: `appointments_booked_this_week`, `best_outreach_script`,
+  `cpa_trend` (this vs last week + `change_pct`/`direction`), and
+  `paused_or_alerted_campaigns`. Format it into a text message and send it to
+  yourself **via GHL** so you start the week knowing where things stand.
+
+### Client reports (V2 — no n8n needed)
+
+Generate a shareable client report from any account page (**Generate Report** →
+pick a date range). It mints a read-only public link (`/reports/<token>`, expires
+in 30 days) with a **Download PDF** button — send it to clients to prove ROI. The
+public route reads only that account's data via the service-role key, guarded by
+the unguessable token.
+
+---
+
+## AI Insights (V2)
+
+The **/insights** page lets you ask plain-English questions ("Which client has the
+worst CPA trend?") and get answers from your live data, via the Anthropic API
+(model `claude-sonnet-4-6`). Set `ANTHROPIC_API_KEY` in `.env.local` / Vercel
+(get one at [console.anthropic.com](https://console.anthropic.com/settings/keys));
+until then the page shows an "AI not configured" state. The key is server-only and
+never reaches the browser.
+
 ---
 
 ## Deploy (Vercel)
 
 1. Push to GitHub (already wired to `origin`).
 2. Import the repo in Vercel.
-3. Add the three env vars above in the Vercel project settings.
-4. After deploy, use the Vercel URL for the n8n webhook endpoint.
+3. Add all env vars from `.env.example` in the Vercel project settings
+   (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+   `N8N_WEBHOOK_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`).
+4. After deploy, use the Vercel URL for the n8n webhook + schedule endpoints.
