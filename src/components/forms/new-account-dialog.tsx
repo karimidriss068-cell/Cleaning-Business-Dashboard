@@ -34,6 +34,8 @@ export function NewAccountDialog() {
   const [niche, setNiche] = useState("");
   const [pricingModel, setPricingModel] = useState("per_appointment");
   const [price, setPrice] = useState("327");
+  const [cpaAlert, setCpaAlert] = useState("");
+  const [autoPause, setAutoPause] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -45,6 +47,8 @@ export function NewAccountDialog() {
       niche: niche.trim() || null,
       pricing_model: pricingModel.trim() || null,
       price_per_appointment: price ? Number(price) : null,
+      cpa_alert_threshold: cpaAlert ? Number(cpaAlert) : null,
+      auto_pause_threshold: autoPause ? Number(autoPause) : null,
     });
     setSaving(false);
 
@@ -128,6 +132,30 @@ export function NewAccountDialog() {
                 step="0.01"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
+                placeholder="327.00"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="cpa-alert">CPA alert ≥</Label>
+              <Input
+                id="cpa-alert"
+                type="number"
+                step="0.01"
+                value={cpaAlert}
+                onChange={(e) => setCpaAlert(e.target.value)}
+                placeholder="260.00"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="auto-pause">Auto-pause ≥</Label>
+              <Input
+                id="auto-pause"
+                type="number"
+                step="0.01"
+                value={autoPause}
+                onChange={(e) => setAutoPause(e.target.value)}
                 placeholder="327.00"
               />
             </div>

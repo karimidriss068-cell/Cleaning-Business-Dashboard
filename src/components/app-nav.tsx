@@ -9,6 +9,8 @@ import {
   Megaphone,
   Clapperboard,
   Users,
+  Bell,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,9 +21,11 @@ const links = [
   { href: "/campaigns", label: "Campaigns", icon: Megaphone },
   { href: "/creatives", label: "Creatives", icon: Clapperboard },
   { href: "/leads", label: "Leads", icon: Users },
+  { href: "/alerts", label: "Alerts", icon: Bell },
+  { href: "/insights", label: "Insights", icon: Sparkles },
 ];
 
-export function AppNav() {
+export function AppNav({ alertCount = 0 }: { alertCount?: number }) {
   const pathname = usePathname();
 
   return (
@@ -46,6 +50,11 @@ export function AppNav() {
               )}
             />
             {label}
+            {href === "/alerts" && alertCount > 0 && (
+              <span className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--accent-bright)] px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-[var(--text-primary)]">
+                {alertCount}
+              </span>
+            )}
           </Link>
         );
       })}

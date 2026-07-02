@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils";
 
-type Tone = "good" | "bad" | "muted";
+type Tone = "good" | "warn" | "bad" | "muted";
 
 // Restraint: sage (good) is reserved for showed/closed; crimson (bad) only for
-// genuine negatives; cream-tan (muted) carries everything else.
+// genuine negatives; amber (warn) for at-risk; cream-tan (muted) for the rest.
 const STATUS_TONE: Record<string, Tone> = {
   // positive completion
   showed: "good",
@@ -13,12 +13,17 @@ const STATUS_TONE: Record<string, Tone> = {
   no_show: "bad",
   cancelled: "bad",
   churned: "bad",
-  // neutral / in-progress — active, paused, draft, ended, testing, winning,
-  // retired, new, contacted, qualified, booked all fall through to muted.
+  // alert types
+  cpa_critical: "bad",
+  cpa_warning: "warn",
+  zero_leads: "warn",
+  other: "muted",
+  // neutral / in-progress fall through to muted.
 };
 
 const TONE_CLASS: Record<Tone, string> = {
   good: "badge-good",
+  warn: "badge-warn",
   bad: "badge-bad",
   muted: "badge-muted",
 };

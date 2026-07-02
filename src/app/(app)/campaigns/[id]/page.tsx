@@ -7,6 +7,8 @@ import { Stat } from "@/components/stat";
 import { StatusBadge } from "@/components/status-badge";
 import { AddSpendForm } from "@/components/forms/add-spend-form";
 import { AttachCreativeForm } from "@/components/forms/attach-creative-form";
+import { AcknowledgeButton } from "@/components/acknowledge-button";
+import { TriangleAlert } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -33,6 +35,16 @@ export default async function CampaignDetailPage({
     .single();
 
   if (!campaign) notFound();
+
+  const { data: criticalAlert } = await supabase
+    .from("alerts")
+    .select("id, message")
+    .eq("campaign_id", id)
+    .eq("type", "cpa_critical")
+    .eq("acknowledged", false)
+    .order("triggered_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   const [{ data: leads }, { data: spend }, { data: attached }] =
     await Promise.all([
@@ -107,6 +119,16 @@ export default async function CampaignDetailPage({
       >
         <StatusBadge status={campaign.status} />
       </PageHeader>
+
+      {criticalAlert && (
+        <div className="mx-6 mt-6 flex flex-col gap-3 rounded-md border border-[var(--accent-bright)] bg-[color-mix(in_srgb,var(--accent-bright)_16%,transparent)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2.5 text-sm text-[var(--text-primary)]">
+            <TriangleAlert className="h-4 w-4 shrink-0 text-[var(--accent-bright)]" />
+            {criticalAlert.message}
+          </div>
+          <AcknowledgeButton alertId={criticalAlert.id} />
+        </div>
+      )}
 
       <div className="space-y-8 p-6">
         {/* Headline metrics */}

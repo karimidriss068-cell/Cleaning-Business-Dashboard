@@ -17,6 +17,11 @@ export default async function AppLayout({
 
   if (!user) redirect("/login");
 
+  const { count: alertCount } = await supabase
+    .from("alerts")
+    .select("id", { count: "exact", head: true })
+    .eq("acknowledged", false);
+
   return (
     <div className="flex min-h-screen">
       <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-sidebar md:flex">
@@ -28,7 +33,7 @@ export default async function AppLayout({
             Ops
           </span>
         </div>
-        <AppNav />
+        <AppNav alertCount={alertCount ?? 0} />
         <div className="mt-auto border-t border-border p-3">
           <p className="truncate px-2 pb-2 text-xs text-muted-foreground">
             {user.email}

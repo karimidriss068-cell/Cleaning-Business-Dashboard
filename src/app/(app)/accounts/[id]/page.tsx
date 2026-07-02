@@ -5,6 +5,7 @@ import { money, num, shortDate } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { Stat } from "@/components/stat";
 import { StatusBadge } from "@/components/status-badge";
+import { AccountGuardrailsForm } from "@/components/forms/account-guardrails-form";
 import {
   Table,
   TableBody,
@@ -105,6 +106,22 @@ export default async function AccountDetailPage({
               className="col-span-2"
             />
           </div>
+        </section>
+
+        {/* Guardrails */}
+        <section>
+          <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-muted-foreground">
+            CPA Guardrails
+          </h2>
+          <AccountGuardrailsForm
+            accountId={account.id}
+            cpaAlertThreshold={account.cpa_alert_threshold}
+            autoPauseThreshold={account.auto_pause_threshold}
+          />
+          <p className="mt-2 text-xs text-muted-foreground">
+            The threshold checker warns at CPA ≥ alert and auto-pauses campaigns
+            at CPA ≥ auto-pause (rolling 3-day).
+          </p>
         </section>
 
         {/* Campaigns */}
