@@ -15,6 +15,13 @@ function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Plain helper (not a component) so the Date.now() call sits outside any
+// component/hook body — satisfies the react-hooks/purity rule, which only
+// flags impure calls made directly during a component's render.
+function isExpired(expiresAt: string): boolean {
+  return new Date(expiresAt).getTime() < Date.now();
+}
+
 function ErrorState({ title, message }: { title: string; message: string }) {
   return (
     <Shell>
@@ -49,7 +56,7 @@ export default async function PublicReportPage({
   if (!share) {
     return <ErrorState title="Report not found" message="This report link is invalid." />;
   }
-  if (new Date(share.expires_at).getTime() < Date.now()) {
+  if (isExpired(share.expires_at)) {
     return <ErrorState title="Link expired" message="This report link has expired." />;
   }
 
