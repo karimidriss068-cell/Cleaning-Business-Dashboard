@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { verifyWebhookSecret } from "@/lib/webhook-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,9 +19,7 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(req: NextRequest) {
   // 1. Authenticate the webhook.
-  const expected = process.env.N8N_WEBHOOK_SECRET;
-  const provided = req.headers.get("x-webhook-secret");
-  if (!expected || !provided || provided !== expected) {
+  if (!verifyWebhookSecret(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

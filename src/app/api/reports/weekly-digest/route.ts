@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { verifyWebhookSecret } from "@/lib/webhook-auth";
 import { currentWeekRange } from "@/lib/format";
 import { computeFunnel, type OutreachContactStatus } from "@/lib/outreach";
 
@@ -15,9 +16,7 @@ export const dynamic = "force-dynamic";
  * the week-over-week CPA trend.
  */
 export async function GET(req: NextRequest) {
-  const expected = process.env.N8N_WEBHOOK_SECRET;
-  const provided = req.headers.get("x-webhook-secret");
-  if (!expected || !provided || provided !== expected) {
+  if (!verifyWebhookSecret(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

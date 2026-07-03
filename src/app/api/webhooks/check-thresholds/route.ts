@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { verifyWebhookSecret } from "@/lib/webhook-auth";
 import { money } from "@/lib/format";
 import type { Enums } from "@/lib/supabase/database.types";
 
@@ -31,9 +32,7 @@ type FiredAlert = {
  * Returns the alerts fired so n8n can loop and send notifications.
  */
 export async function POST(req: NextRequest) {
-  const expected = process.env.N8N_WEBHOOK_SECRET;
-  const provided = req.headers.get("x-webhook-secret");
-  if (!expected || !provided || provided !== expected) {
+  if (!verifyWebhookSecret(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
