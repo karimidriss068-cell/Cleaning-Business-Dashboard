@@ -139,7 +139,6 @@ create index appointments_account_id_idx on appointments (account_id);
 create or replace function set_appointment_revenue_owed()
 returns trigger
 language plpgsql
-set search_path = public
 as $$
 begin
   if new.revenue_owed is null then
