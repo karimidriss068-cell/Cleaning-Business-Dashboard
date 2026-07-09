@@ -26,8 +26,8 @@ export function AcknowledgeButton({ alertId }: { alertId: string }) {
   }
 
   return (
-    <Button size="sm" variant="outline" onClick={acknowledge} disabled={busy}>
-      {busy ? "…" : "Acknowledge"}
+    <Button size="sm" variant="outline" onClick={acknowledge} loading={busy}>
+      Acknowledge
     </Button>
   );
 }

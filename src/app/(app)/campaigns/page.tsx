@@ -1,9 +1,15 @@
 import Link from "next/link";
+import { Megaphone } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { money } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { NewCampaignDialog } from "@/components/forms/new-campaign-dialog";
+import { SyncMetaButton } from "@/components/forms/sync-meta-button";
+import { EmptyState } from "@/components/empty-state";
+import { StaggerPage } from "@/components/dashboard/stagger-page";
+import { FadeInSection } from "@/components/dashboard/fade-in-section";
+import { CardShell } from "@/components/dashboard/card-shell";
 import {
   Table,
   TableBody,
@@ -29,11 +35,15 @@ export default async function CampaignsPage() {
   return (
     <>
       <PageHeader title="Campaigns" description="All campaigns across accounts.">
-        <NewCampaignDialog accounts={accounts ?? []} />
+        <div className="flex gap-2">
+          <SyncMetaButton />
+          <NewCampaignDialog accounts={accounts ?? []} />
+        </div>
       </PageHeader>
 
-      <div className="p-6">
-        <div className="overflow-hidden rounded-lg border border-border">
+      <StaggerPage>
+        <FadeInSection>
+        <CardShell className="overflow-hidden p-0">
           <Table>
             <TableHeader>
               <TableRow>
@@ -47,12 +57,21 @@ export default async function CampaignsPage() {
             <TableBody>
               {(campaigns ?? []).length === 0 && (
                 <TableRow>
-                  <TableCell
-                    colSpan={5}
-                    className="py-10 text-center text-muted-foreground"
-                  >
-                    No campaigns yet.
-                    {(accounts ?? []).length === 0 && " Create an account first."}
+                  <TableCell colSpan={5} className="p-0">
+                    <EmptyState
+                      icon={Megaphone}
+                      title="No campaigns yet"
+                      description={
+                        (accounts ?? []).length === 0
+                          ? "Create an account first, then launch a campaign under it."
+                          : "Launch your first campaign to start tracking spend, leads, and appointments."
+                      }
+                      action={
+                        (accounts ?? []).length > 0 ? (
+                          <NewCampaignDialog accounts={accounts ?? []} />
+                        ) : undefined
+                      }
+                    />
                   </TableCell>
                 </TableRow>
               )}
@@ -91,8 +110,9 @@ export default async function CampaignsPage() {
               ))}
             </TableBody>
           </Table>
-        </div>
-      </div>
+        </CardShell>
+        </FadeInSection>
+      </StaggerPage>
     </>
   );
 }

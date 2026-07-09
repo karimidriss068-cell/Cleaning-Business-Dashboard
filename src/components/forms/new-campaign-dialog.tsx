@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FieldError } from "@/components/field-error";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +27,8 @@ import { Plus } from "lucide-react";
 
 type AccountOption = { id: string; name: string };
 
+type FormErrors = Partial<{ name: string; accountId: string; budget: string }>;
+
 export function NewCampaignDialog({
   accounts,
   defaultAccountId,
@@ -36,6 +39,7 @@ export function NewCampaignDialog({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
 
   const [name, setName] = useState("");
   const [accountId, setAccountId] = useState(defaultAccountId ?? accounts[0]?.id ?? "");
@@ -47,12 +51,24 @@ export function NewCampaignDialog({
 
   const accountItems = Object.fromEntries(accounts.map((a) => [a.id, a.name]));
 
+  function validate(): FormErrors {
+    const errs: FormErrors = {};
+    if (!name.trim()) errs.name = "Name is required.";
+    if (!accountId) errs.accountId = "Create an account first, then select one.";
+    if (budget && (Number.isNaN(Number(budget)) || Number(budget) < 0)) {
+      errs.budget = "Enter a valid non-negative amount.";
+    }
+    return errs;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!accountId) {
-      toast.error("Create an account first");
+    const errs = validate();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
       return;
     }
+    setErrors({});
     setSaving(true);
     const supabase = createClient();
     const { error } = await supabase.from("campaigns").insert({
@@ -80,7 +96,13 @@ export function NewCampaignDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (!o) setErrors({});
+      }}
+    >
       <DialogTrigger
         render={
           <Button size="sm" className="gap-2">
@@ -92,26 +114,33 @@ export function NewCampaignDialog({
         <DialogHeader>
           <DialogTitle>New campaign</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div className="space-y-2">
             <Label htmlFor="c-name">Name</Label>
             <Input
               id="c-name"
-              required
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
+              }}
               placeholder="Roofing — cold traffic Q3"
+              aria-invalid={!!errors.name}
             />
+            <FieldError>{errors.name}</FieldError>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Account</Label>
               <Select
                 value={accountId}
-                onValueChange={(v) => setAccountId(v as string)}
+                onValueChange={(v) => {
+                  setAccountId(v as string);
+                  if (errors.accountId) setErrors((prev) => ({ ...prev, accountId: undefined }));
+                }}
                 items={accountItems}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full" aria-invalid={!!errors.accountId}>
                   <SelectValue placeholder="Select account" />
                 </SelectTrigger>
                 <SelectContent>
@@ -122,6 +151,7 @@ export function NewCampaignDialog({
                   ))}
                 </SelectContent>
               </Select>
+              <FieldError>{errors.accountId}</FieldError>
             </div>
             <div className="space-y-2">
               <Label>Platform</Label>
@@ -160,9 +190,14 @@ export function NewCampaignDialog({
                 type="number"
                 step="0.01"
                 value={budget}
-                onChange={(e) => setBudget(e.target.value)}
+                onChange={(e) => {
+                  setBudget(e.target.value);
+                  if (errors.budget) setErrors((prev) => ({ ...prev, budget: undefined }));
+                }}
                 placeholder="50.00"
+                aria-invalid={!!errors.budget}
               />
+              <FieldError>{errors.budget}</FieldError>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -186,8 +221,8 @@ export function NewCampaignDialog({
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={saving || !name.trim() || !accountId}>
-              {saving ? "Saving…" : "Create campaign"}
+            <Button type="submit" loading={saving}>
+              Create campaign
             </Button>
           </DialogFooter>
         </form>

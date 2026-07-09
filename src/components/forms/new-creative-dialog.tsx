@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { FieldError } from "@/components/field-error";
 import {
   Dialog,
   DialogContent,
@@ -34,10 +35,13 @@ const STATUSES = {
   retired: "Retired",
 };
 
+type FormErrors = Partial<{ name: string; accountId: string }>;
+
 export function NewCreativeDialog({ accounts }: { accounts: AccountOption[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
 
   const [name, setName] = useState("");
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? "");
@@ -47,12 +51,21 @@ export function NewCreativeDialog({ accounts }: { accounts: AccountOption[] }) {
 
   const accountItems = Object.fromEntries(accounts.map((a) => [a.id, a.name]));
 
+  function validate(): FormErrors {
+    const errs: FormErrors = {};
+    if (!name.trim()) errs.name = "Name is required.";
+    if (!accountId) errs.accountId = "Create an account first, then select one.";
+    return errs;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!accountId) {
-      toast.error("Create an account first");
+    const errs = validate();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
       return;
     }
+    setErrors({});
     setSaving(true);
     const supabase = createClient();
     const { error } = await supabase.from("creatives").insert({
@@ -76,7 +89,13 @@ export function NewCreativeDialog({ accounts }: { accounts: AccountOption[] }) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (!o) setErrors({});
+      }}
+    >
       <DialogTrigger
         render={
           <Button size="sm" className="gap-2">
@@ -88,25 +107,32 @@ export function NewCreativeDialog({ accounts }: { accounts: AccountOption[] }) {
         <DialogHeader>
           <DialogTitle>New creative</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div className="space-y-2">
             <Label htmlFor="cr-name">Name</Label>
             <Input
               id="cr-name"
-              required
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
+              }}
               placeholder="Walk-and-talk driveway hook v3"
+              aria-invalid={!!errors.name}
             />
+            <FieldError>{errors.name}</FieldError>
           </div>
           <div className="space-y-2">
             <Label>Account</Label>
             <Select
               value={accountId}
-              onValueChange={(v) => setAccountId(v as string)}
+              onValueChange={(v) => {
+                setAccountId(v as string);
+                if (errors.accountId) setErrors((prev) => ({ ...prev, accountId: undefined }));
+              }}
               items={accountItems}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full" aria-invalid={!!errors.accountId}>
                 <SelectValue placeholder="Select account" />
               </SelectTrigger>
               <SelectContent>
@@ -117,6 +143,7 @@ export function NewCreativeDialog({ accounts }: { accounts: AccountOption[] }) {
                 ))}
               </SelectContent>
             </Select>
+            <FieldError>{errors.accountId}</FieldError>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -168,8 +195,8 @@ export function NewCreativeDialog({ accounts }: { accounts: AccountOption[] }) {
             />
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={saving || !name.trim() || !accountId}>
-              {saving ? "Saving…" : "Create creative"}
+            <Button type="submit" loading={saving}>
+              Create creative
             </Button>
           </DialogFooter>
         </form>

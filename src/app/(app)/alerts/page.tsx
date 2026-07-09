@@ -1,10 +1,15 @@
 import Link from "next/link";
+import { ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { shortDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { AcknowledgeButton } from "@/components/acknowledge-button";
+import { EmptyState } from "@/components/empty-state";
+import { StaggerPage } from "@/components/dashboard/stagger-page";
+import { FadeInSection } from "@/components/dashboard/fade-in-section";
+import { CardShell } from "@/components/dashboard/card-shell";
 import {
   Table,
   TableBody,
@@ -37,8 +42,9 @@ export default async function AlertsPage() {
             : "Guardrail alert history — CPA thresholds and stalled campaigns."
         }
       />
-      <div className="p-6">
-        <div className="overflow-hidden rounded-lg border border-border">
+      <StaggerPage>
+        <FadeInSection>
+        <CardShell className="overflow-hidden p-0">
           <Table>
             <TableHeader>
               <TableRow>
@@ -52,11 +58,12 @@ export default async function AlertsPage() {
             <TableBody>
               {list.length === 0 && (
                 <TableRow>
-                  <TableCell
-                    colSpan={5}
-                    className="py-10 text-center text-muted-foreground"
-                  >
-                    No alerts yet. The threshold checker will log them here.
+                  <TableCell colSpan={5} className="p-0">
+                    <EmptyState
+                      icon={ShieldCheck}
+                      title="All quiet"
+                      description="No guardrail alerts yet — CPA thresholds and stalled-campaign warnings will show up here the moment they trigger."
+                    />
                   </TableCell>
                 </TableRow>
               )}
@@ -106,8 +113,9 @@ export default async function AlertsPage() {
               ))}
             </TableBody>
           </Table>
-        </div>
-      </div>
+        </CardShell>
+        </FadeInSection>
+      </StaggerPage>
     </>
   );
 }

@@ -7,6 +7,7 @@ const fraunces = Fraunces({
   variable: "--font-heading",
   subsets: ["latin"],
   display: "swap",
+  style: ["normal", "italic"],
   axes: ["opsz"],
 });
 
@@ -40,6 +41,7 @@ export default function RootLayout({
       className={`dark ${fraunces.variable} ${inter.variable} ${ibmPlexMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <div className="ambient-bg" aria-hidden />
         {children}
         <Toaster richColors position="top-right" />
       </body>

@@ -4,10 +4,13 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Enums } from "@/lib/supabase/database.types";
 import { shortDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/empty-state";
+import { CardShell } from "@/components/dashboard/card-shell";
 import {
   Select,
   SelectContent,
@@ -200,7 +203,7 @@ export function LeadsTable({
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-lg border border-border">
+      <CardShell className="overflow-hidden p-0">
         <Table>
           <TableHeader>
             <TableRow>
@@ -217,11 +220,16 @@ export function LeadsTable({
           <TableBody>
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell
-                  colSpan={8}
-                  className="py-10 text-center text-muted-foreground"
-                >
-                  No leads match these filters.
+                <TableCell colSpan={8} className="p-0">
+                  <EmptyState
+                    icon={Users}
+                    title={leads.length === 0 ? "No leads yet" : "No leads match these filters"}
+                    description={
+                      leads.length === 0
+                        ? "Leads flow in automatically from your campaigns and outreach — this list fills in as they arrive."
+                        : "Try widening your account, campaign, or status filters."
+                    }
+                  />
                 </TableCell>
               </TableRow>
             )}
@@ -281,7 +289,7 @@ export function LeadsTable({
                       <Button
                         size="sm"
                         variant="secondary"
-                        disabled={busyId === lead.id}
+                        loading={busyId === lead.id}
                         onClick={() => convertToAppointment(lead)}
                       >
                         Convert to appt
@@ -295,7 +303,7 @@ export function LeadsTable({
             })}
           </TableBody>
         </Table>
-      </div>
+      </CardShell>
     </div>
   );
 }

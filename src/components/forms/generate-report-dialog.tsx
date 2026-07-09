@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 import { createReportShare } from "@/app/(app)/accounts/[id]/report-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,7 +83,12 @@ export function GenerateReportDialog({ accountId }: { accountId: string }) {
           </div>
 
           {url && (
-            <div className="space-y-2 rounded-md border border-border bg-card/40 p-3">
+            <motion.div
+              initial={{ opacity: 0, y: 6, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="space-y-2 rounded-md border border-[var(--success)]/30 bg-card/40 p-3"
+            >
               <p className="text-xs text-muted-foreground">
                 Read-only link (expires in 30 days):
               </p>
@@ -104,12 +110,12 @@ export function GenerateReportDialog({ accountId }: { accountId: string }) {
                   </Button>
                 </a>
               </div>
-            </div>
+            </motion.div>
           )}
         </div>
         <DialogFooter>
-          <Button onClick={generate} disabled={busy}>
-            {busy ? "Generating…" : url ? "Regenerate" : "Create report"}
+          <Button onClick={generate} loading={busy}>
+            {url ? "Regenerate" : "Create report"}
           </Button>
         </DialogFooter>
       </DialogContent>

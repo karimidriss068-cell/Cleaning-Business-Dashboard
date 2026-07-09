@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { FieldError } from "@/components/field-error";
 import {
   Select,
   SelectContent,
@@ -25,6 +26,7 @@ export function AttachCreativeForm({
   const router = useRouter();
   const [creativeId, setCreativeId] = useState("");
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | undefined>();
 
   if (options.length === 0) {
     return (
@@ -39,18 +41,19 @@ export function AttachCreativeForm({
 
   async function attach() {
     if (!creativeId) {
-      toast.error("Pick a creative to attach");
+      setError("Pick a creative to attach.");
       return;
     }
+    setError(undefined);
     setSaving(true);
     const supabase = createClient();
-    const { error } = await supabase
+    const { error: dbError } = await supabase
       .from("campaign_creatives")
       .insert({ campaign_id: campaignId, creative_id: creativeId });
     setSaving(false);
 
-    if (error) {
-      toast.error("Could not attach creative", { description: error.message });
+    if (dbError) {
+      toast.error("Could not attach creative", { description: dbError.message });
       return;
     }
     toast.success("Creative attached");
@@ -59,25 +62,31 @@ export function AttachCreativeForm({
   }
 
   return (
-    <div className="flex items-center gap-3">
-      <Select
-        value={creativeId}
-        onValueChange={(v) => setCreativeId(v as string)}
-        items={items}
-      >
-        <SelectTrigger className="w-64">
-          <SelectValue placeholder="Select a creative…" />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((o) => (
-            <SelectItem key={o.id} value={o.id}>
-              {o.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Button size="sm" variant="secondary" onClick={attach} disabled={saving}>
-        {saving ? "Attaching…" : "Attach"}
+    <div className="flex items-start gap-3">
+      <div>
+        <Select
+          value={creativeId}
+          onValueChange={(v) => {
+            setCreativeId(v as string);
+            if (error) setError(undefined);
+          }}
+          items={items}
+        >
+          <SelectTrigger className="w-64" aria-invalid={!!error}>
+            <SelectValue placeholder="Select a creative…" />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((o) => (
+              <SelectItem key={o.id} value={o.id}>
+                {o.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <FieldError>{error}</FieldError>
+      </div>
+      <Button size="sm" variant="secondary" onClick={attach} loading={saving}>
+        Attach
       </Button>
     </div>
   );

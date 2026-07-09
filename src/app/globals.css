@@ -61,12 +61,15 @@
   --bg-base: #1a0e0e; /* near-black with red undertone */
   --bg-surface: #2b1414; /* deep oxblood — cards, panels, rows */
   --bg-surface-raised: #3a1a1a; /* modals, dropdowns, hover */
+  --bg-panel: #44201f; /* visibly lifted surface — Stat/chart panels only */
   --accent-primary: #8b1e2e; /* muted wine-crimson */
   --accent-bright: #b8293d; /* brighter crimson — hover/alerts only */
+  --accent-cream-rich: #d9c9a3; /* deep aged-parchment cream — reserved for ONE dominant element per page */
   --text-primary: #f0e6d2; /* warm cream */
   --text-muted: #b8a88c; /* dusty cream-tan */
   --success: #6b8e5a; /* muted sage — showed/closed only */
   --warning: #c48a3d; /* muted amber — at-risk */
+  --field-error: #c97b82; /* muted dusty rose — inline field validation, distinct from alert crimson */
 
   /* shadcn semantic tokens mapped onto the brand palette */
   --background: var(--bg-base);
@@ -118,6 +121,34 @@
   }
 }
 
+/* Full-bleed ambient vignette — sits fixed behind everything so the page
+ * never reads as a single flat fill. Barely-perceptible slow drift keeps it
+ * from feeling static without ever calling attention to itself. */
+.ambient-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 20% -10%, color-mix(in srgb, var(--accent-primary) 14%, transparent), transparent 55%),
+    radial-gradient(100% 80% at 100% 110%, color-mix(in srgb, var(--accent-cream-rich) 6%, transparent), transparent 60%),
+    var(--bg-base);
+  animation: ambient-drift 26s ease-in-out infinite;
+}
+@keyframes ambient-drift {
+  0%, 100% { background-position: 0% 0%, 0% 0%, 0% 0%; }
+  50% { background-position: 2% 3%, -2% -2%, 0% 0%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ambient-bg {
+    animation: none;
+  }
+}
+
+.text-cream-rich {
+  color: var(--accent-cream-rich);
+}
+
 /* Numbers you scan/compare (spend, CPA, counts, dates) render in IBM Plex Mono
  * with tabular figures so columns line up. Applies anywhere `tabular-nums` is
  * used — table cells, funnel counts, etc. (Hero KPI numerals use Fraunces via
@@ -132,7 +163,9 @@
 /*
  * Signature element — the "hero number". Large Fraunces numeral with a thin
  * crimson underline that sits under the number itself (fountain-pen highlight),
- * a small-caps letter-spaced label above, and a brief fade-in on load.
+ * a small-caps letter-spaced label above, and a brief fade-in on load. The
+ * underline is a separate element (.kpi-underline) rather than a border so
+ * hero numbers can carry an animated glow independent of the number itself.
  */
 .kpi-label {
   font-family: var(--font-sans);
@@ -149,13 +182,10 @@
   line-height: 1;
   letter-spacing: -0.015em;
   color: var(--text-primary);
-  padding-bottom: 6px;
-  border-bottom: 2px solid var(--accent-primary);
   animation: kpi-fade 150ms ease-out both;
 }
 .kpi-number--muted {
   color: var(--text-muted);
-  border-bottom-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
 }
 
 @keyframes kpi-fade {
@@ -167,6 +197,176 @@
     opacity: 1;
     transform: none;
   }
+}
+
+.kpi-underline {
+  height: 2px;
+  margin-top: 8px;
+  border-radius: 2px;
+  background: var(--accent-primary);
+}
+.kpi-underline--muted {
+  background: color-mix(in srgb, var(--text-muted) 55%, transparent);
+}
+.kpi-underline--glow {
+  background: var(--accent-bright);
+  animation: kpi-glow 2.8s ease-in-out infinite;
+}
+@keyframes kpi-glow {
+  0%, 100% {
+    box-shadow: 0 0 4px 0 color-mix(in srgb, var(--accent-bright) 50%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 16px 2px color-mix(in srgb, var(--accent-bright) 80%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kpi-underline--glow {
+    animation: none;
+    box-shadow: 0 0 8px 0 color-mix(in srgb, var(--accent-bright) 60%, transparent);
+  }
+}
+
+/* Soft ambient blob behind hero numbers only — an alive, breathing glow. */
+.kpi-glow-blob {
+  position: absolute;
+  inset: -30% -10%;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in srgb, var(--accent-bright) 28%, transparent),
+    transparent 70%
+  );
+  filter: blur(18px);
+  animation: kpi-shimmer 4.5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes kpi-shimmer {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.08); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kpi-glow-blob {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+/*
+ * Luxury surface treatment — every elevated panel (Stat cards, chart
+ * frames) visibly lifts off the page background using --bg-panel (a
+ * genuinely lighter oxblood, not a near-invisible half-step), plus a warm
+ * glow from the top-left corner and barely-visible grain for material depth.
+ */
+.panel {
+  position: relative;
+  border-radius: var(--radius-lg);
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border));
+  background:
+    radial-gradient(130% 160% at 0% 0%, color-mix(in srgb, var(--accent-bright) 12%, transparent), transparent 60%),
+    var(--bg-panel);
+  box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+.panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+/*
+ * Glass panel — the reinvented dashboard's card surface. A diagonal gradient
+ * (near-black to lifted oxblood, not a flat fill) plus a 1px inner highlight
+ * along the top edge (like light catching the top of glass) and a deep soft
+ * shadow so cards read as floating rather than flush with the page.
+ */
+.panel-glass {
+  position: relative;
+  border-radius: var(--radius-xl);
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 30%, var(--border));
+  background:
+    linear-gradient(135deg, var(--bg-panel) 0%, var(--bg-surface) 100%);
+  box-shadow:
+    0 24px 48px -20px rgba(0, 0, 0, 0.6),
+    0 1px 0 0 rgba(255, 255, 255, 0.06) inset;
+  overflow: hidden;
+}
+.panel-glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+/* Glow applied to chart line strokes — targets Recharts' own generated
+ * classNames on the rendered SVG path, since Recharts doesn't expose a
+ * style prop path for this. */
+.chart-glow .recharts-area-curve {
+  filter: drop-shadow(0 2px 8px color-mix(in srgb, var(--accent-bright) 55%, transparent));
+}
+
+/* A thin warm hairline (cream fading toward crimson) used to separate major
+ * sections in place of a plain border — the closest thing to "gold" we get
+ * without leaving the brand token system. */
+.divider-warm {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--text-primary) 50%, var(--accent-bright) 30%),
+    transparent
+  );
+  opacity: 0.55;
+}
+.divider-warm--v {
+  width: 1px;
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(in srgb, var(--text-primary) 50%, var(--accent-bright) 30%),
+    transparent
+  );
+  opacity: 0.55;
+}
+
+/* Subtle staggered entrance — panels/sections rise and fade in on load.
+ * Combine with an inline `animationDelay` for stagger across a grid. */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-fade-up {
+  animation: fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up {
+    animation: none;
+  }
+}
+
+/* Skeleton loading state in brand tones (not a generic gray spinner). */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.9; }
+}
+.skeleton {
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-raised);
+  animation: skeleton-pulse 1.6s ease-in-out infinite;
 }
 
 /* Status pills — cream/tan carries the UI; sage and amber are the only

@@ -4,6 +4,8 @@ import {
   OutreachContactsTable,
   type OutreachRow,
 } from "@/components/outreach-contacts-table";
+import { StaggerPage } from "@/components/dashboard/stagger-page";
+import { FadeInSection } from "@/components/dashboard/fade-in-section";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +24,7 @@ export default async function OutreachContactsPage() {
     id: c.id,
     name: c.name,
     contact_info: c.contact_info,
+    ghl_contact_id: c.ghl_contact_id,
     niche: c.niche,
     channel: c.channel,
     status: c.status,
@@ -42,9 +45,11 @@ export default async function OutreachContactsPage() {
         title="Outreach Contacts"
         description="Every contact across all scripts. Update status inline or convert booked/closed contacts into leads."
       />
-      <div className="p-6">
-        <OutreachContactsTable contacts={rows} scripts={scripts ?? []} />
-      </div>
+      <StaggerPage>
+        <FadeInSection>
+          <OutreachContactsTable contacts={rows} scripts={scripts ?? []} />
+        </FadeInSection>
+      </StaggerPage>
     </>
   );
 }

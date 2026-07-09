@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { FieldError } from "@/components/field-error";
 import {
   Dialog,
   DialogContent,
@@ -28,10 +29,13 @@ import { Plus } from "lucide-react";
 
 const STATUSES = { testing: "Testing", winning: "Winning", retired: "Retired" };
 
+type FormErrors = Partial<{ name: string }>;
+
 export function NewScriptDialog() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
 
   const [name, setName] = useState("");
   const [channel, setChannel] =
@@ -39,8 +43,20 @@ export function NewScriptDialog() {
   const [status, setStatus] = useState<keyof typeof STATUSES>("testing");
   const [content, setContent] = useState("");
 
+  function validate(): FormErrors {
+    const errs: FormErrors = {};
+    if (!name.trim()) errs.name = "Name is required.";
+    return errs;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const errs = validate();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      return;
+    }
+    setErrors({});
     setSaving(true);
     const supabase = createClient();
     const { error } = await supabase.from("outreach_scripts").insert({
@@ -62,7 +78,13 @@ export function NewScriptDialog() {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (!o) setErrors({});
+      }}
+    >
       <DialogTrigger
         render={
           <Button size="sm" className="gap-2">
@@ -74,16 +96,20 @@ export function NewScriptDialog() {
         <DialogHeader>
           <DialogTitle>New outreach script</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div className="space-y-2">
             <Label htmlFor="sc-name">Name</Label>
             <Input
               id="sc-name"
-              required
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
+              }}
               placeholder="Pain-point opener v2"
+              aria-invalid={!!errors.name}
             />
+            <FieldError>{errors.name}</FieldError>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -138,8 +164,8 @@ export function NewScriptDialog() {
             />
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={saving || !name.trim()}>
-              {saving ? "Saving…" : "Create script"}
+            <Button type="submit" loading={saving}>
+              Create script
             </Button>
           </DialogFooter>
         </form>

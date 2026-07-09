@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 import { askInsights } from "@/app/(app)/insights/actions";
 import { Button } from "@/components/ui/button";
+import { cardHover } from "@/components/dashboard/motion-variants";
 import { Sparkles, ArrowUp } from "lucide-react";
 
 const SUGGESTIONS = [
@@ -15,6 +17,8 @@ const SUGGESTIONS = [
 ];
 
 type Exchange = { q: string; a: string };
+
+const ENTER = { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const };
 
 export function InsightsChat({ configured }: { configured: boolean }) {
   const [input, setInput] = useState("");
@@ -53,36 +57,56 @@ export function InsightsChat({ configured }: { configured: boolean }) {
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
       {/* Conversation */}
       {exchanges.length === 0 && !loading ? (
-        <div className="rounded-lg border border-border bg-card/40 p-6">
+        <div>
           <p className="mb-3 text-sm text-muted-foreground">
             Ask anything about your live data. Try:
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid gap-3 sm:grid-cols-2">
             {SUGGESTIONS.map((s) => (
-              <button
+              <motion.button
                 key={s}
                 onClick={() => ask(s)}
-                className="rounded-full border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-[var(--accent-primary)] hover:text-foreground"
+                whileHover={cardHover}
+                className="panel-glass px-4 py-3.5 text-left text-sm leading-relaxed text-muted-foreground transition-colors hover:text-foreground"
               >
-                {s}
-              </button>
+                <span className="relative z-10">{s}</span>
+              </motion.button>
             ))}
           </div>
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-6">
           {exchanges.map((ex, i) => (
-            <div key={i} className="space-y-2">
-              <p className="font-heading text-lg tracking-tight">{ex.q}</p>
-              <p className="whitespace-pre-wrap leading-relaxed text-muted-foreground">
-                {ex.a}
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={ENTER}
+              className="space-y-3"
+            >
+              {/* User message — plain, so the assistant's answer reads as the content */}
+              <p className="ml-auto w-fit max-w-[85%] rounded-lg bg-[var(--bg-surface-raised)] px-3.5 py-2 text-sm text-[var(--text-primary)]">
+                {ex.q}
               </p>
-            </div>
+              {/* Assistant answer — glass panel, generous body typography */}
+              <div className="panel-glass px-5 py-4">
+                <p className="relative z-10 whitespace-pre-wrap text-[15px] leading-relaxed text-[var(--text-primary)]">
+                  {ex.a}
+                </p>
+              </div>
+            </motion.div>
           ))}
           {loading && (
-            <p className="animate-pulse text-sm text-muted-foreground">
-              Analyzing your data…
-            </p>
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={ENTER}
+              className="panel-glass space-y-2.5 px-5 py-4"
+            >
+              <div className="skeleton h-3.5 w-[85%]" />
+              <div className="skeleton h-3.5 w-[95%]" />
+              <div className="skeleton h-3.5 w-[60%]" />
+            </motion.div>
           )}
         </div>
       )}
@@ -102,8 +126,8 @@ export function InsightsChat({ configured }: { configured: boolean }) {
           className="flex-1 bg-transparent px-2 text-sm outline-none placeholder:text-muted-foreground"
           disabled={loading}
         />
-        <Button type="submit" size="icon-sm" disabled={loading || !input.trim()}>
-          <ArrowUp className="h-4 w-4" />
+        <Button type="submit" size="icon-sm" loading={loading} disabled={!input.trim()}>
+          {!loading && <ArrowUp className="h-4 w-4" />}
         </Button>
       </form>
     </div>

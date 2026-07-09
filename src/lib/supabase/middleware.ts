@@ -5,6 +5,16 @@ import { NextResponse, type NextRequest } from "next/server";
  * Refreshes the Supabase auth session on every request and guards routes.
  * Unauthenticated users are redirected to /login (except the login page and
  * the n8n webhook route, which authenticates via its own shared secret).
+ *
+ * Uses getSession() rather than getUser() deliberately: getUser() makes a
+ * network round-trip to Supabase's Auth API on every single request (measured
+ * ~150-270ms), which is a flat tax on every navigation in the app. getSession()
+ * reads the JWT from the cookie locally (only hitting the network to refresh
+ * when the token has actually expired). This is safe here because middleware
+ * is UX-only — the real security boundary is Row Level Security, which
+ * PostgREST validates server-side against the JWT on every single query
+ * regardless of what middleware decided (see lib/supabase/server.ts). A
+ * tampered/forged cookie would still be rejected at the database layer.
  */
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -31,8 +41,9 @@ export async function updateSession(request: NextRequest) {
   );
 
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
+  const user = session?.user ?? null;
 
   const { pathname } = request.nextUrl;
   const isAuthRoute =

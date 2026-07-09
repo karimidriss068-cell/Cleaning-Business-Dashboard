@@ -1,13 +1,23 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { money, num, perUnit, shortDate } from "@/lib/format";
+import { money, num, shortDate } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
-import { Stat } from "@/components/stat";
 import { StatusBadge } from "@/components/status-badge";
 import { AddSpendForm } from "@/components/forms/add-spend-form";
+import { MetaCampaignIdForm } from "@/components/forms/meta-campaign-id-form";
 import { AttachCreativeForm } from "@/components/forms/attach-creative-form";
 import { AcknowledgeButton } from "@/components/acknowledge-button";
-import { TriangleAlert } from "lucide-react";
+import { TriangleAlert, DollarSign, Clapperboard } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
+import { StaggerPage } from "@/components/dashboard/stagger-page";
+import { FadeInSection } from "@/components/dashboard/fade-in-section";
+import { CardShell } from "@/components/dashboard/card-shell";
+import { StatCard } from "@/components/dashboard/stat-card";
+import { HeroStatCard } from "@/components/dashboard/hero-stat-card";
+import { FunnelRow } from "@/components/dashboard/funnel-row";
+import { SectionLabel } from "@/components/dashboard/section-label";
+import { ChartPanel } from "@/components/dashboard/chart-panel";
+import { TrendAreaChart } from "@/components/charts/trend-area-chart";
 import {
   Table,
   TableBody,
@@ -19,6 +29,12 @@ import {
 
 export const dynamic = "force-dynamic";
 
+const DAY = 86400000;
+
+function isoDate(d: Date) {
+  return d.toISOString().slice(0, 10);
+}
+
 export default async function CampaignDetailPage({
   params,
 }: {
@@ -27,47 +43,45 @@ export default async function CampaignDetailPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: campaign } = await supabase
-    .from("campaigns")
-    .select("*, account:accounts(id, name, type)")
-    .eq("id", id)
-    .single();
+  // Round 1 — every one of these only depends on `id`, so they run together
+  // instead of as 5 sequential round-trips (each Postgrest hop measured
+  // ~140-240ms; that was the single biggest cost on this page).
+  const [
+    { data: campaign },
+    { data: criticalAlert },
+    { data: leads },
+    { data: spend },
+    { data: attached },
+  ] = await Promise.all([
+    supabase
+      .from("campaigns")
+      .select("*, account:accounts(id, name, type)")
+      .eq("id", id)
+      .single(),
+    supabase
+      .from("alerts")
+      .select("id, message")
+      .eq("campaign_id", id)
+      .eq("type", "cpa_critical")
+      .eq("acknowledged", false)
+      .order("triggered_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase.from("leads").select("id, status").eq("campaign_id", id),
+    supabase
+      .from("spend_daily")
+      .select("*")
+      .eq("campaign_id", id)
+      .order("date", { ascending: false }),
+    supabase
+      .from("campaign_creatives")
+      .select("creative:creatives(id, name, type, status)")
+      .eq("campaign_id", id),
+  ]);
 
   if (!campaign) notFound();
 
-  const { data: criticalAlert } = await supabase
-    .from("alerts")
-    .select("id, message")
-    .eq("campaign_id", id)
-    .eq("type", "cpa_critical")
-    .eq("acknowledged", false)
-    .order("triggered_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  const [{ data: leads }, { data: spend }, { data: attached }] =
-    await Promise.all([
-      supabase.from("leads").select("id, status").eq("campaign_id", id),
-      supabase
-        .from("spend_daily")
-        .select("*")
-        .eq("campaign_id", id)
-        .order("date", { ascending: false }),
-      supabase
-        .from("campaign_creatives")
-        .select("creative:creatives(id, name, type, status)")
-        .eq("campaign_id", id),
-    ]);
-
   const leadIds = (leads ?? []).map((l) => l.id);
-
-  const { data: appts } =
-    leadIds.length > 0
-      ? await supabase
-          .from("appointments")
-          .select("status")
-          .in("lead_id", leadIds)
-      : { data: [] };
 
   // Creatives available to attach: same account, not already attached.
   const attachedCreatives = (attached ?? [])
@@ -75,11 +89,18 @@ export default async function CampaignDetailPage({
     .filter((c): c is NonNullable<typeof c> => c !== null);
   const attachedIds = new Set(attachedCreatives.map((c) => c.id));
 
-  const { data: accountCreatives } = await supabase
-    .from("creatives")
-    .select("id, name")
-    .eq("account_id", campaign.account_id)
-    .order("name");
+  // Round 2 — appts needs leadIds from round 1, accountCreatives needs
+  // campaign.account_id from round 1, but neither needs the other.
+  const [{ data: appts }, { data: accountCreatives }] = await Promise.all([
+    leadIds.length > 0
+      ? supabase.from("appointments").select("status").in("lead_id", leadIds)
+      : Promise.resolve({ data: [] as { status: string }[] }),
+    supabase
+      .from("creatives")
+      .select("id, name")
+      .eq("account_id", campaign.account_id)
+      .order("name"),
+  ]);
   const attachOptions = (accountCreatives ?? []).filter(
     (c) => !attachedIds.has(c.id),
   );
@@ -99,6 +120,9 @@ export default async function CampaignDetailPage({
   ).length;
   const closed = (appts ?? []).filter((a) => a.status === "closed").length;
 
+  const cpl = leadsTotal > 0 ? totalSpend / leadsTotal : null;
+  const cpa = apptTotal > 0 ? totalSpend / apptTotal : null;
+
   const funnel = [
     { label: "Leads", value: leadsTotal },
     { label: "Contacted", value: contacted },
@@ -107,6 +131,21 @@ export default async function CampaignDetailPage({
     { label: "Showed", value: showed },
     { label: "Closed", value: closed },
   ];
+
+  // Spend trend — last 30 days, continuous (zero-filled), for this campaign only.
+  const spendByDate = new Map((spend ?? []).map((s) => [s.date, Number(s.spend ?? 0)]));
+  const spendTrend: { date: string; spend: number }[] = [];
+  for (let i = 30; i >= 0; i--) {
+    const date = isoDate(new Date(Date.now() - i * DAY));
+    spendTrend.push({
+      date: new Date(`${date}T00:00:00Z`).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      }),
+      spend: Math.round((spendByDate.get(date) ?? 0) * 100) / 100,
+    });
+  }
+  const cpaSparkline = spendTrend.slice(-14).map((p) => ({ date: p.date, value: p.spend }));
 
   return (
     <>
@@ -129,56 +168,50 @@ export default async function CampaignDetailPage({
         </div>
       )}
 
-      <div className="space-y-8 p-6">
-        {/* Headline metrics */}
-        <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Stat label="Total spend" value={money(totalSpend)} />
-          <Stat label="Leads" value={num(leadsTotal)} />
-          <Stat label="CPL" value={perUnit(totalSpend, leadsTotal)} sub="Cost per lead" />
-          <Stat label="CPA" value={perUnit(totalSpend, apptTotal)} sub="Cost per appointment" hero />
+      <StaggerPage>
+        <HeroStatCard
+          label="Cost per appointment"
+          value={cpa}
+          format="money"
+          sub="Total spend ÷ appointments booked"
+          sparklineData={cpaSparkline}
+        />
+
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <StatCard label="Total spend" value={totalSpend} format="money" />
+          <StatCard label="Leads" value={leadsTotal} format="num" />
+          <StatCard
+            label="CPL"
+            value={cpl ?? "—"}
+            format={cpl !== null ? "money" : undefined}
+            sub="Cost per lead"
+          />
         </section>
 
-        {/* Funnel */}
-        <section>
-          <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-muted-foreground">
-            Funnel
-          </h2>
-          <div className="grid grid-cols-3 gap-3 md:grid-cols-6">
-            {funnel.map((stage, i) => {
-              const prev = i > 0 ? funnel[i - 1].value : null;
-              const rate =
-                prev && prev > 0
-                  ? `${Math.round((stage.value / prev) * 100)}%`
-                  : null;
-              return (
-                <div
-                  key={stage.label}
-                  className="rounded-lg border border-border bg-card p-4"
-                >
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                    {stage.label}
-                  </p>
-                  <p className="mt-1 text-2xl font-semibold tabular-nums">
-                    {num(stage.value)}
-                  </p>
-                  {rate && (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {rate} of prev
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
+        <FadeInSection className="space-y-4">
+          <SectionLabel>Funnel</SectionLabel>
+          <FunnelRow stages={funnel} />
+        </FadeInSection>
 
-        {/* Daily spend */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
-            Daily spend
-          </h2>
+        {spendTrend.some((p) => p.spend > 0) && (
+          <FadeInSection>
+            <ChartPanel title="Spend trend" sub="Daily spend, last 30 days">
+              <TrendAreaChart
+                data={spendTrend}
+                xKey="date"
+                yKey="spend"
+                format="money"
+                gradientId={`campaignSpendGradient-${id}`}
+              />
+            </ChartPanel>
+          </FadeInSection>
+        )}
+
+        <FadeInSection className="space-y-4">
+          <SectionLabel>Daily spend</SectionLabel>
+          <MetaCampaignIdForm campaignId={id} metaCampaignId={campaign.meta_campaign_id} />
           <AddSpendForm campaignId={id} />
-          <div className="overflow-hidden rounded-lg border border-border">
+          <CardShell className="overflow-hidden p-0">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -192,11 +225,12 @@ export default async function CampaignDetailPage({
               <TableBody>
                 {(spend ?? []).length === 0 && (
                   <TableRow>
-                    <TableCell
-                      colSpan={5}
-                      className="py-8 text-center text-muted-foreground"
-                    >
-                      No spend entries yet.
+                    <TableCell colSpan={5} className="p-0">
+                      <EmptyState
+                        icon={DollarSign}
+                        title="No spend entries yet"
+                        description="Add a manual entry above, or map this campaign to Meta and sync to pull spend automatically."
+                      />
                     </TableCell>
                   </TableRow>
                 )}
@@ -221,16 +255,13 @@ export default async function CampaignDetailPage({
                 ))}
               </TableBody>
             </Table>
-          </div>
-        </section>
+          </CardShell>
+        </FadeInSection>
 
-        {/* Creatives */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
-            Creatives
-          </h2>
+        <FadeInSection className="space-y-4">
+          <SectionLabel>Creatives</SectionLabel>
           <AttachCreativeForm campaignId={id} options={attachOptions} />
-          <div className="overflow-hidden rounded-lg border border-border">
+          <CardShell className="overflow-hidden p-0">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -242,11 +273,12 @@ export default async function CampaignDetailPage({
               <TableBody>
                 {attachedCreatives.length === 0 && (
                   <TableRow>
-                    <TableCell
-                      colSpan={3}
-                      className="py-8 text-center text-muted-foreground"
-                    >
-                      No creatives attached.
+                    <TableCell colSpan={3} className="p-0">
+                      <EmptyState
+                        icon={Clapperboard}
+                        title="No creatives attached"
+                        description="Attach a creative above to start rolling its performance up into this campaign."
+                      />
                     </TableCell>
                   </TableRow>
                 )}
@@ -263,9 +295,9 @@ export default async function CampaignDetailPage({
                 ))}
               </TableBody>
             </Table>
-          </div>
-        </section>
-      </div>
+          </CardShell>
+        </FadeInSection>
+      </StaggerPage>
     </>
   );
 }

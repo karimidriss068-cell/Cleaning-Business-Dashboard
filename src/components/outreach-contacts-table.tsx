@@ -13,7 +13,11 @@ import {
   type OutreachChannel,
   type OutreachContactStatus,
 } from "@/lib/outreach";
+import { UsersRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SendSmsDialog } from "@/components/forms/send-sms-dialog";
+import { EmptyState } from "@/components/empty-state";
+import { CardShell } from "@/components/dashboard/card-shell";
 import {
   Select,
   SelectContent,
@@ -34,6 +38,7 @@ export type OutreachRow = {
   id: string;
   name: string | null;
   contact_info: string | null;
+  ghl_contact_id: string | null;
   niche: string | null;
   channel: OutreachChannel;
   status: OutreachContactStatus;
@@ -208,7 +213,7 @@ export function OutreachContactsTable({
         </div>
       )}
 
-      <div className="overflow-hidden rounded-lg border border-border">
+      <CardShell className="overflow-hidden p-0">
         <Table>
           <TableHeader>
             <TableRow>
@@ -225,8 +230,16 @@ export function OutreachContactsTable({
           <TableBody>
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} className="py-10 text-center text-muted-foreground">
-                  No contacts match these filters.
+                <TableCell colSpan={8} className="p-0">
+                  <EmptyState
+                    icon={UsersRound}
+                    title={contacts.length === 0 ? "No contacts yet" : "No contacts match these filters"}
+                    description={
+                      contacts.length === 0
+                        ? "Outreach contacts sync in from GHL as they're worked, or add them manually from a script's detail page."
+                        : "Try widening your channel, script, status, or niche filters."
+                    }
+                  />
                 </TableCell>
               </TableRow>
             )}
@@ -268,32 +281,40 @@ export function OutreachContactsTable({
                     {shortDate(row.created_at)}
                   </TableCell>
                   <TableCell className="text-right">
-                    {row.leadId ? (
-                      <Link
-                        href="/leads"
-                        className="text-xs text-[var(--success)] hover:underline"
-                      >
-                        Linked ✓
-                      </Link>
-                    ) : canConvert ? (
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        disabled={busyId === row.id}
-                        onClick={() => convertToLead(row)}
-                      >
-                        Convert to lead
-                      </Button>
-                    ) : (
-                      <span className="text-xs text-muted-foreground/50">—</span>
-                    )}
+                    <div className="flex items-center justify-end gap-2">
+                      {row.ghl_contact_id && (
+                        <SendSmsDialog
+                          ghlContactId={row.ghl_contact_id}
+                          contactName={row.name}
+                        />
+                      )}
+                      {row.leadId ? (
+                        <Link
+                          href="/leads"
+                          className="text-xs text-[var(--success)] hover:underline"
+                        >
+                          Linked ✓
+                        </Link>
+                      ) : canConvert ? (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          loading={busyId === row.id}
+                          onClick={() => convertToLead(row)}
+                        >
+                          Convert to lead
+                        </Button>
+                      ) : !row.ghl_contact_id ? (
+                        <span className="text-xs text-muted-foreground/50">—</span>
+                      ) : null}
+                    </div>
                   </TableCell>
                 </TableRow>
               );
             })}
           </TableBody>
         </Table>
-      </div>
+      </CardShell>
     </div>
   );
 }

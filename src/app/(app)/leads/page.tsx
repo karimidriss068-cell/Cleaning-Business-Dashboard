@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/page-header";
 import { LeadsTable, type LeadRow } from "@/components/leads-table";
+import { StaggerPage } from "@/components/dashboard/stagger-page";
+import { FadeInSection } from "@/components/dashboard/fade-in-section";
 
 export const dynamic = "force-dynamic";
 
@@ -38,13 +40,15 @@ export default async function LeadsPage() {
         title="Leads"
         description="All leads across campaigns. Update status inline or convert qualified/booked leads to appointments."
       />
-      <div className="p-6">
-        <LeadsTable
-          leads={rows}
-          accounts={accounts ?? []}
-          campaigns={campaigns ?? []}
-        />
-      </div>
+      <StaggerPage>
+        <FadeInSection>
+          <LeadsTable
+            leads={rows}
+            accounts={accounts ?? []}
+            campaigns={campaigns ?? []}
+          />
+        </FadeInSection>
+      </StaggerPage>
     </>
   );
 }

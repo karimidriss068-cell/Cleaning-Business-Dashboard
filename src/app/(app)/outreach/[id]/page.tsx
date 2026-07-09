@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { num, pct, duration } from "@/lib/format";
 import {
   computeFunnel,
   median,
@@ -9,12 +8,17 @@ import {
   STAGE_LABELS,
 } from "@/lib/outreach";
 import { PageHeader } from "@/components/page-header";
-import { Stat } from "@/components/stat";
 import { StatusBadge } from "@/components/status-badge";
 import {
   OutreachContactsTable,
   type OutreachRow,
 } from "@/components/outreach-contacts-table";
+import { StaggerPage } from "@/components/dashboard/stagger-page";
+import { FadeInSection } from "@/components/dashboard/fade-in-section";
+import { StatCard } from "@/components/dashboard/stat-card";
+import { HeroStatCard } from "@/components/dashboard/hero-stat-card";
+import { FunnelRow } from "@/components/dashboard/funnel-row";
+import { SectionLabel } from "@/components/dashboard/section-label";
 
 export const dynamic = "force-dynamic";
 
@@ -28,19 +32,17 @@ export default async function ScriptDetailPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: script } = await supabase
-    .from("outreach_scripts")
-    .select("*")
-    .eq("id", id)
-    .single();
+  // Both only depend on `id`, not on each other — run together.
+  const [{ data: script }, { data: contacts }] = await Promise.all([
+    supabase.from("outreach_scripts").select("*").eq("id", id).single(),
+    supabase
+      .from("outreach_contacts")
+      .select("*")
+      .eq("script_id", id)
+      .order("created_at", { ascending: false }),
+  ]);
 
   if (!script) notFound();
-
-  const { data: contacts } = await supabase
-    .from("outreach_contacts")
-    .select("*")
-    .eq("script_id", id)
-    .order("created_at", { ascending: false });
 
   const list = contacts ?? [];
   const funnel = computeFunnel(list);
@@ -57,25 +59,19 @@ export default async function ScriptDetailPage({
     .map((c) => (new Date(c.call_booked_at!).getTime() - t0(c)) / HOUR)
     .filter((h) => h >= 0);
 
-  const rates = [
-    1,
-    funnel.replyRate,
-    funnel.callBookedRate,
-    funnel.callHeldRate,
-    funnel.closeRate,
-  ];
-  const counts = [
-    funnel.contacted,
-    funnel.replied,
-    funnel.call_booked,
-    funnel.call_held,
-    funnel.closed,
-  ];
+  const medianReply = median(replyHours);
+  const medianBook = median(bookHours);
+
+  const funnelStages = FUNNEL_STAGES.map((stage) => ({
+    label: STAGE_LABELS[stage],
+    value: funnel[stage],
+  }));
 
   const rows: OutreachRow[] = list.map((c) => ({
     id: c.id,
     name: c.name,
     contact_info: c.contact_info,
+    ghl_contact_id: c.ghl_contact_id,
     niche: c.niche,
     channel: c.channel,
     status: c.status,
@@ -99,64 +95,47 @@ export default async function ScriptDetailPage({
         <StatusBadge status={script.status} />
       </PageHeader>
 
-      <div className="space-y-8 p-6">
+      <StaggerPage>
         {script.content && (
-          <blockquote className="rounded-md border border-border bg-card px-4 py-3 text-sm text-muted-foreground italic">
-            “{script.content}”
-          </blockquote>
+          <FadeInSection>
+            <blockquote className="rounded-md border border-border bg-card px-4 py-3 text-sm text-muted-foreground italic">
+              “{script.content}”
+            </blockquote>
+          </FadeInSection>
         )}
 
-        {/* Timing */}
-        <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <Stat label="Reached" value={num(funnel.contacted)} />
-          <Stat label="Median time to reply" value={duration(median(replyHours))} />
-          <Stat
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <HeroStatCard
+            label="Median time to reply"
+            value={medianReply}
+            format={medianReply !== null ? "duration" : undefined}
+            sub="Time from contacted to replied"
+          />
+          <HeroStatCard
             label="Median time to book"
-            value={duration(median(bookHours))}
-            hero
+            value={medianBook}
+            format={medianBook !== null ? "duration" : undefined}
+            sub="Time from contacted to call booked"
           />
         </section>
 
-        {/* Funnel breakdown */}
-        <section>
-          <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-muted-foreground">
-            Funnel
-          </h2>
-          <div className="grid grid-cols-3 gap-3 md:grid-cols-5">
-            {FUNNEL_STAGES.map((stage, i) => {
-              const prev = i > 0 ? counts[i - 1] : null;
-              const step =
-                prev && prev > 0 ? Math.round((counts[i] / prev) * 100) : null;
-              return (
-                <div
-                  key={stage}
-                  className="rounded-md border border-border bg-card p-4"
-                >
-                  <p className="kpi-label">{STAGE_LABELS[stage]}</p>
-                  <p className="mt-2 text-2xl font-semibold tabular-nums">
-                    {num(counts[i])}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {pct(rates[i])} of reached
-                    {step !== null && ` · ${step}% step`}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
+        <section className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <StatCard label="Reached" value={funnel.contacted} format="num" />
         </section>
 
-        {/* Contacts */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
-            Contacts
-          </h2>
+        <FadeInSection className="space-y-4">
+          <SectionLabel>Funnel</SectionLabel>
+          <FunnelRow stages={funnelStages} />
+        </FadeInSection>
+
+        <FadeInSection className="space-y-4">
+          <SectionLabel>Contacts</SectionLabel>
           <OutreachContactsTable
             contacts={rows}
             scripts={[{ id: script.id, name: script.name }]}
           />
-        </section>
-      </div>
+        </FadeInSection>
+      </StaggerPage>
     </>
   );
 }

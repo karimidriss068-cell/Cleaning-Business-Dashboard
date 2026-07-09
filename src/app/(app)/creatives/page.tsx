@@ -1,9 +1,14 @@
 import Link from "next/link";
+import { Clapperboard } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { perUnit } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { NewCreativeDialog } from "@/components/forms/new-creative-dialog";
+import { EmptyState } from "@/components/empty-state";
+import { StaggerPage } from "@/components/dashboard/stagger-page";
+import { FadeInSection } from "@/components/dashboard/fade-in-section";
+import { CardShell } from "@/components/dashboard/card-shell";
 import {
   Table,
   TableBody,
@@ -74,8 +79,9 @@ export default async function CreativesPage() {
         <NewCreativeDialog accounts={accounts ?? []} />
       </PageHeader>
 
-      <div className="p-6">
-        <div className="overflow-hidden rounded-lg border border-border">
+      <StaggerPage>
+        <FadeInSection>
+        <CardShell className="overflow-hidden p-0">
           <Table>
             <TableHeader>
               <TableRow>
@@ -90,11 +96,13 @@ export default async function CreativesPage() {
             <TableBody>
               {(creatives ?? []).length === 0 && (
                 <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="py-10 text-center text-muted-foreground"
-                  >
-                    No creatives yet.
+                  <TableCell colSpan={6} className="p-0">
+                    <EmptyState
+                      icon={Clapperboard}
+                      title="No creatives yet"
+                      description="Add your video, image, and script assets here to track rolled-up CPA across every campaign they run in."
+                      action={<NewCreativeDialog accounts={accounts ?? []} />}
+                    />
                   </TableCell>
                 </TableRow>
               )}
@@ -147,12 +155,13 @@ export default async function CreativesPage() {
               })}
             </TableBody>
           </Table>
-        </div>
+        </CardShell>
         <p className="mt-3 text-xs text-muted-foreground">
           Rolled-up CPA = total spend ÷ total appointments across every campaign a
           creative is attached to (campaign-level attribution).
         </p>
-      </div>
+        </FadeInSection>
+      </StaggerPage>
     </>
   );
 }
