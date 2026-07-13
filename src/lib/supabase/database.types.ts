@@ -263,6 +263,36 @@ export type Database = {
           },
         ]
       }
+      insights_usage: {
+        Row: {
+          created_at: string
+          id: string
+          input_tokens: number
+          output_tokens: number
+          question: string
+          user_email: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          input_tokens?: number
+          output_tokens?: number
+          question: string
+          user_email: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          input_tokens?: number
+          output_tokens?: number
+          question?: string
+          user_email?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           campaign_id: string | null

@@ -52,6 +52,7 @@ export async function updateSession(request: NextRequest) {
   // read-only client reports (unguessable token).
   const isPublicApi =
     pathname.startsWith("/api/webhooks") ||
+    pathname.startsWith("/api/insights/sms") ||
     pathname.startsWith("/api/reports") ||
     pathname.startsWith("/reports");
 

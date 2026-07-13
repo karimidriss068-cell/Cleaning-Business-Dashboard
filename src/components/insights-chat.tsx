@@ -1,29 +1,74 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Fragment } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { askInsights } from "@/app/(app)/insights/actions";
+import { askInsights, type InsightsAnswer } from "@/app/(app)/insights/actions";
 import { Button } from "@/components/ui/button";
 import { cardHover } from "@/components/dashboard/motion-variants";
-import { Sparkles, ArrowUp } from "lucide-react";
+import { Sparkles, ArrowUp, CircleAlert, Gauge } from "lucide-react";
 
 const SUGGESTIONS = [
-  "What's my best-performing outreach script?",
-  "Which client has the worst CPA trend?",
-  "How many appointments did I book this week vs last week?",
-  "Is any client campaign at risk right now?",
-  "Compare this week's spend to last week across all accounts.",
+  "Which account is at risk?",
+  "What's my top-spending account?",
+  "Which creative should I scale?",
+  "How does my outreach volume compare to what's converting?",
 ];
 
-type Exchange = { q: string; a: string };
+type Exchange =
+  | { q: string; kind: "answer"; result: InsightsAnswer }
+  | { q: string; kind: "limited"; used: number; cap: number };
 
 const ENTER = { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const };
 
-export function InsightsChat({ configured }: { configured: boolean }) {
+const ENTITY_ROUTE: Record<InsightsAnswer["mentioned_entities"][number]["type"], (id: string) => string> = {
+  account: (id) => `/accounts/${id}`,
+  campaign: (id) => `/campaigns/${id}`,
+  script: (id) => `/outreach/${id}`,
+  creative: () => `/creatives`,
+};
+
+/** Splits answer text on any mentioned entity's exact name and turns those
+ * occurrences into links to the relevant page. Falls back to plain text for
+ * anything that doesn't match (e.g. slightly reworded mentions). */
+function linkifyAnswer(text: string, entities: InsightsAnswer["mentioned_entities"]) {
+  const uniqueByName = entities.filter(
+    (e, i) => e.name && entities.findIndex((o) => o.name === e.name) === i,
+  );
+  if (uniqueByName.length === 0) return text;
+
+  const sorted = [...uniqueByName].sort((a, b) => b.name.length - a.name.length);
+  const pattern = sorted.map((e) => e.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  const regex = new RegExp(`(${pattern})`, "g");
+  const parts = text.split(regex);
+
+  return parts.map((part, i) => {
+    const entity = sorted.find((e) => e.name === part);
+    if (!entity) return <Fragment key={i}>{part}</Fragment>;
+    return (
+      <Link
+        key={i}
+        href={ENTITY_ROUTE[entity.type](entity.id)}
+        className="font-medium text-[var(--accent-bright)] underline underline-offset-2 hover:text-cream-rich"
+      >
+        {part}
+      </Link>
+    );
+  });
+}
+
+export function InsightsChat({
+  configured,
+  initialUsage,
+}: {
+  configured: boolean;
+  initialUsage: { queryCount: number; cap: number; estimatedCostUsd: number };
+}) {
   const [input, setInput] = useState("");
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
   const [loading, setLoading] = useState(false);
+  const [usage, setUsage] = useState(initialUsage);
 
   async function ask(question: string) {
     const q = question.trim();
@@ -36,7 +81,13 @@ export function InsightsChat({ configured }: { configured: boolean }) {
       toast.error(res.error);
       return;
     }
-    setExchanges((prev) => [...prev, { q, a: res.answer }]);
+    if ("limited" in res) {
+      setExchanges((prev) => [...prev, { q, kind: "limited", used: res.used, cap: res.cap }]);
+      setUsage((prev) => ({ ...prev, queryCount: res.used }));
+      return;
+    }
+    setExchanges((prev) => [...prev, { q, kind: "answer", result: res.result }]);
+    setUsage((prev) => ({ ...prev, queryCount: prev.queryCount + 1 }));
   }
 
   if (!configured) {
@@ -55,6 +106,19 @@ export function InsightsChat({ configured }: { configured: boolean }) {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
+      {/* Usage indicator */}
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Gauge className="h-3.5 w-3.5" />
+        <span className="font-data tabular-nums">
+          {usage.queryCount} / {usage.cap}
+        </span>
+        <span>queries this month</span>
+        <span className="text-muted-foreground/50">·</span>
+        <span className="font-data tabular-nums">
+          ~${usage.estimatedCostUsd.toFixed(2)} estimated
+        </span>
+      </div>
+
       {/* Conversation */}
       {exchanges.length === 0 && !loading ? (
         <div>
@@ -88,12 +152,30 @@ export function InsightsChat({ configured }: { configured: boolean }) {
               <p className="ml-auto w-fit max-w-[85%] rounded-lg bg-[var(--bg-surface-raised)] px-3.5 py-2 text-sm text-[var(--text-primary)]">
                 {ex.q}
               </p>
-              {/* Assistant answer — glass panel, generous body typography */}
-              <div className="panel-glass px-5 py-4">
-                <p className="relative z-10 whitespace-pre-wrap text-[15px] leading-relaxed text-[var(--text-primary)]">
-                  {ex.a}
-                </p>
-              </div>
+              {ex.kind === "limited" ? (
+                <div className="panel-glass border-[var(--warning)]/30 px-5 py-4">
+                  <div className="relative z-10 flex items-center gap-1.5 text-sm font-medium text-[var(--warning)]">
+                    <Gauge className="h-4 w-4" />
+                    Monthly limit reached
+                  </div>
+                  <p className="relative z-10 mt-1.5 text-sm text-muted-foreground">
+                    You&apos;ve used {ex.used} of {ex.cap} queries this month. The
+                    limit resets at the start of next calendar month.
+                  </p>
+                </div>
+              ) : (
+                <div className="panel-glass px-5 py-4">
+                  {!ex.result.data_available && (
+                    <div className="relative z-10 mb-2.5 flex items-center gap-1.5 text-xs font-medium text-[var(--warning)]">
+                      <CircleAlert className="h-3.5 w-3.5" />
+                      Not answerable from current data
+                    </div>
+                  )}
+                  <p className="relative z-10 whitespace-pre-wrap text-[15px] leading-relaxed text-[var(--text-primary)]">
+                    {linkifyAnswer(ex.result.answer, ex.result.mentioned_entities)}
+                  </p>
+                </div>
+              )}
             </motion.div>
           ))}
           {loading && (

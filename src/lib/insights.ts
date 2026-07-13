@@ -3,26 +3,31 @@ import type { Database } from "@/lib/supabase/database.types";
 import { currentWeekRange } from "@/lib/format";
 import { computeFunnel } from "@/lib/outreach";
 
+const DAY = 86400000;
+const NO_ACTIVITY_THRESHOLD_DAYS = 14;
+
 /**
- * Builds a compact, aggregated snapshot of the whole MAKI Ops business for the
- * AI insights feature. Numbers only (no raw PII-heavy rows) so the payload stays
- * small and Claude can reason over the full picture.
+ * Builds a full aggregated snapshot of the MAKI Ops business for the AI
+ * insights feature — every account, campaign, creative, and outreach script,
+ * with derived signals (at-risk accounts, week-over-week trends) computed
+ * here in code, not left for the model to infer from raw rows. IDs are
+ * included throughout so the UI can turn entity mentions into links.
  */
-export async function getInsightsData(
-  supabase: SupabaseClient<Database>,
-) {
+export async function getInsightsData(supabase: SupabaseClient<Database>) {
   const { weekStart } = currentWeekRange();
   const now = Date.now();
-  const DAY = 86400000;
   const lastWeekStart = new Date(new Date(weekStart).getTime() - 7 * DAY)
     .toISOString()
     .slice(0, 10);
   const since30 = new Date(now - 30 * DAY).toISOString().slice(0, 10);
   const since7 = new Date(now - 7 * DAY).toISOString().slice(0, 10);
+  const todayIso = new Date(now).toISOString().slice(0, 10);
 
   const [
     { data: accounts },
     { data: campaigns },
+    { data: creatives },
+    { data: campaignCreatives },
     { data: spend },
     { data: leads },
     { data: appts },
@@ -30,38 +35,111 @@ export async function getInsightsData(
     { data: contacts },
     { data: alerts },
   ] = await Promise.all([
-    supabase.from("accounts").select("id, name, type, price_per_appointment, cpa_alert_threshold, auto_pause_threshold, status"),
+    supabase
+      .from("accounts")
+      .select(
+        "id, name, type, price_per_appointment, cpa_alert_threshold, auto_pause_threshold, status",
+      ),
     supabase.from("campaigns").select("id, name, account_id, status"),
-    supabase.from("spend_daily").select("campaign_id, date, spend").gte("date", since30),
-    supabase.from("leads").select("campaign_id, created_at").gte("created_at", since30),
-    supabase.from("appointments").select("account_id, lead_id, booked_at, status, revenue_owed").gte("booked_at", since30),
+    supabase.from("creatives").select("id, name, type, status, account_id"),
+    supabase.from("campaign_creatives").select("campaign_id, creative_id"),
+    supabase
+      .from("spend_daily")
+      .select("campaign_id, date, spend")
+      .gte("date", since30),
+    supabase
+      .from("leads")
+      .select("id, campaign_id, created_at")
+      .gte("created_at", since30),
+    supabase
+      .from("appointments")
+      .select("account_id, lead_id, booked_at, status, revenue_owed")
+      .gte("booked_at", since30),
     supabase.from("outreach_scripts").select("id, name, channel, status"),
-    supabase.from("outreach_contacts").select("script_id, status, created_at"),
-    supabase.from("alerts").select("type, message, acknowledged, campaign_id, triggered_at").eq("acknowledged", false),
+    supabase
+      .from("outreach_contacts")
+      .select("script_id, status, created_at"),
+    supabase
+      .from("alerts")
+      .select("type, message, acknowledged, campaign_id, triggered_at")
+      .eq("acknowledged", false),
   ]);
 
   const accountById = new Map((accounts ?? []).map((a) => [a.id, a]));
   const campaignById = new Map((campaigns ?? []).map((c) => [c.id, c]));
+  const leadCampaign = new Map((leads ?? []).map((l) => [l.id, l.campaign_id]));
 
-  // Per-campaign aggregates (7d + 30d spend, 30d leads).
-  const cAgg = new Map<string, { spend7: number; spend30: number; leads30: number; appts30: number }>();
-  const ensureC = (id: string) => {
-    if (!cAgg.has(id)) cAgg.set(id, { spend7: 0, spend30: 0, leads30: 0, appts30: 0 });
+  // ---- Per-campaign aggregates: spend (7d/30d/this-week/last-week), leads, appts ----
+  type CampaignAgg = {
+    spend7: number;
+    spend30: number;
+    spendThisWeek: number;
+    spendLastWeek: number;
+    leads30: number;
+    leadsThisWeek: number;
+    leadsLastWeek: number;
+    lastLeadDate: string | null;
+    appts30: number;
+    apptsThisWeek: number;
+    apptsLastWeek: number;
+    revenue30: number;
+    lastApptDate: string | null;
+  };
+  const cAgg = new Map<string, CampaignAgg>();
+  const ensureC = (id: string): CampaignAgg => {
+    if (!cAgg.has(id)) {
+      cAgg.set(id, {
+        spend7: 0,
+        spend30: 0,
+        spendThisWeek: 0,
+        spendLastWeek: 0,
+        leads30: 0,
+        leadsThisWeek: 0,
+        leadsLastWeek: 0,
+        lastLeadDate: null,
+        appts30: 0,
+        apptsThisWeek: 0,
+        apptsLastWeek: 0,
+        revenue30: 0,
+        lastApptDate: null,
+      });
+    }
     return cAgg.get(id)!;
   };
+
   for (const s of spend ?? []) {
     const a = ensureC(s.campaign_id);
     a.spend30 += Number(s.spend ?? 0);
     if (s.date >= since7) a.spend7 += Number(s.spend ?? 0);
+    if (s.date >= weekStart) a.spendThisWeek += Number(s.spend ?? 0);
+    else if (s.date >= lastWeekStart) a.spendLastWeek += Number(s.spend ?? 0);
   }
   for (const l of leads ?? []) {
-    if (l.campaign_id) ensureC(l.campaign_id).leads30 += 1;
+    if (!l.campaign_id) continue;
+    const a = ensureC(l.campaign_id);
+    a.leads30 += 1;
+    const d = l.created_at.slice(0, 10);
+    if (d >= weekStart) a.leadsThisWeek += 1;
+    else if (d >= lastWeekStart) a.leadsLastWeek += 1;
+    if (!a.lastLeadDate || d > a.lastLeadDate) a.lastLeadDate = d;
+  }
+  for (const ap of appts ?? []) {
+    const cid = leadCampaign.get(ap.lead_id);
+    if (!cid) continue;
+    const a = ensureC(cid);
+    a.appts30 += 1;
+    a.revenue30 += Number(ap.revenue_owed ?? 0);
+    const d = ap.booked_at.slice(0, 10);
+    if (d >= weekStart) a.apptsThisWeek += 1;
+    else if (d >= lastWeekStart) a.apptsLastWeek += 1;
+    if (!a.lastApptDate || d > a.lastApptDate) a.lastApptDate = d;
   }
 
-  // Appointments -> campaign via lead (we only have account_id on appt, so map by lead).
-  // Fetch lead->campaign for the appt leads we saw. leads query above lacks id; approximate
-  // per-account instead for appts (accurate at account level).
-  const acctAppts = new Map<string, { appts: number; showed: number; revenue: number }>();
+  // ---- Per-account rollups (sum of that account's campaigns) + risk signal ----
+  const acctAppts = new Map<
+    string,
+    { appts: number; showed: number; revenue: number }
+  >();
   for (const ap of appts ?? []) {
     const cur = acctAppts.get(ap.account_id) ?? { appts: 0, showed: 0, revenue: 0 };
     cur.appts += 1;
@@ -70,19 +148,89 @@ export async function getInsightsData(
     acctAppts.set(ap.account_id, cur);
   }
 
-  // Per-account 30d rollup.
+  const alertsByCampaign = new Map<string, { type: string; message: string }[]>();
+  for (const al of alerts ?? []) {
+    const arr = alertsByCampaign.get(al.campaign_id) ?? [];
+    arr.push({ type: al.type, message: al.message });
+    alertsByCampaign.set(al.campaign_id, arr);
+  }
+
   const accountSummaries = (accounts ?? []).map((a) => {
-    const cids = (campaigns ?? []).filter((c) => c.account_id === a.id).map((c) => c.id);
+    const campaignsForAcct = (campaigns ?? []).filter((c) => c.account_id === a.id);
+    const cids = campaignsForAcct.map((c) => c.id);
+
     const spend30 = cids.reduce((s, id) => s + (cAgg.get(id)?.spend30 ?? 0), 0);
     const leads30 = cids.reduce((s, id) => s + (cAgg.get(id)?.leads30 ?? 0), 0);
+    const spendThisWeek = cids.reduce((s, id) => s + (cAgg.get(id)?.spendThisWeek ?? 0), 0);
+    const spendLastWeek = cids.reduce((s, id) => s + (cAgg.get(id)?.spendLastWeek ?? 0), 0);
+    const leadsThisWeek = cids.reduce((s, id) => s + (cAgg.get(id)?.leadsThisWeek ?? 0), 0);
+    const leadsLastWeek = cids.reduce((s, id) => s + (cAgg.get(id)?.leadsLastWeek ?? 0), 0);
+    const apptsThisWeek = cids.reduce((s, id) => s + (cAgg.get(id)?.apptsThisWeek ?? 0), 0);
+    const apptsLastWeek = cids.reduce((s, id) => s + (cAgg.get(id)?.apptsLastWeek ?? 0), 0);
+
+    const lastLeadDate =
+      cids
+        .map((id) => cAgg.get(id)?.lastLeadDate)
+        .filter((d): d is string => !!d)
+        .sort()
+        .at(-1) ?? null;
+    const lastApptDate =
+      cids
+        .map((id) => cAgg.get(id)?.lastApptDate)
+        .filter((d): d is string => !!d)
+        .sort()
+        .at(-1) ?? null;
+
     const ap = acctAppts.get(a.id) ?? { appts: 0, showed: 0, revenue: 0 };
+    const cpaThisWeek = apptsThisWeek > 0 ? spendThisWeek / apptsThisWeek : null;
+    const cpaLastWeek = apptsLastWeek > 0 ? spendLastWeek / apptsLastWeek : null;
+
+    const daysSinceLastLead = lastLeadDate
+      ? Math.floor((now - new Date(`${lastLeadDate}T00:00:00Z`).getTime()) / DAY)
+      : null;
+    const daysSinceLastAppt = lastApptDate
+      ? Math.floor((now - new Date(`${lastApptDate}T00:00:00Z`).getTime()) / DAY)
+      : null;
+
+    // Deterministic at-risk signal — computed here, not left to the model.
+    const reasons: string[] = [];
+    const hasAnyActivity30d = leads30 > 0 || ap.appts > 0;
+    if (!hasAnyActivity30d) {
+      reasons.push("no_leads_or_appointments_in_last_30_days");
+    } else if (
+      (daysSinceLastLead === null || daysSinceLastLead > NO_ACTIVITY_THRESHOLD_DAYS) &&
+      (daysSinceLastAppt === null || daysSinceLastAppt > NO_ACTIVITY_THRESHOLD_DAYS)
+    ) {
+      reasons.push(`no_activity_in_last_${NO_ACTIVITY_THRESHOLD_DAYS}_days`);
+    }
+    if (leadsLastWeek > 0 && leadsThisWeek < leadsLastWeek * 0.5) {
+      reasons.push("leads_declining_week_over_week");
+    }
+    if (apptsLastWeek > 0 && apptsThisWeek < apptsLastWeek * 0.5) {
+      reasons.push("appointments_declining_week_over_week");
+    }
+    if (cpaThisWeek !== null && cpaLastWeek !== null && cpaThisWeek > cpaLastWeek * 1.3) {
+      reasons.push("cpa_rising_week_over_week");
+    }
+    if (
+      cpaThisWeek !== null &&
+      a.cpa_alert_threshold !== null &&
+      cpaThisWeek >= a.cpa_alert_threshold
+    ) {
+      reasons.push("cpa_at_or_above_alert_threshold");
+    }
+
+    const acctAlerts = cids.flatMap((id) => alertsByCampaign.get(id) ?? []);
+
     return {
+      id: a.id,
       name: a.name,
       type: a.type,
       status: a.status,
       price_per_appointment: a.price_per_appointment,
       cpa_alert_threshold: a.cpa_alert_threshold,
       auto_pause_threshold: a.auto_pause_threshold,
+      campaign_ids: cids,
       last30d: {
         spend: round(spend30),
         leads: leads30,
@@ -92,22 +240,81 @@ export async function getInsightsData(
         margin: round(ap.revenue - spend30),
         cpa: ap.appts > 0 ? round(spend30 / ap.appts) : null,
       },
+      week_over_week: {
+        this_week: {
+          spend: round(spendThisWeek),
+          leads: leadsThisWeek,
+          appointments: apptsThisWeek,
+          cpa: cpaThisWeek !== null ? round(cpaThisWeek) : null,
+        },
+        last_week: {
+          spend: round(spendLastWeek),
+          leads: leadsLastWeek,
+          appointments: apptsLastWeek,
+          cpa: cpaLastWeek !== null ? round(cpaLastWeek) : null,
+        },
+      },
+      activity: {
+        days_since_last_lead: daysSinceLastLead,
+        days_since_last_appointment: daysSinceLastAppt,
+      },
+      risk_assessment: {
+        at_risk: reasons.length > 0,
+        reasons,
+      },
+      unacknowledged_alerts: acctAlerts,
     };
   });
 
-  // Per-campaign 7d snapshot.
+  // ---- Per-campaign 7d snapshot (kept for campaign-level questions) ----
   const campaignSummaries = (campaigns ?? []).map((c) => {
-    const agg = cAgg.get(c.id) ?? { spend7: 0, leads30: 0, appts30: 0, spend30: 0 };
+    const agg = cAgg.get(c.id) ?? ensureC(c.id);
     return {
+      id: c.id,
       name: c.name,
       account: accountById.get(c.account_id)?.name ?? null,
+      account_id: c.account_id,
       status: c.status,
       last7d_spend: round(agg.spend7),
       last30d_leads: agg.leads30,
+      last30d_appointments: agg.appts30,
+      last30d_cpa: agg.appts30 > 0 ? round(agg.spend30 / agg.appts30) : null,
     };
   });
 
-  // Weekly internal vs client (this week vs last week) — spend, leads, appts.
+  // ---- Creatives: full table + rolled-up performance across attached campaigns ----
+  const creativeCampaignIds = new Map<string, string[]>();
+  for (const j of campaignCreatives ?? []) {
+    const arr = creativeCampaignIds.get(j.creative_id) ?? [];
+    arr.push(j.campaign_id);
+    creativeCampaignIds.set(j.creative_id, arr);
+  }
+  const creativeSummaries = (creatives ?? []).map((cr) => {
+    const cids = creativeCampaignIds.get(cr.id) ?? [];
+    const usedInCampaigns = cids
+      .map((id) => campaignById.get(id)?.name)
+      .filter((n): n is string => !!n);
+    const spend30 = cids.reduce((s, id) => s + (cAgg.get(id)?.spend30 ?? 0), 0);
+    const appts30 = cids.reduce((s, id) => s + (cAgg.get(id)?.appts30 ?? 0), 0);
+    return {
+      id: cr.id,
+      name: cr.name,
+      type: cr.type,
+      status: cr.status,
+      account: accountById.get(cr.account_id)?.name ?? null,
+      account_id: cr.account_id,
+      used_in_campaigns: usedInCampaigns,
+      campaign_ids: cids,
+      last30d: {
+        spend: round(spend30),
+        appointments: appts30,
+        cpa: appts30 > 0 ? round(spend30 / appts30) : null,
+      },
+      has_performance_data: cids.length > 0 && spend30 > 0,
+    };
+  });
+
+  // ---- Weekly internal vs client (unchanged shape, still useful for the top-line view) ----
   const campaignType = new Map(
     (campaigns ?? []).map((c) => [c.id, accountById.get(c.account_id)?.type]),
   );
@@ -137,41 +344,73 @@ export async function getInsightsData(
     else if (d >= lastWeekStart) weekAgg[t].lastWeek.appts += 1;
   }
 
-  // Outreach scripts funnel.
+  // ---- Outreach: per-script funnel + this-week/last-week contact volume ----
   const contactsByScript = new Map<
     string,
     { status: Database["public"]["Enums"]["outreach_contact_status"] }[]
   >();
+  const scriptVolume = new Map<string, { thisWeek: number; lastWeek: number }>();
   for (const ct of contacts ?? []) {
     if (!ct.script_id) continue;
     const arr = contactsByScript.get(ct.script_id) ?? [];
     arr.push({ status: ct.status });
     contactsByScript.set(ct.script_id, arr);
+
+    const v = scriptVolume.get(ct.script_id) ?? { thisWeek: 0, lastWeek: 0 };
+    const d = ct.created_at.slice(0, 10);
+    if (d >= weekStart) v.thisWeek += 1;
+    else if (d >= lastWeekStart) v.lastWeek += 1;
+    scriptVolume.set(ct.script_id, v);
   }
   const scriptSummaries = (scripts ?? []).map((sc) => {
     const f = computeFunnel(contactsByScript.get(sc.id) ?? []);
+    const v = scriptVolume.get(sc.id) ?? { thisWeek: 0, lastWeek: 0 };
     return {
+      id: sc.id,
       name: sc.name,
       channel: sc.channel,
       status: sc.status,
-      contacted: f.contacted,
-      reply_rate: pctRound(f.replyRate),
-      call_booked_rate: pctRound(f.callBookedRate),
-      close_rate: pctRound(f.closeRate),
+      contacted_total: f.contacted,
+      contacted_this_week: v.thisWeek,
+      contacted_last_week: v.lastWeek,
+      reply_rate_pct: pctRound(f.replyRate),
+      call_booked_rate_pct: pctRound(f.callBookedRate),
+      close_rate_pct: pctRound(f.closeRate),
     };
   });
+  const outreachTotals = {
+    contacted_this_week: (scripts ?? []).reduce(
+      (s, sc) => s + (scriptVolume.get(sc.id)?.thisWeek ?? 0),
+      0,
+    ),
+    contacted_last_week: (scripts ?? []).reduce(
+      (s, sc) => s + (scriptVolume.get(sc.id)?.lastWeek ?? 0),
+      0,
+    ),
+  };
 
   return {
-    context: "MAKI Ops — marketing agency internal dashboard. 'internal' accounts are MAKI's own client-acquisition ads; 'client' accounts are ads MAKI runs for clients at $327 per booked appointment. Money is USD.",
-    periods: { this_week_start: weekStart, last_week_start: lastWeekStart, rollup_window_days: 30 },
+    context:
+      "MAKI Ops — marketing agency internal dashboard. 'internal' accounts are MAKI's own client-acquisition ads; 'client' accounts are ads MAKI runs for clients. Money is USD. This snapshot is the ONLY data available — nothing outside it is known.",
+    generated_at: new Date(now).toISOString(),
+    periods: {
+      today: todayIso,
+      this_week_start: weekStart,
+      last_week_start: lastWeekStart,
+      rollup_window_days: 30,
+      at_risk_no_activity_threshold_days: NO_ACTIVITY_THRESHOLD_DAYS,
+    },
     accounts: accountSummaries,
     campaigns: campaignSummaries,
+    creatives: creativeSummaries,
     weekly_by_context: weekAgg,
     outreach_scripts: scriptSummaries,
+    outreach_totals: outreachTotals,
     unacknowledged_alerts: (alerts ?? []).map((a) => ({
       type: a.type,
       message: a.message,
       campaign: campaignById.get(a.campaign_id)?.name ?? null,
+      campaign_id: a.campaign_id,
     })),
   };
 }
