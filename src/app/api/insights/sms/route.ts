@@ -64,7 +64,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Phone number not authorized" }, { status: 403 });
   }
 
-  const outcome = await askInsightsCore(supabase, user, question, { concise: true });
+  const outcome = await askInsightsCore(supabase, user, question, {
+    mode: "sms",
+    callerPhone: phone,
+  });
 
   const replyText =
     "result" in outcome

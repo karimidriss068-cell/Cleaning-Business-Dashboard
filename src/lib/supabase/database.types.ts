@@ -265,6 +265,8 @@ export type Database = {
       }
       insights_usage: {
         Row: {
+          caller_phone: string | null
+          channel: string
           created_at: string
           id: string
           input_tokens: number
@@ -274,6 +276,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          caller_phone?: string | null
+          channel?: string
           created_at?: string
           id?: string
           input_tokens?: number
@@ -283,6 +287,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          caller_phone?: string | null
+          channel?: string
           created_at?: string
           id?: string
           input_tokens?: number

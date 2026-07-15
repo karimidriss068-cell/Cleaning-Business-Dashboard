@@ -26,6 +26,10 @@ const SMS_ADDENDUM = `
 
 SMS MODE: This answer will be sent as a raw SMS text message, not shown in the app. Keep it to 1-3 short sentences. Plain text only — no markdown, no bullet points, no headers, no links.`;
 
+const VOICE_ADDENDUM = `
+
+VOICE MODE: This answer will be spoken aloud by a voice agent on a live phone call, not shown as text. Answer in 1-3 short spoken sentences — something a person could say out loud in under 15-20 seconds. No lists, no markdown, no links, no numbered steps — just natural spoken language. If you cite a number, say it the way a person would speak it.`;
+
 const AnswerSchema = z.object({
   answer: z
     .string()
@@ -51,21 +55,24 @@ export type AskInsightsResult =
   | { limited: true; used: number; cap: number }
   | { error: string };
 
-// Hard safety net for SMS delivery — even if the model ignores the length
-// instruction, the reply must still fit a small number of SMS segments.
+// Hard safety nets — even if the model ignores the length instruction, the
+// reply must still fit the delivery channel. Voice is tighter than SMS:
+// ~15-20s spoken at a natural pace is roughly 40-55 words / 220-300 chars.
 const SMS_MAX_CHARS = 480;
+const VOICE_MAX_CHARS = 300;
 
 /**
- * The shared core behind both the /insights chat UI and the SMS route.
- * Takes an explicit user identity rather than reading a session, so callers
- * with no browser session (the SMS webhook route, using the admin client)
- * can attribute usage the same way the authenticated chat UI does.
+ * The shared core behind the /insights chat UI, the SMS route, and the
+ * voice (Retell) route. Takes an explicit user identity rather than reading
+ * a session, so callers with no browser session (the SMS/voice webhook
+ * routes, using the admin client) can attribute usage the same way the
+ * authenticated chat UI does.
  */
 export async function askInsightsCore(
   supabase: SupabaseClient<Database>,
   user: { id: string; email: string },
   question: string,
-  opts?: { concise?: boolean },
+  opts?: { mode?: "web" | "sms" | "voice"; callerPhone?: string },
 ): Promise<AskInsightsResult> {
   const q = question.trim();
   if (!q) return { error: "Ask a question first." };
@@ -78,6 +85,8 @@ export async function askInsightsCore(
     };
   }
 
+  const mode = opts?.mode ?? "web";
+
   const usage = await getMonthlyUsage(supabase, user.id);
   if (usage.queryCount >= usage.cap) {
     return { limited: true, used: usage.queryCount, cap: usage.cap };
@@ -85,7 +94,12 @@ export async function askInsightsCore(
 
   const data = await getInsightsData(supabase);
   const client = new Anthropic({ apiKey });
-  const system = opts?.concise ? BASE_SYSTEM + SMS_ADDENDUM : BASE_SYSTEM;
+  const system =
+    mode === "sms"
+      ? BASE_SYSTEM + SMS_ADDENDUM
+      : mode === "voice"
+        ? BASE_SYSTEM + VOICE_ADDENDUM
+        : BASE_SYSTEM;
 
   try {
     const message = await client.messages.parse({
@@ -114,15 +128,18 @@ export async function askInsightsCore(
       question: q,
       inputTokens: message.usage.input_tokens,
       outputTokens: message.usage.output_tokens,
+      channel: mode,
+      callerPhone: opts?.callerPhone,
     });
 
     if (!message.parsed_output) {
       return { error: "No answer returned." };
     }
 
-    if (opts?.concise && message.parsed_output.answer.length > SMS_MAX_CHARS) {
+    const maxChars = mode === "sms" ? SMS_MAX_CHARS : mode === "voice" ? VOICE_MAX_CHARS : null;
+    if (maxChars && message.parsed_output.answer.length > maxChars) {
       message.parsed_output.answer =
-        message.parsed_output.answer.slice(0, SMS_MAX_CHARS - 1).trimEnd() + "…";
+        message.parsed_output.answer.slice(0, maxChars - 1).trimEnd() + "…";
     }
 
     return { result: message.parsed_output };

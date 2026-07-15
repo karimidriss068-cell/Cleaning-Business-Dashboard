@@ -2,8 +2,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 
 /** Digits-only comparison so "+1 929-317-3127", "+19293173127", and
- * "19293173127" all match the same number regardless of formatting. */
-function normalizePhone(phone: string): string {
+ * "19293173127" all match the same number regardless of formatting. Exported
+ * for reuse by other channels (e.g. the Retell voice route) that need the
+ * same normalization for their own allowlist checks. */
+export function normalizePhone(phone: string): string {
   return phone.replace(/[^\d]/g, "");
 }
 

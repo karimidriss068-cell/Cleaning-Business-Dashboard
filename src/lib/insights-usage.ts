@@ -62,6 +62,8 @@ export async function logInsightsQuery(
     question: string;
     inputTokens: number;
     outputTokens: number;
+    channel?: "web" | "sms" | "voice";
+    callerPhone?: string;
   },
 ) {
   const { error } = await supabase.from("insights_usage").insert({
@@ -70,6 +72,8 @@ export async function logInsightsQuery(
     question: params.question,
     input_tokens: params.inputTokens,
     output_tokens: params.outputTokens,
+    channel: params.channel ?? "web",
+    caller_phone: params.callerPhone ?? null,
   });
   if (error) throw new Error(error.message);
 }

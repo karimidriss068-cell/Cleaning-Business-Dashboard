@@ -53,6 +53,7 @@ export async function updateSession(request: NextRequest) {
   const isPublicApi =
     pathname.startsWith("/api/webhooks") ||
     pathname.startsWith("/api/insights/sms") ||
+    pathname.startsWith("/api/retell/query-insights") ||
     pathname.startsWith("/api/reports") ||
     pathname.startsWith("/reports");
 
