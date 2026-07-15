@@ -64,6 +64,21 @@ export async function POST(req: NextRequest) {
   const supabase = createAdminClient();
   const myPhone = process.env.MY_PHONE_NUMBER;
 
+  // TEMP DEBUG LOGGING — remove once the from_number question is settled.
+  // Logs the full raw payload plus what we extracted/compared, so a real
+  // Vercel log pull shows exactly what Retell actually sent, instead of us
+  // guessing at the shape.
+  console.log("[retell-debug] raw body:", JSON.stringify(body));
+  console.log("[retell-debug] extracted fromNumber:", JSON.stringify(fromNumber));
+  console.log("[retell-debug] MY_PHONE_NUMBER env value:", JSON.stringify(myPhone));
+  console.log(
+    "[retell-debug] normalized comparison:",
+    JSON.stringify({
+      fromNumberNormalized: fromNumber ? normalizePhone(fromNumber) : null,
+      myPhoneNormalized: myPhone ? normalizePhone(myPhone) : null,
+    }),
+  );
+
   // Fail closed: no caller number in the payload (e.g. "args only" mode is
   // still on despite the setup instructions), no MY_PHONE_NUMBER configured,
   // or the numbers don't match — all treated the same, as "not authorized."
@@ -71,6 +86,8 @@ export async function POST(req: NextRequest) {
     !!fromNumber &&
     !!myPhone &&
     normalizePhone(fromNumber) === normalizePhone(myPhone);
+
+  console.log("[retell-debug] authorized:", authorized);
 
   if (!authorized) {
     return new NextResponse("This line isn't authorized for that.", {
