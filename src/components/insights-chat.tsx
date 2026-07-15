@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, Fragment } from "react";
-import Link from "next/link";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { askInsights, type InsightsAnswer } from "@/app/(app)/insights/actions";
 import { Button } from "@/components/ui/button";
-import { cardHover } from "@/components/dashboard/motion-variants";
+import { EntityChip } from "@/components/entity-chip";
+import { StatList } from "@/components/stat-list";
+import { UsageRing } from "@/components/usage-ring";
 import { Sparkles, ArrowUp, CircleAlert, Gauge } from "lucide-react";
 
 const SUGGESTIONS = [
@@ -29,10 +30,10 @@ const ENTITY_ROUTE: Record<InsightsAnswer["mentioned_entities"][number]["type"],
   creative: () => `/creatives`,
 };
 
-/** Splits answer text on any mentioned entity's exact name and turns those
- * occurrences into links to the relevant page. Falls back to plain text for
- * anything that doesn't match (e.g. slightly reworded mentions). */
-function linkifyAnswer(text: string, entities: InsightsAnswer["mentioned_entities"]) {
+/** Splits text on any mentioned entity's exact name and turns those
+ * occurrences into pill-shaped entity chips (not underlined links). Falls
+ * back to plain text for anything that doesn't match exactly. */
+function chipifyEntities(text: string, entities: InsightsAnswer["mentioned_entities"]) {
   const uniqueByName = entities.filter(
     (e, i) => e.name && entities.findIndex((o) => o.name === e.name) === i,
   );
@@ -47,15 +48,64 @@ function linkifyAnswer(text: string, entities: InsightsAnswer["mentioned_entitie
     const entity = sorted.find((e) => e.name === part);
     if (!entity) return <Fragment key={i}>{part}</Fragment>;
     return (
-      <Link
-        key={i}
-        href={ENTITY_ROUTE[entity.type](entity.id)}
-        className="font-medium text-[var(--accent-bright)] underline underline-offset-2 hover:text-cream-rich"
-      >
+      <EntityChip key={i} href={ENTITY_ROUTE[entity.type](entity.id)}>
         {part}
-      </Link>
+      </EntityChip>
     );
   });
+}
+
+/** Structured stat-card rendering of one AI answer — Fraunces headline,
+ * compact stat grid, footnote caveat. Matches the panel-glass/oxblood
+ * language used across /accounts and /dashboard rather than a chat bubble. */
+function InsightAnswerCard({ result }: { result: InsightsAnswer }) {
+  const headline = result.headline ?? result.answer;
+  const items = (result.breakdown ?? []).map((item) => ({
+    label: item.label,
+    value: chipifyEntities(item.value, result.mentioned_entities),
+  }));
+
+  return (
+    <div className="panel-glass px-7 py-7 sm:px-8 sm:py-8">
+      {!result.data_available && (
+        <div className="relative z-10 mb-3 flex items-center gap-1.5 text-xs font-medium text-[var(--warning)]">
+          <CircleAlert className="h-3.5 w-3.5" />
+          Not answerable from current data
+        </div>
+      )}
+
+      <p className="relative z-10 font-heading text-[19px] leading-[1.3] font-medium text-cream-rich sm:text-[22px]">
+        {chipifyEntities(headline, result.mentioned_entities)}
+      </p>
+
+      {items.length > 0 && (
+        <StatList items={items} className="relative z-10 mt-6 border-t border-border/60 pt-6" />
+      )}
+
+      {result.caveat && (
+        <p className="relative z-10 mt-5 text-xs text-muted-foreground italic">{result.caveat}</p>
+      )}
+    </div>
+  );
+}
+
+function AnswerCardSkeleton() {
+  return (
+    <div className="panel-glass space-y-6 px-7 py-7 sm:px-8 sm:py-8">
+      <div className="space-y-2.5">
+        <div className="skeleton h-4 w-[92%]" />
+        <div className="skeleton h-4 w-[65%]" />
+      </div>
+      <div className="grid grid-cols-2 gap-x-6 gap-y-4 border-t border-border/60 pt-6 sm:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="space-y-2">
+            <div className="skeleton h-2.5 w-16" />
+            <div className="skeleton h-3.5 w-20" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export function InsightsChat({
@@ -105,18 +155,10 @@ export function InsightsChat({
   }
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6">
-      {/* Usage indicator */}
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Gauge className="h-3.5 w-3.5" />
-        <span className="font-data tabular-nums">
-          {usage.queryCount} / {usage.cap}
-        </span>
-        <span>queries this month</span>
-        <span className="text-muted-foreground/50">·</span>
-        <span className="font-data tabular-nums">
-          ~${usage.estimatedCostUsd.toFixed(2)} estimated
-        </span>
+    <div className="mx-auto flex max-w-2xl flex-col gap-8">
+      {/* Usage badge — top-right */}
+      <div className="flex justify-end">
+        <UsageRing used={usage.queryCount} cap={usage.cap} costUsd={usage.estimatedCostUsd} />
       </div>
 
       {/* Conversation */}
@@ -125,21 +167,20 @@ export function InsightsChat({
           <p className="mb-3 text-sm text-muted-foreground">
             Ask anything about your live data. Try:
           </p>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="flex flex-wrap gap-2">
             {SUGGESTIONS.map((s) => (
-              <motion.button
+              <button
                 key={s}
                 onClick={() => ask(s)}
-                whileHover={cardHover}
-                className="panel-glass px-4 py-3.5 text-left text-sm leading-relaxed text-muted-foreground transition-colors hover:text-foreground"
+                className="rounded-full border border-border bg-[var(--bg-surface)] px-4 py-2 text-left text-sm text-muted-foreground transition-colors hover:border-[color-mix(in_srgb,var(--accent-primary)_60%,transparent)] hover:text-cream-rich"
               >
-                <span className="relative z-10">{s}</span>
-              </motion.button>
+                {s}
+              </button>
             ))}
           </div>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {exchanges.map((ex, i) => (
             <motion.div
               key={i}
@@ -148,12 +189,12 @@ export function InsightsChat({
               transition={ENTER}
               className="space-y-3"
             >
-              {/* User message — plain, so the assistant's answer reads as the content */}
-              <p className="ml-auto w-fit max-w-[85%] rounded-lg bg-[var(--bg-surface-raised)] px-3.5 py-2 text-sm text-[var(--text-primary)]">
+              {/* User message — small, right-aligned, visually secondary */}
+              <p className="ml-auto w-fit max-w-[75%] rounded-full bg-[var(--bg-surface)]/60 px-3.5 py-1.5 text-[13px] text-[var(--text-muted)]">
                 {ex.q}
               </p>
               {ex.kind === "limited" ? (
-                <div className="panel-glass border-[var(--warning)]/30 px-5 py-4">
+                <div className="panel-glass border-[var(--warning)]/30 px-7 py-6">
                   <div className="relative z-10 flex items-center gap-1.5 text-sm font-medium text-[var(--warning)]">
                     <Gauge className="h-4 w-4" />
                     Monthly limit reached
@@ -164,17 +205,7 @@ export function InsightsChat({
                   </p>
                 </div>
               ) : (
-                <div className="panel-glass px-5 py-4">
-                  {!ex.result.data_available && (
-                    <div className="relative z-10 mb-2.5 flex items-center gap-1.5 text-xs font-medium text-[var(--warning)]">
-                      <CircleAlert className="h-3.5 w-3.5" />
-                      Not answerable from current data
-                    </div>
-                  )}
-                  <p className="relative z-10 whitespace-pre-wrap text-[15px] leading-relaxed text-[var(--text-primary)]">
-                    {linkifyAnswer(ex.result.answer, ex.result.mentioned_entities)}
-                  </p>
-                </div>
+                <InsightAnswerCard result={ex.result} />
               )}
             </motion.div>
           ))}
@@ -183,11 +214,8 @@ export function InsightsChat({
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={ENTER}
-              className="panel-glass space-y-2.5 px-5 py-4"
             >
-              <div className="skeleton h-3.5 w-[85%]" />
-              <div className="skeleton h-3.5 w-[95%]" />
-              <div className="skeleton h-3.5 w-[60%]" />
+              <AnswerCardSkeleton />
             </motion.div>
           )}
         </div>
@@ -199,16 +227,22 @@ export function InsightsChat({
           e.preventDefault();
           ask(input);
         }}
-        className="sticky bottom-6 flex items-center gap-2 rounded-lg border border-border bg-card p-2"
+        className="sticky bottom-6 flex items-center gap-2 rounded-full border border-border bg-[var(--bg-surface)] py-1.5 pr-1.5 pl-4 shadow-[0_12px_32px_-16px_rgba(0,0,0,0.6)]"
       >
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask a question about your data…"
-          className="flex-1 bg-transparent px-2 text-sm outline-none placeholder:text-muted-foreground"
+          className="flex-1 bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-muted-foreground"
           disabled={loading}
         />
-        <Button type="submit" size="icon-sm" loading={loading} disabled={!input.trim()}>
+        <Button
+          type="submit"
+          size="icon-sm"
+          loading={loading}
+          disabled={!input.trim()}
+          className="rounded-full transition-shadow hover:shadow-[0_0_16px_2px_color-mix(in_srgb,var(--accent-bright)_55%,transparent)]"
+        >
           {!loading && <ArrowUp className="h-4 w-4" />}
         </Button>
       </form>

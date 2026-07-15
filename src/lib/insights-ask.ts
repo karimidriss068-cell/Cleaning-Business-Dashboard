@@ -20,20 +20,46 @@ HARD RULES — these override any instinct to be more "helpful":
 7. "internal" accounts are MAKI's own client-acquisition ads; "client" accounts are ads MAKI runs for clients. Money is USD.
 8. List every account/campaign/creative/outreach script you specifically named in your answer in mentioned_entities, with its exact id and type from the snapshot, so the UI can link to it. Do not include entities you didn't actually reference in the prose.
 
-Keep the answer itself to a few sentences — sharp and specific, not a report.`;
+The exact response fields you must fill are set by the mode-specific instructions below.`;
 
 const SMS_ADDENDUM = `
 
-SMS MODE: This answer will be sent as a raw SMS text message, not shown in the app. Keep it to 1-3 short sentences. Plain text only — no markdown, no bullet points, no headers, no links.`;
+SMS MODE: This answer will be sent as a raw SMS text message, not shown in the app. Fill \`answer\` with 1-3 short sentences, plain text only — no markdown, no bullet points, no headers, no links. Leave \`headline\`, \`breakdown\`, and \`caveat\` as null — they are not used in this mode.`;
 
 const VOICE_ADDENDUM = `
 
-VOICE MODE: This answer will be spoken aloud by a voice agent on a live phone call, not shown as text. Answer in 1-3 short spoken sentences — something a person could say out loud in under 15-20 seconds. No lists, no markdown, no links, no numbered steps — just natural spoken language. If you cite a number, say it the way a person would speak it.`;
+VOICE MODE: This answer will be spoken aloud by a voice agent on a live phone call, not shown as text. Fill \`answer\` with 1-3 short spoken sentences — something a person could say out loud in under 15-20 seconds. No lists, no markdown, no links, no numbered steps — just natural spoken language. If you cite a number, say it the way a person would speak it. Leave \`headline\`, \`breakdown\`, and \`caveat\` as null — they are not used in this mode.`;
+
+const WEB_ADDENDUM = `
+
+WEB MODE: This answer is rendered as structured UI, not read as prose — every answer must follow the same shape:
+- \`headline\`: a single line stating the direct answer or key stat (e.g. "Acme Co is your top-spending account at $4,120 this month"). One line, no markdown, no bullet characters — the UI renders it as a bolded headline automatically.
+- \`breakdown\`: a short, clean list of the specific data points behind the headline — no more than 5-6 items, each a short \`label\` (account/campaign/creative/script name, or a metric name) paired with its \`value\` (the number/figure, pre-formatted as you'd say it, e.g. "$4,120", "12%", "38 leads"). Every item must trace to a snapshot field. Omit \`breakdown\` (null) only if the question has no meaningful breakdown (e.g. a plain yes/no).
+- \`caveat\`: a single short clause ONLY if something material is missing or uncertain (e.g. "no historical data to project from"). Null otherwise — never repeat a disclaimer verbosely or by default.
+- \`answer\`: fill this too, as a plain-text one-line fallback equivalent to \`headline\` (used only if the UI falls back to plain text).
+- Never inline markdown links or bracket syntax around account/campaign names anywhere — plain text only, the UI adds its own links from mentioned_entities.`;
 
 const AnswerSchema = z.object({
   answer: z
     .string()
     .describe("The direct answer to the question, a few sentences, citing specific numbers from the snapshot."),
+  headline: z
+    .string()
+    .nullable()
+    .describe("Web mode only: a single-line headline stating the direct answer/key stat. Null for sms/voice mode."),
+  breakdown: z
+    .array(
+      z.object({
+        label: z.string().describe("Short label — account, campaign, creative, or script name, or a metric name."),
+        value: z.string().describe("The figure for this label, pre-formatted as it should be displayed."),
+      }),
+    )
+    .nullable()
+    .describe("Web mode only: up to 5-6 bullet items backing the headline. Null for sms/voice mode, or if there's no meaningful breakdown."),
+  caveat: z
+    .string()
+    .nullable()
+    .describe("A single short clause noting missing/uncertain data, only if relevant. Null otherwise."),
   data_available: z
     .boolean()
     .describe("False if the snapshot did not contain what was needed to answer the question."),
@@ -99,7 +125,7 @@ export async function askInsightsCore(
       ? BASE_SYSTEM + SMS_ADDENDUM
       : mode === "voice"
         ? BASE_SYSTEM + VOICE_ADDENDUM
-        : BASE_SYSTEM;
+        : BASE_SYSTEM + WEB_ADDENDUM;
 
   try {
     const message = await client.messages.parse({
