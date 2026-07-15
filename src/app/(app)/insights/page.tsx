@@ -23,16 +23,14 @@ export default async function InsightsPage() {
         title="Insights"
         description="Ask plain-English questions and get answers from your live MAKI Ops data."
       />
-      <div className="p-6">
-        <InsightsChat
-          configured={configured}
-          initialUsage={{
-            queryCount: usage.queryCount,
-            cap: usage.cap,
-            estimatedCostUsd: usage.estimatedCostUsd,
-          }}
-        />
-      </div>
+      <InsightsChat
+        configured={configured}
+        initialUsage={{
+          queryCount: usage.queryCount,
+          cap: usage.cap,
+          estimatedCostUsd: usage.estimatedCostUsd,
+        }}
+      />
     </>
   );
 }

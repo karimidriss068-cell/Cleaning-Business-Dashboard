@@ -24,38 +24,25 @@ The exact response fields you must fill are set by the mode-specific instruction
 
 const SMS_ADDENDUM = `
 
-SMS MODE: This answer will be sent as a raw SMS text message, not shown in the app. Fill \`answer\` with 1-3 short sentences, plain text only — no markdown, no bullet points, no headers, no links. Leave \`headline\`, \`breakdown\`, and \`caveat\` as null — they are not used in this mode.`;
+SMS MODE: This answer will be sent as a raw SMS text message, not shown in the app. Fill \`answer\` with 1-3 short sentences, plain text only — no markdown, no bullet points, no headers, no links. Leave \`caveat\` null — it is not used in this mode.`;
 
 const VOICE_ADDENDUM = `
 
-VOICE MODE: This answer will be spoken aloud by a voice agent on a live phone call, not shown as text. Fill \`answer\` with 1-3 short spoken sentences — something a person could say out loud in under 15-20 seconds. No lists, no markdown, no links, no numbered steps — just natural spoken language. If you cite a number, say it the way a person would speak it. Leave \`headline\`, \`breakdown\`, and \`caveat\` as null — they are not used in this mode.`;
+VOICE MODE: This answer will be spoken aloud by a voice agent on a live phone call, not shown as text. Fill \`answer\` with 1-3 short spoken sentences — something a person could say out loud in under 15-20 seconds. No lists, no markdown, no links, no numbered steps — just natural spoken language. If you cite a number, say it the way a person would speak it. Leave \`caveat\` null — it is not used in this mode.`;
 
 const WEB_ADDENDUM = `
 
-WEB MODE: This answer is rendered as structured UI, not read as prose — every answer must follow the same shape:
-- \`headline\`: a single line stating the direct answer or key stat (e.g. "Acme Co is your top-spending account at $4,120 this month"). One line, no markdown, no bullet characters — the UI renders it as a bolded headline automatically.
-- \`breakdown\`: a short, clean list of the specific data points behind the headline — no more than 5-6 items, each a short \`label\` (account/campaign/creative/script name, or a metric name) paired with its \`value\` (the number/figure, pre-formatted as you'd say it, e.g. "$4,120", "12%", "38 leads"). Every item must trace to a snapshot field. Omit \`breakdown\` (null) only if the question has no meaningful breakdown (e.g. a plain yes/no).
-- \`caveat\`: a single short clause ONLY if something material is missing or uncertain (e.g. "no historical data to project from"). Null otherwise — never repeat a disclaimer verbosely or by default.
-- \`answer\`: fill this too, as a plain-text one-line fallback equivalent to \`headline\` (used only if the UI falls back to plain text).
-- Never inline markdown links or bracket syntax around account/campaign names anywhere — plain text only, the UI adds its own links from mentioned_entities.`;
+WEB MODE: This answer is rendered as a natural chat response, like Claude or ChatGPT — not a report, not a data table.
+- Fill \`answer\` with flowing prose, the way a sharp analyst would actually talk: complete sentences, weaving specific numbers and account/campaign names naturally into the sentence (e.g. "Acme Co is your top-spending account at $4,120 this month, up from $3,050 last month.") — never extract numbers into a separate list or table.
+- Use a blank line between paragraphs if the answer genuinely needs more than one (e.g. an observation, then a recommendation). Most answers should be 1-3 short paragraphs — don't pad.
+- Only use a simple list (lines starting with "- ") when you are genuinely enumerating several distinct items (e.g. three accounts at risk) — never for a single point, and never a table.
+- \`caveat\`: a single short clause ONLY if something material is missing or uncertain (e.g. "no historical data to project from yet"). Null otherwise — never repeat a disclaimer verbosely or by default.
+- Never use markdown syntax (no **, no #, no markdown links, no brackets) — plain prose text only. The UI styles numbers and entity names on its own from \`mentioned_entities\`.`;
 
 const AnswerSchema = z.object({
   answer: z
     .string()
-    .describe("The direct answer to the question, a few sentences, citing specific numbers from the snapshot."),
-  headline: z
-    .string()
-    .nullable()
-    .describe("Web mode only: a single-line headline stating the direct answer/key stat. Null for sms/voice mode."),
-  breakdown: z
-    .array(
-      z.object({
-        label: z.string().describe("Short label — account, campaign, creative, or script name, or a metric name."),
-        value: z.string().describe("The figure for this label, pre-formatted as it should be displayed."),
-      }),
-    )
-    .nullable()
-    .describe("Web mode only: up to 5-6 bullet items backing the headline. Null for sms/voice mode, or if there's no meaningful breakdown."),
+    .describe("The direct answer to the question, in natural prose, citing specific numbers from the snapshot."),
   caveat: z
     .string()
     .nullable()
