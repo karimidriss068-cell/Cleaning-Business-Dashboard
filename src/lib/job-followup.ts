@@ -13,6 +13,7 @@ const FOLLOWUP_DELAY_DAYS = (() => {
 export type FollowUpSendResult = {
   sent: number;
   autoResolvedNotClosed: number;
+  autoResolvedClosed: number;
   skippedNoContact: number;
   failed: number;
 };
@@ -38,7 +39,13 @@ export async function sendJobFollowUps(
     .not("appointment_date", "is", null)
     .lte("appointment_date", cutoffDate);
 
-  const result: FollowUpSendResult = { sent: 0, autoResolvedNotClosed: 0, skippedNoContact: 0, failed: 0 };
+  const result: FollowUpSendResult = {
+    sent: 0,
+    autoResolvedNotClosed: 0,
+    autoResolvedClosed: 0,
+    skippedNoContact: 0,
+    failed: 0,
+  };
 
   for (const a of appts ?? []) {
     // No-shows/cancellations obviously didn't become a job — resolve
@@ -49,6 +56,20 @@ export async function sendJobFollowUps(
         .update({ job_closed: false, closed_recorded_at: nowIso })
         .eq("id", a.id);
       result.autoResolvedNotClosed++;
+      continue;
+    }
+    // Legacy 'closed' status predates job_closed/the follow-up loop, but
+    // already means the same thing insights.ts's resolvedJobStatus()
+    // treats it as: a closed job, just with no revenue figure attached.
+    // Auto-resolve it the same way rather than leaving it stuck forever
+    // (it's not 'showed', so the loop below would otherwise skip it with
+    // no path to ever getting job_closed set).
+    if (a.status === "closed") {
+      await supabase
+        .from("appointments")
+        .update({ job_closed: true, closed_recorded_at: nowIso })
+        .eq("id", a.id);
+      result.autoResolvedClosed++;
       continue;
     }
     // Only appointments that actually happened are worth asking about.
