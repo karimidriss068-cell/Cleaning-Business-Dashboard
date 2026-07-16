@@ -56,22 +56,36 @@ type Exchange =
   | { q: string; kind: "limited"; used: number; cap: number }
   | { kind: "report"; result: InsightsAnswer; createdAt: string };
 
-const ENTER = { duration: 0.28, ease: [0.16, 1, 0.3, 1] as const };
+// Message entrance — the one "functional" motion kept from the last pass,
+// tightened to a subtler 150-200ms range per the restraint pass.
+const ENTER = { duration: 0.18, ease: [0.16, 1, 0.3, 1] as const };
 
-/** Follow-up suggestion chip — tactile hover lift + soft crimson glow, not a
- * flat button. Shared by the report and regular-answer follow-up rows. */
+// The one orchestrated page-load sequence: the empty-state greeting and
+// suggestion chips fade+rise in with a slight stagger, once, on load.
+// Nothing else on the page animates on mount.
+const GREETING_STAGGER = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.07, delayChildren: 0.05 } },
+};
+const GREETING_ITEM = {
+  hidden: { opacity: 0, y: 8 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] as const } },
+};
+
+/** Follow-up suggestion chip — crisp color/border change only, no motion.
+ * Shared by the report and regular-answer follow-up rows. */
 const FOLLOWUP_CHIP_CLASS =
-  "rounded-full border border-border px-3.5 py-1.5 text-left text-[13px] text-muted-foreground transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--accent-primary)_60%,transparent)] hover:text-cream-rich hover:shadow-[0_6px_20px_-8px_color-mix(in_srgb,var(--accent-bright)_65%,transparent)] active:translate-y-0 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50";
+  "rounded-full border border-border px-3.5 py-1.5 text-left text-[13px] text-muted-foreground transition-colors hover:border-[color-mix(in_srgb,var(--accent-primary)_60%,transparent)] hover:text-cream-rich disabled:pointer-events-none disabled:opacity-50";
 
-/** Sidebar list row (session/pin/report) — selected state is a thin glowing
- * crimson left rail + tinted background, not a flat color swap; unselected
- * rows get a subtle hover lift. */
+/** Sidebar list row (session/pin/report) — selected state is a thin crimson
+ * left rail + tinted background, a crisp color change with no hover motion
+ * or glow (restraint reads more premium than constant micro-animation). */
 function sidebarItemClass(selected: boolean): string {
   return cn(
-    "relative block w-full truncate rounded-md py-2 pl-3.5 pr-3 text-left text-[13px] transition-all duration-150 ease-out",
+    "relative block w-full truncate rounded-md py-2 pl-3.5 pr-3 text-left text-[13px] transition-colors",
     selected
-      ? "bg-[color-mix(in_srgb,var(--accent-primary)_16%,var(--bg-surface))] text-cream-rich before:absolute before:top-1.5 before:bottom-1.5 before:left-0 before:w-[2px] before:rounded-full before:bg-[var(--accent-bright)] before:shadow-[0_0_6px_1px_color-mix(in_srgb,var(--accent-bright)_70%,transparent)]"
-      : "text-muted-foreground hover:translate-x-0.5 hover:bg-[var(--bg-surface)]/60 hover:text-[var(--text-primary)]",
+      ? "bg-[color-mix(in_srgb,var(--accent-primary)_16%,var(--bg-surface))] text-cream-rich before:absolute before:top-1.5 before:bottom-1.5 before:left-0 before:w-[2px] before:rounded-full before:bg-[var(--accent-bright)]"
+      : "text-muted-foreground hover:bg-[var(--bg-surface)]/60 hover:text-[var(--text-primary)]",
   );
 }
 
@@ -260,14 +274,14 @@ function ThinkingMark() {
       <motion.div
         className="absolute inset-0 rounded-full"
         style={{
-          background: "radial-gradient(circle, var(--accent-bright) 0%, transparent 70%)",
+          background: "radial-gradient(circle, var(--accent-secondary) 0%, transparent 70%)",
         }}
         animate={{ opacity: [0.35, 0.9, 0.35], scale: [0.85, 1.15, 0.85] }}
         transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
       />
       <div
-        className="absolute inset-0 m-auto h-1.5 w-1.5 rounded-full bg-[var(--accent-bright)]"
-        style={{ boxShadow: "0 0 8px 2px color-mix(in srgb, var(--accent-bright) 70%, transparent)" }}
+        className="absolute inset-0 m-auto h-1.5 w-1.5 rounded-full bg-[var(--accent-secondary)]"
+        style={{ boxShadow: "0 0 8px 2px color-mix(in srgb, var(--accent-secondary) 70%, transparent)" }}
       />
       <motion.div
         className="absolute inset-0"
@@ -583,27 +597,14 @@ function HistorySidebar({
             <button
               key={t.key}
               onClick={() => onTabChange(t.key)}
-              className="relative rounded-full px-2.5 py-1 text-[11px] font-medium tracking-[0.06em] uppercase"
-            >
-              {tab === t.key && (
-                <motion.span
-                  layoutId="sidebar-tab-highlight"
-                  className="absolute inset-0 rounded-full"
-                  style={{
-                    background: "color-mix(in srgb, var(--accent-primary) 22%, var(--bg-surface))",
-                    boxShadow: "0 0 12px -2px color-mix(in srgb, var(--accent-bright) 55%, transparent)",
-                  }}
-                  transition={{ duration: 0.18, ease: "easeOut" }}
-                />
+              className={cn(
+                "rounded-full px-2.5 py-1 text-[11px] font-medium tracking-[0.06em] uppercase transition-colors",
+                tab === t.key
+                  ? "bg-[var(--bg-surface)] text-cream-rich"
+                  : "text-muted-foreground hover:text-[var(--text-primary)]",
               )}
-              <span
-                className={cn(
-                  "relative z-10 transition-colors duration-150",
-                  tab === t.key ? "text-cream-rich" : "text-muted-foreground hover:text-[var(--text-primary)]",
-                )}
-              >
-                {t.label}
-              </span>
+            >
+              {t.label}
             </button>
           ))}
         </div>
@@ -1056,22 +1057,23 @@ export function InsightsChat({
           )}
 
           {exchanges.length === 0 && !loading && !analyzing ? (
-            <div className="pt-10">
-              <p className="mb-4 text-[15px] text-muted-foreground">
+            <motion.div className="pt-10" variants={GREETING_STAGGER} initial="hidden" animate="show">
+              <motion.p variants={GREETING_ITEM} className="mb-4 text-[15px] text-muted-foreground">
                 Ask anything about your live data. Try:
-              </p>
+              </motion.p>
               <div className="flex flex-wrap gap-2">
                 {SUGGESTIONS.map((s) => (
-                  <button
+                  <motion.button
                     key={s}
+                    variants={GREETING_ITEM}
                     onClick={() => ask(s)}
                     className="rounded-full border border-border px-4 py-2 text-left text-sm text-muted-foreground transition-colors hover:border-[color-mix(in_srgb,var(--accent-primary)_60%,transparent)] hover:text-cream-rich"
                   >
                     {s}
-                  </button>
+                  </motion.button>
                 ))}
               </div>
-            </div>
+            </motion.div>
           ) : (
             <div className="space-y-10">
               {exchanges.map((ex, i) => (
@@ -1099,19 +1101,12 @@ export function InsightsChat({
                     </p>
                   ) : ex.kind === "report" ? (
                     <>
-                      <div className="pt-1">
-                        <div className="divider-warm mb-4" />
+                      {/* Signature moment — a torn work-order-stub edge, used
+                          nowhere else on the page. See .job-ticket-tear. */}
+                      <div className="pt-2">
+                        <div className="job-ticket-tear mb-4" />
                         <p className="mb-2 flex items-center gap-1.5 text-[11px] font-medium tracking-[0.12em] text-muted-foreground uppercase">
-                          <motion.span
-                            className="flex h-3.5 w-3.5 items-center justify-center rounded-full"
-                            style={{
-                              boxShadow: "0 0 8px 1px color-mix(in srgb, var(--accent-bright) 55%, transparent)",
-                            }}
-                            animate={{ opacity: [0.55, 1, 0.55] }}
-                            transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-                          >
-                            <FileText className="h-3 w-3 text-[var(--accent-bright)]" />
-                          </motion.span>
+                          <FileText className="h-3 w-3 text-copper" />
                           <span className="text-cream-rich">Full Analysis</span> — {formatReportDate(ex.createdAt)}
                         </p>
                         <InsightAnswer result={ex.result} />
@@ -1226,7 +1221,7 @@ export function InsightsChat({
                 size="icon-sm"
                 loading={loading}
                 disabled={!input.trim()}
-                className="rounded-full transition-shadow hover:shadow-[0_0_16px_2px_color-mix(in_srgb,var(--accent-bright)_55%,transparent)]"
+                className="rounded-full"
               >
                 {!loading && <ArrowUp className="h-4 w-4" />}
               </Button>

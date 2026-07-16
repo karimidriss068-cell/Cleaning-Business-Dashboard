@@ -11,12 +11,12 @@ import type { ReportData } from "@/lib/report";
 
 // MAKI brand palette (hex — @react-pdf has no CSS variables).
 const C = {
-  bg: "#1A0E0E",
-  surface: "#2B1414",
-  border: "#3D2020",
-  crimson: "#8B1E2E",
-  cream: "#F0E6D2",
-  tan: "#B8A88C",
+  bg: "#17110F",
+  surface: "#2A1512",
+  border: "#3D2420",
+  crimson: "#9B2C2C",
+  cream: "#EDE6D6",
+  tan: "#A89A87",
 };
 
 const s = StyleSheet.create({
