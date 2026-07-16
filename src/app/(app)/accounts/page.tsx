@@ -2,8 +2,10 @@ import Link from "next/link";
 import { Building2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { money, shortDate } from "@/lib/format";
+import { getClientHealthScores } from "@/lib/client-health";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
+import { HealthGradeBadge } from "@/components/health-grade-badge";
 import { NewAccountDialog } from "@/components/forms/new-account-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { StaggerPage } from "@/components/dashboard/stagger-page";
@@ -22,10 +24,10 @@ export const dynamic = "force-dynamic";
 
 export default async function AccountsPage() {
   const supabase = await createClient();
-  const { data: accounts } = await supabase
-    .from("accounts")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const [{ data: accounts }, healthScores] = await Promise.all([
+    supabase.from("accounts").select("*").order("created_at", { ascending: false }),
+    getClientHealthScores(supabase),
+  ]);
 
   return (
     <>
@@ -46,6 +48,7 @@ export default async function AccountsPage() {
                 <TableHead>Type</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Niche</TableHead>
+                <TableHead>Health</TableHead>
                 <TableHead className="text-right">Price / appt</TableHead>
                 <TableHead className="text-right">Created</TableHead>
               </TableRow>
@@ -53,7 +56,7 @@ export default async function AccountsPage() {
             <TableBody>
               {(accounts ?? []).length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="p-0">
+                  <TableCell colSpan={7} className="p-0">
                     <EmptyState
                       icon={Building2}
                       title="No accounts yet"
@@ -81,6 +84,16 @@ export default async function AccountsPage() {
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {a.niche ?? "—"}
+                  </TableCell>
+                  <TableCell>
+                    {a.type === "client" ? (
+                      <HealthGradeBadge
+                        grade={healthScores.get(a.id)?.grade ?? null}
+                        score={healthScores.get(a.id)?.score}
+                      />
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
                     {money(a.price_per_appointment)}

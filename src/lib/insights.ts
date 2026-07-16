@@ -3,6 +3,7 @@ import type { Database } from "@/lib/supabase/database.types";
 import { currentWeekRange } from "@/lib/format";
 import { computeFunnel } from "@/lib/outreach";
 import { getUncontactedLeads, WARNING_MINUTES, CRITICAL_HOURS } from "@/lib/lead-response";
+import { computeClientHealthScore } from "@/lib/client-health";
 
 const DAY = 86400000;
 const NO_ACTIVITY_THRESHOLD_DAYS = 14;
@@ -317,6 +318,20 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
 
     const acctAlerts = cids.flatMap((id) => alertsByCampaign.get(id) ?? []);
 
+    // Phase 3: composite client health score — reuses the risk_assessment
+    // just computed above (an at-risk account is capped so it can never
+    // read as a clean "A") rather than building a second, disconnected
+    // signal.
+    const healthScore = computeClientHealthScore({
+      cpa: ap.appts > 0 ? spend30 / ap.appts : null,
+      cpaAlertThreshold: a.cpa_alert_threshold,
+      apptsShowed: ap.showed,
+      apptsTotal: ap.appts,
+      jobsClosed: jobsClosed30,
+      jobsAnswered: jobsAnswered30,
+      atRisk: reasons.length > 0,
+    });
+
     return {
       id: a.id,
       name: a.name,
@@ -390,6 +405,7 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
         at_risk: reasons.length > 0,
         reasons,
       },
+      health_score: healthScore,
       unacknowledged_alerts: acctAlerts,
     };
   });
