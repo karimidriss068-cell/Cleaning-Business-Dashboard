@@ -38,10 +38,41 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // TEMP DEBUG LOGGING — remove once the real GHL payload shape is
+  // confirmed. Reads the body as raw text ONCE (a request body stream can
+  // only be consumed once — calling req.json() separately afterward would
+  // throw), then attempts to interpret it as JSON, and separately as
+  // form-urlencoded, purely for visibility. Does not change any
+  // validation/error behavior below.
+  const rawText = await req.text();
+  console.log("[sms-debug] content-type:", JSON.stringify(req.headers.get("content-type")));
+  console.log("[sms-debug] raw body text:", JSON.stringify(rawText));
+
   let body: unknown;
+  let jsonParseError: string | null = null;
   try {
-    body = await req.json();
-  } catch {
+    body = rawText ? JSON.parse(rawText) : undefined;
+    console.log("[sms-debug] parsed as JSON:", JSON.stringify(body));
+  } catch (e) {
+    jsonParseError = e instanceof Error ? e.message : "Unknown JSON parse error";
+    console.log("[sms-debug] JSON.parse failed:", jsonParseError);
+  }
+
+  // Only attempted for visibility when JSON parsing didn't produce a usable
+  // object — e.g. GHL sent form-urlencoded or multipart instead of JSON.
+  if (jsonParseError || !body || typeof body !== "object") {
+    try {
+      const asForm = Object.fromEntries(new URLSearchParams(rawText).entries());
+      console.log("[sms-debug] parsed as form-urlencoded:", JSON.stringify(asForm));
+    } catch (e) {
+      console.log(
+        "[sms-debug] form-urlencoded parse also failed:",
+        e instanceof Error ? e.message : "Unknown error",
+      );
+    }
+  }
+
+  if (jsonParseError) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
@@ -50,6 +81,10 @@ export async function POST(req: NextRequest) {
     contact_id?: string;
     question?: string;
   };
+  console.log(
+    "[sms-debug] extracted fields:",
+    JSON.stringify({ phone, contact_id, question }),
+  );
   if (!phone || !contact_id || !question?.trim()) {
     return NextResponse.json(
       { error: "Missing required fields: phone, contact_id, and question" },
