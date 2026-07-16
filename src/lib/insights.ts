@@ -6,6 +6,27 @@ import { computeFunnel } from "@/lib/outreach";
 const DAY = 86400000;
 const NO_ACTIVITY_THRESHOLD_DAYS = 14;
 
+type AppointmentRow = {
+  status: Database["public"]["Enums"]["appointment_status"];
+  job_closed: boolean | null;
+};
+
+/**
+ * Whether an appointment turned into a real paid job — job_closed (from the
+ * SMS follow-up loop, see src/lib/job-followup.ts) is the source of truth
+ * when it's been answered. The legacy 'closed' status value is treated as a
+ * closed signal too (some appointments were marked that way before the
+ * follow-up loop existed), but never implies a revenue figure — only actual
+ * job_revenue replies ever contribute to closed-revenue totals.
+ */
+function resolvedJobStatus(ap: AppointmentRow): "closed" | "not_closed" | "pending" {
+  if (ap.job_closed === true) return "closed";
+  if (ap.job_closed === false) return "not_closed";
+  if (ap.status === "closed") return "closed";
+  if (ap.status === "no_show" || ap.status === "cancelled") return "not_closed";
+  return "pending";
+}
+
 /**
  * Builds a full aggregated snapshot of the MAKI Ops business for the AI
  * insights feature — every account, campaign, creative, and outreach script,
@@ -49,7 +70,7 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
     supabase
       .from("accounts")
       .select(
-        "id, name, type, price_per_appointment, cpa_alert_threshold, auto_pause_threshold, status",
+        "id, name, niche, type, price_per_appointment, cpa_alert_threshold, auto_pause_threshold, status",
       ),
     supabase.from("campaigns").select("id, name, account_id, status"),
     supabase.from("creatives").select("id, name, type, status, account_id"),
@@ -64,7 +85,7 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
       .gte("created_at", sinceFetch),
     supabase
       .from("appointments")
-      .select("account_id, lead_id, booked_at, status, revenue_owed")
+      .select("account_id, lead_id, booked_at, status, revenue_owed, job_closed, job_revenue")
       .gte("booked_at", sinceFetch),
     supabase.from("outreach_scripts").select("id, name, channel, status"),
     supabase
@@ -101,6 +122,13 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
     apptsLastMonth: number;
     revenue30: number;
     lastApptDate: string | null;
+    // Job-closed revenue loop (Phase 1) — 30d window only for now, the
+    // signal is too sparse yet to slice by week/month too.
+    showed30: number;
+    jobsClosed30: number;
+    jobsNotClosed30: number;
+    jobsPending30: number;
+    closedRevenue30: number;
   };
   const cAgg = new Map<string, CampaignAgg>();
   const ensureC = (id: string): CampaignAgg => {
@@ -125,6 +153,11 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
         apptsLastMonth: 0,
         revenue30: 0,
         lastApptDate: null,
+        showed30: 0,
+        jobsClosed30: 0,
+        jobsNotClosed30: 0,
+        jobsPending30: 0,
+        closedRevenue30: 0,
       });
     }
     return cAgg.get(id)!;
@@ -158,6 +191,18 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
     if (d >= since30) {
       a.appts30 += 1;
       a.revenue30 += Number(ap.revenue_owed ?? 0);
+      if (ap.status === "showed" || ap.status === "closed") {
+        a.showed30 += 1;
+        const resolved = resolvedJobStatus(ap);
+        if (resolved === "closed") {
+          a.jobsClosed30 += 1;
+          a.closedRevenue30 += Number(ap.job_revenue ?? 0);
+        } else if (resolved === "not_closed") {
+          a.jobsNotClosed30 += 1;
+        } else {
+          a.jobsPending30 += 1;
+        }
+      }
     }
     if (d >= weekStart) a.apptsThisWeek += 1;
     else if (d >= lastWeekStart) a.apptsLastWeek += 1;
@@ -208,6 +253,12 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
     const leadsLastMonth = cids.reduce((s, id) => s + (cAgg.get(id)?.leadsLastMonth ?? 0), 0);
     const apptsThisMonth = cids.reduce((s, id) => s + (cAgg.get(id)?.apptsThisMonth ?? 0), 0);
     const apptsLastMonth = cids.reduce((s, id) => s + (cAgg.get(id)?.apptsLastMonth ?? 0), 0);
+    const showed30 = cids.reduce((s, id) => s + (cAgg.get(id)?.showed30 ?? 0), 0);
+    const jobsClosed30 = cids.reduce((s, id) => s + (cAgg.get(id)?.jobsClosed30 ?? 0), 0);
+    const jobsNotClosed30 = cids.reduce((s, id) => s + (cAgg.get(id)?.jobsNotClosed30 ?? 0), 0);
+    const jobsPending30 = cids.reduce((s, id) => s + (cAgg.get(id)?.jobsPending30 ?? 0), 0);
+    const closedRevenue30 = cids.reduce((s, id) => s + (cAgg.get(id)?.closedRevenue30 ?? 0), 0);
+    const jobsAnswered30 = jobsClosed30 + jobsNotClosed30;
 
     const lastLeadDate =
       cids
@@ -268,6 +319,7 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
     return {
       id: a.id,
       name: a.name,
+      niche: a.niche,
       type: a.type,
       status: a.status,
       price_per_appointment: a.price_per_appointment,
@@ -282,6 +334,24 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
         revenue: round(ap.revenue),
         margin: round(ap.revenue - spend30),
         cpa: ap.appts > 0 ? round(spend30 / ap.appts) : null,
+      },
+      // Job-closed revenue loop (Phase 1): actual client-confirmed revenue,
+      // collected via SMS follow-up a few days after each appointment —
+      // NOT the same as last30d.revenue (that's the pre-filled estimate
+      // from price_per_appointment). jobs_pending_reply is how many showed
+      // appointments haven't answered yet; true_roi/true_cpa are null
+      // whenever there's no closed-job data at all, so the model never
+      // fabricates an ROI figure from an empty denominator.
+      revenue_data: {
+        appointments_showed_30d: showed30,
+        jobs_closed_30d: jobsClosed30,
+        jobs_not_closed_30d: jobsNotClosed30,
+        jobs_pending_reply_30d: jobsPending30,
+        reply_rate_pct: jobsAnswered30 > 0 ? pctRound(jobsAnswered30 / showed30) : null,
+        closed_revenue_30d: round(closedRevenue30),
+        true_roi_30d: jobsClosed30 > 0 ? round(closedRevenue30 - spend30) : null,
+        true_cpa_per_closed_job_30d: jobsClosed30 > 0 ? round(spend30 / jobsClosed30) : null,
+        data_complete: jobsPending30 === 0 && showed30 > 0,
       },
       week_over_week: {
         this_week: {
@@ -338,6 +408,12 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
       last30d_leads: agg.leads30,
       last30d_appointments: agg.appts30,
       last30d_cpa: agg.appts30 > 0 ? round(agg.spend30 / agg.appts30) : null,
+      revenue_data: {
+        jobs_closed_30d: agg.jobsClosed30,
+        jobs_pending_reply_30d: agg.jobsPending30,
+        closed_revenue_30d: round(agg.closedRevenue30),
+        true_roi_30d: agg.jobsClosed30 > 0 ? round(agg.closedRevenue30 - agg.spend30) : null,
+      },
       week_over_week: {
         this_week: {
           spend: round(agg.spendThisWeek),
@@ -375,6 +451,9 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
     const apptsLastWeek = cids.reduce((s, id) => s + (cAgg.get(id)?.apptsLastWeek ?? 0), 0);
     const cpaThisWeek = apptsThisWeek > 0 ? spendThisWeek / apptsThisWeek : null;
     const cpaLastWeek = apptsLastWeek > 0 ? spendLastWeek / apptsLastWeek : null;
+    const jobsClosed30 = cids.reduce((s, id) => s + (cAgg.get(id)?.jobsClosed30 ?? 0), 0);
+    const jobsPending30 = cids.reduce((s, id) => s + (cAgg.get(id)?.jobsPending30 ?? 0), 0);
+    const closedRevenue30 = cids.reduce((s, id) => s + (cAgg.get(id)?.closedRevenue30 ?? 0), 0);
     return {
       id: cr.id,
       name: cr.name,
@@ -388,6 +467,12 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
         spend: round(spend30),
         appointments: appts30,
         cpa: appts30 > 0 ? round(spend30 / appts30) : null,
+      },
+      revenue_data: {
+        jobs_closed_30d: jobsClosed30,
+        jobs_pending_reply_30d: jobsPending30,
+        closed_revenue_30d: round(closedRevenue30),
+        true_roi_30d: jobsClosed30 > 0 ? round(closedRevenue30 - spend30) : null,
       },
       week_over_week: {
         this_week: { cpa: cpaThisWeek !== null ? round(cpaThisWeek) : null },

@@ -93,8 +93,12 @@ export type Database = {
           account_id: string
           appointment_date: string | null
           booked_at: string
+          closed_recorded_at: string | null
+          follow_up_sent_at: string | null
           ghl_appointment_id: string | null
           id: string
+          job_closed: boolean | null
+          job_revenue: number | null
           lead_id: string
           revenue_owed: number | null
           status: Database["public"]["Enums"]["appointment_status"]
@@ -103,8 +107,12 @@ export type Database = {
           account_id: string
           appointment_date?: string | null
           booked_at?: string
+          closed_recorded_at?: string | null
+          follow_up_sent_at?: string | null
           ghl_appointment_id?: string | null
           id?: string
+          job_closed?: boolean | null
+          job_revenue?: number | null
           lead_id: string
           revenue_owed?: number | null
           status?: Database["public"]["Enums"]["appointment_status"]
@@ -113,8 +121,12 @@ export type Database = {
           account_id?: string
           appointment_date?: string | null
           booked_at?: string
+          closed_recorded_at?: string | null
+          follow_up_sent_at?: string | null
           ghl_appointment_id?: string | null
           id?: string
+          job_closed?: boolean | null
+          job_revenue?: number | null
           lead_id?: string
           revenue_owed?: number | null
           status?: Database["public"]["Enums"]["appointment_status"]
