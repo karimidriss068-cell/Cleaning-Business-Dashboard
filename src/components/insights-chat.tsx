@@ -1036,23 +1036,34 @@ export function InsightsChat({
               <p className="text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
                 Today&apos;s flags
               </p>
-              {digest.map((d) => (
-                <div key={d.id} className="flex items-start justify-between gap-3">
-                  <p className="flex items-start gap-1.5 text-[14px] leading-relaxed text-[var(--warning)]">
-                    <span className="mt-0.5">
-                      <CircleAlert className="h-3.5 w-3.5" />
-                    </span>
-                    <span>{d.message}</span>
-                  </p>
-                  <button
-                    onClick={() => dismissFlag(d.id)}
-                    aria-label="Dismiss"
-                    className="mt-0.5 shrink-0 text-muted-foreground transition-colors hover:text-cream-rich"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ))}
+              {digest.map((d) => {
+                // Ghost leads (24h+ uncontacted) are critical, not just a
+                // warning — reads in the brighter alert red, everything
+                // else stays the standard amber "flag" tone.
+                const critical = d.findingType === "ghost_leads";
+                return (
+                  <div key={d.id} className="flex items-start justify-between gap-3">
+                    <p
+                      className={cn(
+                        "flex items-start gap-1.5 text-[14px] leading-relaxed",
+                        critical ? "font-medium text-[var(--accent-bright)]" : "text-[var(--warning)]",
+                      )}
+                    >
+                      <span className="mt-0.5">
+                        <CircleAlert className="h-3.5 w-3.5" />
+                      </span>
+                      <span>{d.message}</span>
+                    </p>
+                    <button
+                      onClick={() => dismissFlag(d.id)}
+                      aria-label="Dismiss"
+                      className="mt-0.5 shrink-0 text-muted-foreground transition-colors hover:text-cream-rich"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
 

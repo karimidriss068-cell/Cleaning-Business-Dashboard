@@ -1,10 +1,16 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import { currentWeekRange, money } from "@/lib/format";
+import { getUncontactedLeads } from "@/lib/lead-response";
 
 const DAY = 86400000;
 
-export type DigestFindingType = "zero_leads" | "cpa_above_threshold" | "creative_cpa_spike";
+export type DigestFindingType =
+  | "zero_leads"
+  | "cpa_above_threshold"
+  | "creative_cpa_spike"
+  | "ghost_leads"
+  | "slow_response";
 
 export type DigestFinding = {
   accountId: string;
@@ -150,6 +156,39 @@ export async function computeDailyDigest(
     }
   }
 
+  // 4. Lead response monitoring (Phase 2) — grouped per account rather than
+  // one finding per lead, so a client with 20 uncontacted leads doesn't
+  // flood the digest with 20 rows.
+  const uncontacted = await getUncontactedLeads(supabase);
+  const byAccount = new Map<string, { critical: number; warning: number; accountName: string }>();
+  for (const l of uncontacted) {
+    if (!l.accountId) continue;
+    const cur = byAccount.get(l.accountId) ?? { critical: 0, warning: 0, accountName: l.accountName ?? "That account" };
+    if (l.severity === "critical") cur.critical++;
+    else cur.warning++;
+    byAccount.set(l.accountId, cur);
+  }
+  for (const [accountId, v] of byAccount) {
+    if (v.critical > 0) {
+      findings.push({
+        accountId,
+        campaignId: null,
+        creativeId: null,
+        findingType: "ghost_leads",
+        message: `${v.accountName} has ${v.critical} lead${v.critical > 1 ? "s" : ""} uncontacted for 24+ hours — likely lost without follow-up.`,
+      });
+    }
+    if (v.warning > 0) {
+      findings.push({
+        accountId,
+        campaignId: null,
+        creativeId: null,
+        findingType: "slow_response",
+        message: `${v.accountName} has ${v.warning} lead${v.warning > 1 ? "s" : ""} past the fast-response window, not yet contacted.`,
+      });
+    }
+  }
+
   return findings;
 }
 
@@ -178,7 +217,10 @@ export async function getTodaysDigest(
   const dismissedIds = new Set((dismissals ?? []).map((d) => d.digest_id));
   return (findings ?? [])
     .filter((f) => !dismissedIds.has(f.id))
-    .map((f) => ({ id: f.id, message: f.message, findingType: f.finding_type }));
+    .map((f) => ({ id: f.id, message: f.message, findingType: f.finding_type }))
+    // Ghost leads (critical — a full day+ uncontacted) surface above every
+    // other warning-level flag, per the Phase 2 severity requirement.
+    .sort((a, b) => (a.findingType === "ghost_leads" ? -1 : 0) - (b.findingType === "ghost_leads" ? -1 : 0));
 }
 
 export async function dismissDigestFinding(

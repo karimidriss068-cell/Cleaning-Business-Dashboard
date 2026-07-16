@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import { currentWeekRange } from "@/lib/format";
 import { computeFunnel } from "@/lib/outreach";
+import { getUncontactedLeads, WARNING_MINUTES, CRITICAL_HOURS } from "@/lib/lead-response";
 
 const DAY = 86400000;
 const NO_ACTIVITY_THRESHOLD_DAYS = 14;
@@ -557,6 +558,29 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
     ),
   };
 
+  // ---- Phase 2: lead response monitoring — leads still at status 'new' ----
+  const uncontactedLeads = await getUncontactedLeads(supabase);
+  const uncontactedByAccount = new Map<string, { warning: number; critical: number }>();
+  for (const l of uncontactedLeads) {
+    if (!l.accountId) continue;
+    const cur = uncontactedByAccount.get(l.accountId) ?? { warning: 0, critical: 0 };
+    if (l.severity === "critical") cur.critical++;
+    else cur.warning++;
+    uncontactedByAccount.set(l.accountId, cur);
+  }
+  const leadResponse = {
+    warning_threshold_minutes: WARNING_MINUTES,
+    critical_threshold_hours: CRITICAL_HOURS,
+    uncontacted_warning_count: uncontactedLeads.filter((l) => l.severity === "warning").length,
+    uncontacted_critical_count: uncontactedLeads.filter((l) => l.severity === "critical").length,
+    by_account: [...uncontactedByAccount.entries()].map(([accountId, v]) => ({
+      account_id: accountId,
+      account: accountById.get(accountId)?.name ?? null,
+      warning_count: v.warning,
+      critical_count: v.critical,
+    })),
+  };
+
   return {
     context:
       "MAKI Ops — marketing agency internal dashboard. 'internal' accounts are MAKI's own client-acquisition ads; 'client' accounts are ads MAKI runs for clients. Money is USD. This snapshot is the ONLY data available — nothing outside it is known.",
@@ -576,6 +600,7 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
     weekly_by_context: weekAgg,
     outreach_scripts: scriptSummaries,
     outreach_totals: outreachTotals,
+    lead_response: leadResponse,
     unacknowledged_alerts: (alerts ?? []).map((a) => ({
       type: a.type,
       message: a.message,
@@ -607,6 +632,10 @@ export function scopeSnapshotToAccount(
     unacknowledged_alerts: data.unacknowledged_alerts.filter(
       (a) => a.campaign_id && accountCampaignIds.has(a.campaign_id),
     ),
+    lead_response: {
+      ...data.lead_response,
+      by_account: data.lead_response.by_account.filter((b) => b.account_id === accountId),
+    },
   };
 }
 

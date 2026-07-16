@@ -843,6 +843,8 @@ export type Database = {
         | "zero_leads"
         | "cpa_above_threshold"
         | "creative_cpa_spike"
+        | "ghost_leads"
+        | "slow_response"
       insights_message_role: "user" | "assistant"
       lead_status: "new" | "contacted" | "qualified" | "booked" | "dead"
       outreach_channel: "sms" | "cold_call" | "dm" | "email"
@@ -1000,6 +1002,8 @@ export const Constants = {
         "zero_leads",
         "cpa_above_threshold",
         "creative_cpa_spike",
+        "ghost_leads",
+        "slow_response",
       ],
       insights_message_role: ["user", "assistant"],
       lead_status: ["new", "contacted", "qualified", "booked", "dead"],
