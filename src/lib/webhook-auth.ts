@@ -33,3 +33,17 @@ export function verifyWebhookSecret(req: NextRequest): boolean {
 export function verifyRetellSecret(req: NextRequest): boolean {
   return verifySecretHeader(req, "x-retell-secret", process.env.RETELL_WEBHOOK_SECRET);
 }
+
+/**
+ * Verifies Vercel Cron's own auth contract: an `authorization: Bearer
+ * $CRON_SECRET` header, automatically sent on every cron-triggered request
+ * once CRON_SECRET is set as a project env var (Vercel docs:
+ * https://vercel.com/docs/cron-jobs/manage-cron-jobs#securing-cron-jobs).
+ * Distinct from verifyWebhookSecret's `x-webhook-secret` header — a route
+ * that's triggered by both Vercel Cron and n8n/manual calls should check
+ * both rather than replacing one with the other.
+ */
+export function verifyCronSecret(req: NextRequest): boolean {
+  const secret = process.env.CRON_SECRET;
+  return verifySecretHeader(req, "authorization", secret ? `Bearer ${secret}` : undefined);
+}
