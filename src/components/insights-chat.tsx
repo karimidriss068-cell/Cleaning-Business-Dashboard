@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, Fragment, useCallback } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
   askInsights,
@@ -56,7 +56,24 @@ type Exchange =
   | { q: string; kind: "limited"; used: number; cap: number }
   | { kind: "report"; result: InsightsAnswer; createdAt: string };
 
-const ENTER = { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const };
+const ENTER = { duration: 0.28, ease: [0.16, 1, 0.3, 1] as const };
+
+/** Follow-up suggestion chip — tactile hover lift + soft crimson glow, not a
+ * flat button. Shared by the report and regular-answer follow-up rows. */
+const FOLLOWUP_CHIP_CLASS =
+  "rounded-full border border-border px-3.5 py-1.5 text-left text-[13px] text-muted-foreground transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--accent-primary)_60%,transparent)] hover:text-cream-rich hover:shadow-[0_6px_20px_-8px_color-mix(in_srgb,var(--accent-bright)_65%,transparent)] active:translate-y-0 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50";
+
+/** Sidebar list row (session/pin/report) — selected state is a thin glowing
+ * crimson left rail + tinted background, not a flat color swap; unselected
+ * rows get a subtle hover lift. */
+function sidebarItemClass(selected: boolean): string {
+  return cn(
+    "relative block w-full truncate rounded-md py-2 pl-3.5 pr-3 text-left text-[13px] transition-all duration-150 ease-out",
+    selected
+      ? "bg-[color-mix(in_srgb,var(--accent-primary)_16%,var(--bg-surface))] text-cream-rich before:absolute before:top-1.5 before:bottom-1.5 before:left-0 before:w-[2px] before:rounded-full before:bg-[var(--accent-bright)] before:shadow-[0_0_6px_1px_color-mix(in_srgb,var(--accent-bright)_70%,transparent)]"
+      : "text-muted-foreground hover:translate-x-0.5 hover:bg-[var(--bg-surface)]/60 hover:text-[var(--text-primary)]",
+  );
+}
 
 type Entity = InsightsAnswer["mentioned_entities"][number];
 
@@ -71,6 +88,11 @@ const ENTITY_ROUTE: Record<Entity["type"], (id: string) => string> = {
 // column on desktop; the history sidebar sits immediately after it.
 const MAIN_NAV_PX = 240;
 const HISTORY_PX = 256; // w-64
+// PageHeader's rendered height (title + description + padding + border).
+// The history sidebar starts below this instead of at the very top, so it
+// can never cover the header text regardless of open/collapsed state —
+// the header doesn't need to know anything about the sidebar to stay clear.
+const HEADER_HEIGHT_PX = 96;
 
 /** A number/dollar-figure/percentage token, highlighted inline so key stats
  * stand out inside a sentence without being pulled into a separate grid. */
@@ -195,20 +217,96 @@ function InsightAnswer({ result }: { result: InsightsAnswer }) {
   );
 }
 
-function ThinkingIndicator() {
+// Short (<8 words), dry/witty, MAKI-Ops-specific — rotated randomly while a
+// question or analysis is in flight, so waiting feels like part of the
+// product's personality rather than a generic spinner.
+const THINKING_LINES = [
+  "Cross-examining the spend report…",
+  "Making sure Peak Plumbing isn't leaking budget…",
+  "Giving the CPA a lie detector test…",
+  "Reading the funnel its rights…",
+  "Confirming the roofers are still roofing…",
+  "Asking Meta Ads to be honest…",
+  "Separating real leads from wishful thinking…",
+  "Running the numbers past a skeptic…",
+  "Checking if Shine Detailing still shines…",
+  "Weighing appointments against vibes…",
+  "Double-checking who actually showed up…",
+  "Making sure this isn't just optimism…",
+  "Interrogating last week's ad spend…",
+  "Consulting the ledger, not the mood…",
+  "Giving outreach scripts a pop quiz…",
+  "Not trusting a single unweighted average…",
+  "Confirming Apex's numbers add up twice…",
+  "Reconciling CPA with cold, hard reality…",
+  "Making sure nobody's massaging the CPA…",
+  "Checking if the funnel actually funnels…",
+];
+
+function pickThinkingLine(exclude?: string): string {
+  if (THINKING_LINES.length <= 1) return THINKING_LINES[0];
+  let next = THINKING_LINES[Math.floor(Math.random() * THINKING_LINES.length)];
+  while (next === exclude) {
+    next = THINKING_LINES[Math.floor(Math.random() * THINKING_LINES.length)];
+  }
+  return next;
+}
+
+/** Pulsing crimson core + orbiting particle — a small, alive mark rather
+ * than a generic spinner. Pure CSS-driven motion, cheap to keep running. */
+function ThinkingMark() {
   return (
-    <div className="flex items-center gap-1.5 py-1 text-sm text-muted-foreground">
-      <span>Thinking</span>
-      <span className="flex gap-0.5">
-        {[0, 1, 2].map((i) => (
-          <motion.span
-            key={i}
-            className="h-1 w-1 rounded-full bg-current"
-            animate={{ opacity: [0.25, 1, 0.25] }}
-            transition={{ duration: 1.1, repeat: Infinity, delay: i * 0.15, ease: "easeInOut" }}
-          />
-        ))}
-      </span>
+    <div className="relative h-5 w-5 shrink-0">
+      <motion.div
+        className="absolute inset-0 rounded-full"
+        style={{
+          background: "radial-gradient(circle, var(--accent-bright) 0%, transparent 70%)",
+        }}
+        animate={{ opacity: [0.35, 0.9, 0.35], scale: [0.85, 1.15, 0.85] }}
+        transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <div
+        className="absolute inset-0 m-auto h-1.5 w-1.5 rounded-full bg-[var(--accent-bright)]"
+        style={{ boxShadow: "0 0 8px 2px color-mix(in srgb, var(--accent-bright) 70%, transparent)" }}
+      />
+      <motion.div
+        className="absolute inset-0"
+        animate={{ rotate: 360 }}
+        transition={{ duration: 2.4, repeat: Infinity, ease: "linear" }}
+      >
+        <div
+          className="absolute top-0 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-[var(--accent-cream-rich)]"
+          style={{ boxShadow: "0 0 6px 1px color-mix(in srgb, var(--accent-cream-rich) 70%, transparent)" }}
+        />
+      </motion.div>
+    </div>
+  );
+}
+
+function ThinkingIndicator() {
+  const [line, setLine] = useState(() => pickThinkingLine());
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setLine((prev) => pickThinkingLine(prev));
+    }, 2000);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <div className="flex items-center gap-2.5 py-1 text-sm text-muted-foreground">
+      <ThinkingMark />
+      <AnimatePresence mode="wait">
+        <motion.span
+          key={line}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.25, ease: "easeInOut" }}
+        >
+          {line}
+        </motion.span>
+      </AnimatePresence>
     </div>
   );
 }
@@ -399,12 +497,7 @@ function SpaceDetail({
               key={s.id}
               onClick={() => onSelect(s.id)}
               title={s.title}
-              className={cn(
-                "block w-full truncate rounded-md px-3 py-2 text-left text-[13px] transition-colors",
-                s.id === currentSessionId
-                  ? "bg-[var(--bg-surface)] text-cream-rich"
-                  : "text-muted-foreground hover:bg-[var(--bg-surface)]/60 hover:text-[var(--text-primary)]",
-              )}
+              className={sidebarItemClass(s.id === currentSessionId)}
             >
               <span className="block truncate">{s.title}</span>
               <span className="block text-[10px] text-muted-foreground/70">{formatSessionDate(s.updatedAt)}</span>
@@ -469,10 +562,12 @@ function HistorySidebar({
     <>
       <aside
         className={cn(
-          "fixed inset-y-0 z-30 hidden flex-col border-r border-border bg-[var(--sidebar)] md:flex",
+          "fixed bottom-0 z-30 hidden flex-col border-r border-border bg-[var(--sidebar)] md:flex",
           open ? "w-64" : "w-0 overflow-hidden border-r-0",
         )}
-        style={{ left: MAIN_NAV_PX }}
+        // Starts below the page header (not inset-y-0 from the very top) so
+        // it can never render over the "Insights" title/description.
+        style={{ left: MAIN_NAV_PX, top: HEADER_HEIGHT_PX }}
       >
         <div className="flex items-center justify-end px-3 pt-3">
           <button
@@ -488,14 +583,27 @@ function HistorySidebar({
             <button
               key={t.key}
               onClick={() => onTabChange(t.key)}
-              className={cn(
-                "rounded-full px-2.5 py-1 text-[11px] font-medium tracking-[0.06em] uppercase transition-colors",
-                tab === t.key
-                  ? "bg-[var(--bg-surface)] text-cream-rich"
-                  : "text-muted-foreground hover:text-[var(--text-primary)]",
-              )}
+              className="relative rounded-full px-2.5 py-1 text-[11px] font-medium tracking-[0.06em] uppercase"
             >
-              {t.label}
+              {tab === t.key && (
+                <motion.span
+                  layoutId="sidebar-tab-highlight"
+                  className="absolute inset-0 rounded-full"
+                  style={{
+                    background: "color-mix(in srgb, var(--accent-primary) 22%, var(--bg-surface))",
+                    boxShadow: "0 0 12px -2px color-mix(in srgb, var(--accent-bright) 55%, transparent)",
+                  }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                />
+              )}
+              <span
+                className={cn(
+                  "relative z-10 transition-colors duration-150",
+                  tab === t.key ? "text-cream-rich" : "text-muted-foreground hover:text-[var(--text-primary)]",
+                )}
+              >
+                {t.label}
+              </span>
             </button>
           ))}
         </div>
@@ -518,12 +626,7 @@ function HistorySidebar({
                     key={s.id}
                     onClick={() => onSelect(s.id)}
                     title={s.title}
-                    className={cn(
-                      "block w-full truncate rounded-md px-3 py-2 text-left text-[13px] transition-colors",
-                      s.id === currentSessionId
-                        ? "bg-[var(--bg-surface)] text-cream-rich"
-                        : "text-muted-foreground hover:bg-[var(--bg-surface)]/60 hover:text-[var(--text-primary)]",
-                    )}
+                    className={sidebarItemClass(s.id === currentSessionId)}
                   >
                     <span className="block truncate">{s.title}</span>
                     <span className="block text-[10px] text-muted-foreground/70">
@@ -578,7 +681,7 @@ function HistorySidebar({
                       key={s.id}
                       onClick={() => onEnterSpace(s.id)}
                       title={s.name}
-                      className="block w-full truncate rounded-md px-3 py-2 text-left text-[13px] text-muted-foreground transition-colors hover:bg-[var(--bg-surface)]/60 hover:text-[var(--text-primary)]"
+                      className={sidebarItemClass(false)}
                     >
                       <span className="block truncate">{s.name}</span>
                       {s.accountName && (
@@ -601,7 +704,7 @@ function HistorySidebar({
                   key={p.id}
                   onClick={() => onSelect(p.sessionId)}
                   title={p.content}
-                  className="block w-full truncate rounded-md px-3 py-2 text-left text-[13px] text-muted-foreground transition-colors hover:bg-[var(--bg-surface)]/60 hover:text-[var(--text-primary)]"
+                  className={sidebarItemClass(p.sessionId === currentSessionId)}
                 >
                   {p.content}
                 </button>
@@ -622,7 +725,7 @@ function HistorySidebar({
                   key={r.id}
                   onClick={() => onSelectReport(r)}
                   title={r.content}
-                  className="block w-full rounded-md px-3 py-2 text-left text-[13px] text-muted-foreground transition-colors hover:bg-[var(--bg-surface)]/60 hover:text-[var(--text-primary)]"
+                  className={sidebarItemClass(false)}
                 >
                   <span className="block text-[11px] font-medium text-cream-rich">
                     {formatReportDate(r.createdAt)}
@@ -677,6 +780,22 @@ export function InsightsChat({
   const [reports, setReports] = useState<ReportItem[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const inputBarRef = useRef<HTMLDivElement>(null);
+  const [inputBarHeight, setInputBarHeight] = useState(160);
+
+  // The input bar's real height varies (space indicator, "Run analysis" row
+  // both toggle on/off), so a fixed pb-* class on the scroll container was
+  // occasionally too short and let content get covered. Measure it instead.
+  useEffect(() => {
+    const el = inputBarRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const height = entries[0]?.contentRect.height;
+      if (height) setInputBarHeight(height);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const refreshSessions = useCallback((spaceId: string | null) => {
     listInsightsSessions(spaceId).then(setSessions);
@@ -907,7 +1026,10 @@ export function InsightsChat({
         </div>
 
         {/* Conversation — scrolls in normal page flow; bottom padding clears the fixed input bar */}
-        <div className="mx-auto w-full max-w-[760px] px-6 pt-6 pb-40 sm:px-10">
+        <div
+          className="mx-auto w-full max-w-[760px] px-6 pt-6 sm:px-10"
+          style={{ paddingBottom: inputBarHeight + 32 }}
+        >
           {digest.length > 0 && (
             <div className="mb-8 space-y-2 border-b border-border/60 pb-6">
               <p className="text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
@@ -977,10 +1099,20 @@ export function InsightsChat({
                     </p>
                   ) : ex.kind === "report" ? (
                     <>
-                      <div>
+                      <div className="pt-1">
+                        <div className="divider-warm mb-4" />
                         <p className="mb-2 flex items-center gap-1.5 text-[11px] font-medium tracking-[0.12em] text-muted-foreground uppercase">
-                          <FileText className="h-3 w-3" />
-                          Full Analysis — {formatReportDate(ex.createdAt)}
+                          <motion.span
+                            className="flex h-3.5 w-3.5 items-center justify-center rounded-full"
+                            style={{
+                              boxShadow: "0 0 8px 1px color-mix(in srgb, var(--accent-bright) 55%, transparent)",
+                            }}
+                            animate={{ opacity: [0.55, 1, 0.55] }}
+                            transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+                          >
+                            <FileText className="h-3 w-3 text-[var(--accent-bright)]" />
+                          </motion.span>
+                          <span className="text-cream-rich">Full Analysis</span> — {formatReportDate(ex.createdAt)}
                         </p>
                         <InsightAnswer result={ex.result} />
                       </div>
@@ -991,7 +1123,7 @@ export function InsightsChat({
                               key={f}
                               onClick={() => ask(f)}
                               disabled={loading}
-                              className="rounded-full border border-border px-3.5 py-1.5 text-left text-[13px] text-muted-foreground transition-colors hover:border-[color-mix(in_srgb,var(--accent-primary)_60%,transparent)] hover:text-cream-rich disabled:opacity-50"
+                              className={FOLLOWUP_CHIP_CLASS}
                             >
                               {f}
                             </button>
@@ -1027,7 +1159,7 @@ export function InsightsChat({
                               key={f}
                               onClick={() => ask(f)}
                               disabled={loading}
-                              className="rounded-full border border-border px-3.5 py-1.5 text-left text-[13px] text-muted-foreground transition-colors hover:border-[color-mix(in_srgb,var(--accent-primary)_60%,transparent)] hover:text-cream-rich disabled:opacity-50"
+                              className={FOLLOWUP_CHIP_CLASS}
                             >
                               {f}
                             </button>
@@ -1046,7 +1178,10 @@ export function InsightsChat({
 
         {/* Input — fixed to the bottom of the viewport, offset past the sidebar(s) on desktop */}
         <div className={cn("fixed inset-x-0 bottom-0 z-20 transition-[left] duration-200", inputLeftClass)}>
-          <div className="bg-gradient-to-t from-background via-background/95 to-transparent px-6 pt-8 pb-6 sm:px-10">
+          <div
+            ref={inputBarRef}
+            className="bg-gradient-to-t from-background via-background/95 to-transparent px-6 pt-8 pb-6 sm:px-10"
+          >
             {activeSpace && (
               <div className="mx-auto mb-2 flex w-full max-w-[760px] items-center gap-1.5 text-[12px] text-muted-foreground">
                 <Compass className="h-3 w-3" />
@@ -1077,7 +1212,7 @@ export function InsightsChat({
                 e.preventDefault();
                 ask(input);
               }}
-              className="mx-auto flex w-full max-w-[760px] items-center gap-2 rounded-full border border-border bg-[var(--bg-surface)] px-4 py-2 shadow-[0_12px_32px_-16px_rgba(0,0,0,0.6)]"
+              className="mx-auto flex w-full max-w-[760px] items-center gap-2 rounded-full border border-border bg-[var(--bg-surface)] px-4 py-2 shadow-[0_12px_32px_-16px_rgba(0,0,0,0.6)] transition-shadow duration-200 focus-within:border-[color-mix(in_srgb,var(--accent-bright)_70%,transparent)] focus-within:shadow-[0_0_0_3px_color-mix(in_srgb,var(--accent-bright)_22%,transparent),0_12px_32px_-16px_rgba(0,0,0,0.6)]"
             >
               <input
                 value={input}
