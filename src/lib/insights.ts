@@ -4,6 +4,7 @@ import { currentWeekRange } from "@/lib/format";
 import { computeFunnel } from "@/lib/outreach";
 import { getUncontactedLeads, WARNING_MINUTES, CRITICAL_HOURS } from "@/lib/lead-response";
 import { computeClientHealthScore } from "@/lib/client-health";
+import { computePriorities } from "@/lib/priorities";
 
 const DAY = 86400000;
 const NO_ACTIVITY_THRESHOLD_DAYS = 14;
@@ -597,6 +598,9 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
     })),
   };
 
+  // ---- Phase 4: prioritization engine — ranked, dollar-quantified actions ----
+  const priorities = await computePriorities(supabase);
+
   return {
     context:
       "MAKI Ops — marketing agency internal dashboard. 'internal' accounts are MAKI's own client-acquisition ads; 'client' accounts are ads MAKI runs for clients. Money is USD. This snapshot is the ONLY data available — nothing outside it is known.",
@@ -617,6 +621,7 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
     outreach_scripts: scriptSummaries,
     outreach_totals: outreachTotals,
     lead_response: leadResponse,
+    priorities,
     unacknowledged_alerts: (alerts ?? []).map((a) => ({
       type: a.type,
       message: a.message,
@@ -652,6 +657,7 @@ export function scopeSnapshotToAccount(
       ...data.lead_response,
       by_account: data.lead_response.by_account.filter((b) => b.account_id === accountId),
     },
+    priorities: data.priorities.filter((p) => p.accountId === accountId),
   };
 }
 

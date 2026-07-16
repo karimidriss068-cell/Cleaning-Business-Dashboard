@@ -30,6 +30,7 @@ import {
   type SpaceSummary,
 } from "@/lib/insights-spaces";
 import { listReports as listReportsCore, saveReport, type ReportItem } from "@/lib/insights-reports";
+import { computePriorities, type PriorityItem } from "@/lib/priorities";
 
 export type { InsightsAnswer } from "@/lib/insights-ask";
 export type { SessionSummary, SessionWithMessages, StoredMessage } from "@/lib/insights-sessions";
@@ -37,6 +38,7 @@ export type { DigestItem } from "@/lib/insights-digest";
 export type { PinnedMessage } from "@/lib/insights-pins";
 export type { SpaceSummary } from "@/lib/insights-spaces";
 export type { ReportItem } from "@/lib/insights-reports";
+export type { PriorityItem } from "@/lib/priorities";
 
 export type AskInsightsPageResult =
   | { result: InsightsAnswer; sessionId: string; messageId: string | null }
@@ -239,4 +241,13 @@ export async function listInsightsReports(): Promise<ReportItem[]> {
   } = await supabase.auth.getUser();
   if (!user) return [];
   return listReportsCore(supabase, user.id);
+}
+
+export async function listTopPriorities(limit = 2): Promise<PriorityItem[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  return (await computePriorities(supabase)).slice(0, limit);
 }

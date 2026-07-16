@@ -14,10 +14,16 @@ export type DigestFindingType =
 
 export type DigestFinding = {
   accountId: string;
+  accountName: string;
   campaignId: string | null;
   creativeId: string | null;
   findingType: DigestFindingType;
   message: string;
+  /** Rough dollar impact where calculable from existing numbers (never
+   * invented) — feeds the Phase 4 prioritization engine. Null when there's
+   * no defensible way to put a number on it (e.g. "zero leads" — there's no
+   * historical baseline to estimate a lost-revenue figure from). */
+  estimatedImpact: number | null;
 };
 
 /**
@@ -50,7 +56,10 @@ export async function computeDailyDigest(
     { data: leads },
     { data: appts },
   ] = await Promise.all([
-    supabase.from("accounts").select("id, name, status, cpa_alert_threshold").eq("status", "active"),
+    supabase
+      .from("accounts")
+      .select("id, name, status, cpa_alert_threshold, price_per_appointment")
+      .eq("status", "active"),
     supabase.from("campaigns").select("id, name, account_id, status").eq("status", "active"),
     supabase.from("creatives").select("id, name, status, account_id").neq("status", "retired"),
     supabase.from("campaign_creatives").select("campaign_id, creative_id"),
@@ -100,12 +109,16 @@ export async function computeDailyDigest(
     if (!last || last < since7Date) {
       findings.push({
         accountId: a.id,
+        accountName: a.name,
         campaignId: null,
         creativeId: null,
         findingType: "zero_leads",
         message: last
           ? `${a.name} has had no new leads since ${last} — 7+ days quiet.`
           : `${a.name} has had no new leads in the last 7 days.`,
+        // No historical baseline to estimate a lost-revenue figure from —
+        // this is a lead-gen problem, not a quantifiable-yet dollar loss.
+        estimatedImpact: null,
       });
     }
   }
@@ -118,12 +131,17 @@ export async function computeDailyDigest(
     if (!a) continue;
     const cpa7 = a.apptsThisWeek > 0 ? a.spendThisWeek / a.apptsThisWeek : null;
     if (cpa7 !== null && cpa7 >= account.cpa_alert_threshold) {
+      // Overspend estimate: how much more this week's appointments cost
+      // than they would have at the account's own threshold.
+      const overspend = (cpa7 - account.cpa_alert_threshold) * a.apptsThisWeek;
       findings.push({
         accountId: c.account_id,
+        accountName: account.name,
         campaignId: c.id,
         creativeId: null,
         findingType: "cpa_above_threshold",
         message: `${c.name}'s CPA this week is ${money(cpa7)}, above ${account.name}'s ${money(account.cpa_alert_threshold)} alert threshold.`,
+        estimatedImpact: overspend > 0 ? Math.round(overspend) : null,
       });
     }
   }
@@ -146,12 +164,17 @@ export async function computeDailyDigest(
     const cpaLastWeek = apptsLastWeek > 0 ? spendLastWeek / apptsLastWeek : null;
     if (cpaThisWeek !== null && cpaLastWeek !== null && cpaThisWeek >= cpaLastWeek * 1.2) {
       const pctUp = Math.round(((cpaThisWeek - cpaLastWeek) / cpaLastWeek) * 100);
+      // Extra spend this week attributable to the CPA rise, at the same
+      // appointment volume.
+      const excessSpend = (cpaThisWeek - cpaLastWeek) * apptsThisWeek;
       findings.push({
         accountId: cr.account_id,
+        accountName: accountById.get(cr.account_id)?.name ?? "That account",
         campaignId: null,
         creativeId: cr.id,
         findingType: "creative_cpa_spike",
         message: `${cr.name}'s CPA is up ${pctUp}% week over week (${money(cpaLastWeek)} → ${money(cpaThisWeek)}).`,
+        estimatedImpact: excessSpend > 0 ? Math.round(excessSpend) : null,
       });
     }
   }
@@ -169,22 +192,32 @@ export async function computeDailyDigest(
     byAccount.set(l.accountId, cur);
   }
   for (const [accountId, v] of byAccount) {
+    const pricePerAppt = accountById.get(accountId)?.price_per_appointment ?? null;
     if (v.critical > 0) {
       findings.push({
         accountId,
+        accountName: v.accountName,
         campaignId: null,
         creativeId: null,
         findingType: "ghost_leads",
         message: `${v.accountName} has ${v.critical} lead${v.critical > 1 ? "s" : ""} uncontacted for 24+ hours — likely lost without follow-up.`,
+        // Each ghost lead treated as one missed appointment at this
+        // account's usual value — a direct, defensible read of
+        // price_per_appointment, not an invented conversion-rate guess.
+        estimatedImpact: pricePerAppt ? Math.round(pricePerAppt * v.critical) : null,
       });
     }
     if (v.warning > 0) {
       findings.push({
         accountId,
+        accountName: v.accountName,
         campaignId: null,
         creativeId: null,
         findingType: "slow_response",
         message: `${v.accountName} has ${v.warning} lead${v.warning > 1 ? "s" : ""} past the fast-response window, not yet contacted.`,
+        // Half weight vs. a ghost lead — these are still recoverable, this
+        // is "at elevated risk," not "likely already lost."
+        estimatedImpact: pricePerAppt ? Math.round(pricePerAppt * v.warning * 0.5) : null,
       });
     }
   }

@@ -3,6 +3,7 @@ import { InsightsChat } from "@/components/insights-chat";
 import { createClient } from "@/lib/supabase/server";
 import { getMonthlyUsage } from "@/lib/insights-usage";
 import { getTodaysDigest } from "@/lib/insights-digest";
+import { computePriorities } from "@/lib/priorities";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,12 @@ export default async function InsightsPage() {
     : { queryCount: 0, cap: 50, estimatedCostUsd: 0 };
 
   const digest = user ? await getTodaysDigest(supabase, user.id) : [];
+  // Top of the ranked priorities list — surfaced prominently near the
+  // empty-state suggestions so opening Insights immediately says where the
+  // next hour is worth the most, before asking anything. Doesn't need
+  // Anthropic configured, this is computed deterministically from Supabase
+  // data, not an AI call.
+  const priorities = user ? (await computePriorities(supabase)).slice(0, 2) : [];
 
   return (
     <>
@@ -34,6 +41,7 @@ export default async function InsightsPage() {
           estimatedCostUsd: usage.estimatedCostUsd,
         }}
         initialDigest={digest}
+        initialPriorities={priorities}
       />
     </>
   );

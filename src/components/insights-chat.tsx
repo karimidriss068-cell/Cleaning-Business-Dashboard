@@ -26,7 +26,9 @@ import {
   type PinnedMessage,
   type SpaceSummary,
   type ReportItem,
+  type PriorityItem,
 } from "@/app/(app)/insights/actions";
+import { money } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { UsageRing } from "@/components/usage-ring";
 import {
@@ -42,6 +44,7 @@ import {
   Compass,
   ChevronLeft,
   FileText,
+  Target,
 } from "lucide-react";
 
 const SUGGESTIONS = [
@@ -759,16 +762,19 @@ export function InsightsChat({
   configured,
   initialUsage,
   initialDigest,
+  initialPriorities,
 }: {
   configured: boolean;
   initialUsage: { queryCount: number; cap: number; estimatedCostUsd: number };
   initialDigest?: DigestItem[];
+  initialPriorities?: PriorityItem[];
 }) {
   const [input, setInput] = useState("");
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
   const [loading, setLoading] = useState(false);
   const [usage, setUsage] = useState(initialUsage);
   const [digest, setDigest] = useState<DigestItem[]>(initialDigest ?? []);
+  const [priorities] = useState<PriorityItem[]>(initialPriorities ?? []);
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(true);
@@ -1069,6 +1075,30 @@ export function InsightsChat({
 
           {exchanges.length === 0 && !loading && !analyzing ? (
             <motion.div className="pt-10" variants={GREETING_STAGGER} initial="hidden" animate="show">
+              {priorities.length > 0 && (
+                <motion.div variants={GREETING_ITEM} className="mb-7">
+                  <p className="mb-2.5 flex items-center gap-1.5 text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+                    <Target className="h-3 w-3 text-copper" />
+                    Where to focus
+                  </p>
+                  <div className="space-y-2">
+                    {priorities.map((p, i) => (
+                      <button
+                        key={i}
+                        onClick={() => ask("What should I focus on?")}
+                        className="block text-left text-[15px] leading-relaxed text-[var(--text-primary)] transition-colors hover:text-cream-rich"
+                      >
+                        {p.message}
+                        {p.estimatedImpact !== null && (
+                          <span className="ml-1.5 font-semibold text-copper">
+                            ~{money(p.estimatedImpact)}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
               <motion.p variants={GREETING_ITEM} className="mb-4 text-[15px] text-muted-foreground">
                 Ask anything about your live data. Try:
               </motion.p>
