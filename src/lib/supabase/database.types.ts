@@ -263,6 +263,198 @@ export type Database = {
           },
         ]
       }
+      insights_digest: {
+        Row: {
+          account_id: string
+          campaign_id: string | null
+          created_at: string
+          creative_id: string | null
+          digest_date: string
+          finding_type: Database["public"]["Enums"]["insights_digest_finding_type"]
+          id: string
+          message: string
+        }
+        Insert: {
+          account_id: string
+          campaign_id?: string | null
+          created_at?: string
+          creative_id?: string | null
+          digest_date?: string
+          finding_type: Database["public"]["Enums"]["insights_digest_finding_type"]
+          id?: string
+          message: string
+        }
+        Update: {
+          account_id?: string
+          campaign_id?: string | null
+          created_at?: string
+          creative_id?: string | null
+          digest_date?: string
+          finding_type?: Database["public"]["Enums"]["insights_digest_finding_type"]
+          id?: string
+          message?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insights_digest_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insights_digest_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insights_digest_creative_id_fkey"
+            columns: ["creative_id"]
+            isOneToOne: false
+            referencedRelation: "creatives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      insights_digest_dismissals: {
+        Row: {
+          digest_id: string
+          dismissed_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          digest_id: string
+          dismissed_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          digest_id?: string
+          dismissed_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insights_digest_dismissals_digest_id_fkey"
+            columns: ["digest_id"]
+            isOneToOne: false
+            referencedRelation: "insights_digest"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      insights_messages: {
+        Row: {
+          caveat: string | null
+          content: string
+          created_at: string
+          data_available: boolean
+          follow_ups: Json | null
+          id: string
+          mentioned_entities: Json | null
+          role: Database["public"]["Enums"]["insights_message_role"]
+          session_id: string
+        }
+        Insert: {
+          caveat?: string | null
+          content: string
+          created_at?: string
+          data_available?: boolean
+          follow_ups?: Json | null
+          id?: string
+          mentioned_entities?: Json | null
+          role: Database["public"]["Enums"]["insights_message_role"]
+          session_id: string
+        }
+        Update: {
+          caveat?: string | null
+          content?: string
+          created_at?: string
+          data_available?: boolean
+          follow_ups?: Json | null
+          id?: string
+          mentioned_entities?: Json | null
+          role?: Database["public"]["Enums"]["insights_message_role"]
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insights_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "insights_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      insights_pins: {
+        Row: {
+          id: string
+          message_id: string
+          pinned_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          message_id: string
+          pinned_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          message_id?: string
+          pinned_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insights_pins_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "insights_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      insights_sessions: {
+        Row: {
+          account_id: string | null
+          created_at: string
+          id: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          created_at?: string
+          id?: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          created_at?: string
+          id?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insights_sessions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       insights_usage: {
         Row: {
           caller_phone: string | null
@@ -549,6 +741,11 @@ export type Database = {
       campaign_status: "draft" | "active" | "paused" | "ended"
       creative_status: "testing" | "winning" | "retired"
       creative_type: "video" | "image" | "script" | "vsl"
+      insights_digest_finding_type:
+        | "zero_leads"
+        | "cpa_above_threshold"
+        | "creative_cpa_spike"
+      insights_message_role: "user" | "assistant"
       lead_status: "new" | "contacted" | "qualified" | "booked" | "dead"
       outreach_channel: "sms" | "cold_call" | "dm" | "email"
       outreach_contact_status:
@@ -701,6 +898,12 @@ export const Constants = {
       campaign_status: ["draft", "active", "paused", "ended"],
       creative_status: ["testing", "winning", "retired"],
       creative_type: ["video", "image", "script", "vsl"],
+      insights_digest_finding_type: [
+        "zero_leads",
+        "cpa_above_threshold",
+        "creative_cpa_spike",
+      ],
+      insights_message_role: ["user", "assistant"],
       lead_status: ["new", "contacted", "qualified", "booked", "dead"],
       outreach_channel: ["sms", "cold_call", "dm", "email"],
       outreach_contact_status: [

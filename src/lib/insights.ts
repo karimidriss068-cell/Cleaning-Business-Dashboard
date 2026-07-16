@@ -16,12 +16,23 @@ const NO_ACTIVITY_THRESHOLD_DAYS = 14;
 export async function getInsightsData(supabase: SupabaseClient<Database>) {
   const { weekStart } = currentWeekRange();
   const now = Date.now();
+  const nowDate = new Date(now);
   const lastWeekStart = new Date(new Date(weekStart).getTime() - 7 * DAY)
     .toISOString()
     .slice(0, 10);
   const since30 = new Date(now - 30 * DAY).toISOString().slice(0, 10);
   const since7 = new Date(now - 7 * DAY).toISOString().slice(0, 10);
   const todayIso = new Date(now).toISOString().slice(0, 10);
+
+  // Calendar-month boundaries (UTC), for "this month vs last month" trend
+  // context — distinct from the rolling 30-day window used elsewhere.
+  const thisMonthStart = `${nowDate.getUTCFullYear()}-${String(nowDate.getUTCMonth() + 1).padStart(2, "0")}-01`;
+  const lastMonthDate = new Date(Date.UTC(nowDate.getUTCFullYear(), nowDate.getUTCMonth() - 1, 1));
+  const lastMonthStart = `${lastMonthDate.getUTCFullYear()}-${String(lastMonthDate.getUTCMonth() + 1).padStart(2, "0")}-01`;
+  // Fetch back far enough to cover last calendar month too, whichever bound
+  // is further back (near the start of a month, last month's start can be
+  // further back than the rolling 30-day window).
+  const sinceFetch = lastMonthStart < since30 ? lastMonthStart : since30;
 
   const [
     { data: accounts },
@@ -46,15 +57,15 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
     supabase
       .from("spend_daily")
       .select("campaign_id, date, spend")
-      .gte("date", since30),
+      .gte("date", sinceFetch),
     supabase
       .from("leads")
       .select("id, campaign_id, created_at")
-      .gte("created_at", since30),
+      .gte("created_at", sinceFetch),
     supabase
       .from("appointments")
       .select("account_id, lead_id, booked_at, status, revenue_owed")
-      .gte("booked_at", since30),
+      .gte("booked_at", sinceFetch),
     supabase.from("outreach_scripts").select("id, name, channel, status"),
     supabase
       .from("outreach_contacts")
@@ -75,13 +86,19 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
     spend30: number;
     spendThisWeek: number;
     spendLastWeek: number;
+    spendThisMonth: number;
+    spendLastMonth: number;
     leads30: number;
     leadsThisWeek: number;
     leadsLastWeek: number;
+    leadsThisMonth: number;
+    leadsLastMonth: number;
     lastLeadDate: string | null;
     appts30: number;
     apptsThisWeek: number;
     apptsLastWeek: number;
+    apptsThisMonth: number;
+    apptsLastMonth: number;
     revenue30: number;
     lastApptDate: string | null;
   };
@@ -93,13 +110,19 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
         spend30: 0,
         spendThisWeek: 0,
         spendLastWeek: 0,
+        spendThisMonth: 0,
+        spendLastMonth: 0,
         leads30: 0,
         leadsThisWeek: 0,
         leadsLastWeek: 0,
+        leadsThisMonth: 0,
+        leadsLastMonth: 0,
         lastLeadDate: null,
         appts30: 0,
         apptsThisWeek: 0,
         apptsLastWeek: 0,
+        apptsThisMonth: 0,
+        apptsLastMonth: 0,
         revenue30: 0,
         lastApptDate: null,
       });
@@ -109,29 +132,37 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
 
   for (const s of spend ?? []) {
     const a = ensureC(s.campaign_id);
-    a.spend30 += Number(s.spend ?? 0);
+    if (s.date >= since30) a.spend30 += Number(s.spend ?? 0);
     if (s.date >= since7) a.spend7 += Number(s.spend ?? 0);
     if (s.date >= weekStart) a.spendThisWeek += Number(s.spend ?? 0);
     else if (s.date >= lastWeekStart) a.spendLastWeek += Number(s.spend ?? 0);
+    if (s.date >= thisMonthStart) a.spendThisMonth += Number(s.spend ?? 0);
+    else if (s.date >= lastMonthStart) a.spendLastMonth += Number(s.spend ?? 0);
   }
   for (const l of leads ?? []) {
     if (!l.campaign_id) continue;
     const a = ensureC(l.campaign_id);
-    a.leads30 += 1;
     const d = l.created_at.slice(0, 10);
+    if (d >= since30) a.leads30 += 1;
     if (d >= weekStart) a.leadsThisWeek += 1;
     else if (d >= lastWeekStart) a.leadsLastWeek += 1;
+    if (d >= thisMonthStart) a.leadsThisMonth += 1;
+    else if (d >= lastMonthStart) a.leadsLastMonth += 1;
     if (!a.lastLeadDate || d > a.lastLeadDate) a.lastLeadDate = d;
   }
   for (const ap of appts ?? []) {
     const cid = leadCampaign.get(ap.lead_id);
     if (!cid) continue;
     const a = ensureC(cid);
-    a.appts30 += 1;
-    a.revenue30 += Number(ap.revenue_owed ?? 0);
     const d = ap.booked_at.slice(0, 10);
+    if (d >= since30) {
+      a.appts30 += 1;
+      a.revenue30 += Number(ap.revenue_owed ?? 0);
+    }
     if (d >= weekStart) a.apptsThisWeek += 1;
     else if (d >= lastWeekStart) a.apptsLastWeek += 1;
+    if (d >= thisMonthStart) a.apptsThisMonth += 1;
+    else if (d >= lastMonthStart) a.apptsLastMonth += 1;
     if (!a.lastApptDate || d > a.lastApptDate) a.lastApptDate = d;
   }
 
@@ -141,6 +172,10 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
     { appts: number; showed: number; revenue: number }
   >();
   for (const ap of appts ?? []) {
+    // appts is now fetched back to sinceFetch (may exceed 30 days, to also
+    // cover last calendar month for month_over_month) — gate this rollup to
+    // the last30d window explicitly rather than assuming the fetch already did.
+    if (ap.booked_at.slice(0, 10) < since30) continue;
     const cur = acctAppts.get(ap.account_id) ?? { appts: 0, showed: 0, revenue: 0 };
     cur.appts += 1;
     if (["showed", "closed"].includes(ap.status)) cur.showed += 1;
@@ -167,6 +202,12 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
     const leadsLastWeek = cids.reduce((s, id) => s + (cAgg.get(id)?.leadsLastWeek ?? 0), 0);
     const apptsThisWeek = cids.reduce((s, id) => s + (cAgg.get(id)?.apptsThisWeek ?? 0), 0);
     const apptsLastWeek = cids.reduce((s, id) => s + (cAgg.get(id)?.apptsLastWeek ?? 0), 0);
+    const spendThisMonth = cids.reduce((s, id) => s + (cAgg.get(id)?.spendThisMonth ?? 0), 0);
+    const spendLastMonth = cids.reduce((s, id) => s + (cAgg.get(id)?.spendLastMonth ?? 0), 0);
+    const leadsThisMonth = cids.reduce((s, id) => s + (cAgg.get(id)?.leadsThisMonth ?? 0), 0);
+    const leadsLastMonth = cids.reduce((s, id) => s + (cAgg.get(id)?.leadsLastMonth ?? 0), 0);
+    const apptsThisMonth = cids.reduce((s, id) => s + (cAgg.get(id)?.apptsThisMonth ?? 0), 0);
+    const apptsLastMonth = cids.reduce((s, id) => s + (cAgg.get(id)?.apptsLastMonth ?? 0), 0);
 
     const lastLeadDate =
       cids
@@ -184,6 +225,8 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
     const ap = acctAppts.get(a.id) ?? { appts: 0, showed: 0, revenue: 0 };
     const cpaThisWeek = apptsThisWeek > 0 ? spendThisWeek / apptsThisWeek : null;
     const cpaLastWeek = apptsLastWeek > 0 ? spendLastWeek / apptsLastWeek : null;
+    const cpaThisMonth = apptsThisMonth > 0 ? spendThisMonth / apptsThisMonth : null;
+    const cpaLastMonth = apptsLastMonth > 0 ? spendLastMonth / apptsLastMonth : null;
 
     const daysSinceLastLead = lastLeadDate
       ? Math.floor((now - new Date(`${lastLeadDate}T00:00:00Z`).getTime()) / DAY)
@@ -254,6 +297,20 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
           cpa: cpaLastWeek !== null ? round(cpaLastWeek) : null,
         },
       },
+      month_over_month: {
+        this_month: {
+          spend: round(spendThisMonth),
+          leads: leadsThisMonth,
+          appointments: apptsThisMonth,
+          cpa: cpaThisMonth !== null ? round(cpaThisMonth) : null,
+        },
+        last_month: {
+          spend: round(spendLastMonth),
+          leads: leadsLastMonth,
+          appointments: apptsLastMonth,
+          cpa: cpaLastMonth !== null ? round(cpaLastMonth) : null,
+        },
+      },
       activity: {
         days_since_last_lead: daysSinceLastLead,
         days_since_last_appointment: daysSinceLastAppt,
@@ -269,6 +326,8 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
   // ---- Per-campaign 7d snapshot (kept for campaign-level questions) ----
   const campaignSummaries = (campaigns ?? []).map((c) => {
     const agg = cAgg.get(c.id) ?? ensureC(c.id);
+    const cpaThisWeek = agg.apptsThisWeek > 0 ? agg.spendThisWeek / agg.apptsThisWeek : null;
+    const cpaLastWeek = agg.apptsLastWeek > 0 ? agg.spendLastWeek / agg.apptsLastWeek : null;
     return {
       id: c.id,
       name: c.name,
@@ -279,6 +338,20 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
       last30d_leads: agg.leads30,
       last30d_appointments: agg.appts30,
       last30d_cpa: agg.appts30 > 0 ? round(agg.spend30 / agg.appts30) : null,
+      week_over_week: {
+        this_week: {
+          spend: round(agg.spendThisWeek),
+          leads: agg.leadsThisWeek,
+          appointments: agg.apptsThisWeek,
+          cpa: cpaThisWeek !== null ? round(cpaThisWeek) : null,
+        },
+        last_week: {
+          spend: round(agg.spendLastWeek),
+          leads: agg.leadsLastWeek,
+          appointments: agg.apptsLastWeek,
+          cpa: cpaLastWeek !== null ? round(cpaLastWeek) : null,
+        },
+      },
     };
   });
 
@@ -296,6 +369,12 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
       .filter((n): n is string => !!n);
     const spend30 = cids.reduce((s, id) => s + (cAgg.get(id)?.spend30 ?? 0), 0);
     const appts30 = cids.reduce((s, id) => s + (cAgg.get(id)?.appts30 ?? 0), 0);
+    const spendThisWeek = cids.reduce((s, id) => s + (cAgg.get(id)?.spendThisWeek ?? 0), 0);
+    const spendLastWeek = cids.reduce((s, id) => s + (cAgg.get(id)?.spendLastWeek ?? 0), 0);
+    const apptsThisWeek = cids.reduce((s, id) => s + (cAgg.get(id)?.apptsThisWeek ?? 0), 0);
+    const apptsLastWeek = cids.reduce((s, id) => s + (cAgg.get(id)?.apptsLastWeek ?? 0), 0);
+    const cpaThisWeek = apptsThisWeek > 0 ? spendThisWeek / apptsThisWeek : null;
+    const cpaLastWeek = apptsLastWeek > 0 ? spendLastWeek / apptsLastWeek : null;
     return {
       id: cr.id,
       name: cr.name,
@@ -309,6 +388,10 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
         spend: round(spend30),
         appointments: appts30,
         cpa: appts30 > 0 ? round(spend30 / appts30) : null,
+      },
+      week_over_week: {
+        this_week: { cpa: cpaThisWeek !== null ? round(cpaThisWeek) : null },
+        last_week: { cpa: cpaLastWeek !== null ? round(cpaLastWeek) : null },
       },
       has_performance_data: cids.length > 0 && spend30 > 0,
     };
@@ -397,6 +480,8 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
       today: todayIso,
       this_week_start: weekStart,
       last_week_start: lastWeekStart,
+      this_month_start: thisMonthStart,
+      last_month_start: lastMonthStart,
       rollup_window_days: 30,
       at_risk_no_activity_threshold_days: NO_ACTIVITY_THRESHOLD_DAYS,
     },

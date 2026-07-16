@@ -2,6 +2,7 @@ import { PageHeader } from "@/components/page-header";
 import { InsightsChat } from "@/components/insights-chat";
 import { createClient } from "@/lib/supabase/server";
 import { getMonthlyUsage } from "@/lib/insights-usage";
+import { getTodaysDigest } from "@/lib/insights-digest";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,8 @@ export default async function InsightsPage() {
     ? await getMonthlyUsage(supabase, user.id)
     : { queryCount: 0, cap: 50, estimatedCostUsd: 0 };
 
+  const digest = user ? await getTodaysDigest(supabase, user.id) : [];
+
   return (
     <>
       <PageHeader
@@ -30,6 +33,7 @@ export default async function InsightsPage() {
           cap: usage.cap,
           estimatedCostUsd: usage.estimatedCostUsd,
         }}
+        initialDigest={digest}
       />
     </>
   );
