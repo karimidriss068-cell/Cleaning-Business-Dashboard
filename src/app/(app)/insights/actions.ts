@@ -22,11 +22,21 @@ import {
   listPinnedMessages as listPinnedMessagesCore,
   type PinnedMessage,
 } from "@/lib/insights-pins";
+import {
+  listSpaces as listSpacesCore,
+  createSpace as createSpaceCore,
+  updateSpaceNotes as updateSpaceNotesCore,
+  getSpace,
+  type SpaceSummary,
+} from "@/lib/insights-spaces";
+import { listReports as listReportsCore, saveReport, type ReportItem } from "@/lib/insights-reports";
 
 export type { InsightsAnswer } from "@/lib/insights-ask";
 export type { SessionSummary, SessionWithMessages, StoredMessage } from "@/lib/insights-sessions";
 export type { DigestItem } from "@/lib/insights-digest";
 export type { PinnedMessage } from "@/lib/insights-pins";
+export type { SpaceSummary } from "@/lib/insights-spaces";
+export type { ReportItem } from "@/lib/insights-reports";
 
 export type AskInsightsPageResult =
   | { result: InsightsAnswer; sessionId: string; messageId: string | null }
@@ -39,10 +49,15 @@ export type AskInsightsPageResult =
  * to insights_sessions/insights_messages. Lazily creates a session on the
  * first question of a new conversation (sessionId null) rather than on
  * "New chat" click, so an unused new-chat slot never clutters the sidebar.
+ *
+ * `spaceId`, if set, both scopes the question (account context + persistent
+ * notes injected into the system prompt) and tags a newly-created session to
+ * that Space so its history stays separate from general chats.
  */
 export async function askInsights(
   question: string,
   sessionId: string | null,
+  spaceId: string | null = null,
 ): Promise<AskInsightsPageResult> {
   const supabase = await createClient();
   const {
@@ -50,12 +65,19 @@ export async function askInsights(
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in.", sessionId };
 
-  const outcome = await askInsightsCore(supabase, { id: user.id, email: user.email ?? "unknown" }, question);
+  const space = spaceId ? await getSpace(supabase, user.id, spaceId) : null;
+
+  const outcome = await askInsightsCore(
+    supabase,
+    { id: user.id, email: user.email ?? "unknown" },
+    question,
+    space ? { space: { name: space.name, accountId: space.accountId, contextNotes: space.contextNotes } } : undefined,
+  );
 
   if ("error" in outcome) return { error: outcome.error, sessionId };
   if ("limited" in outcome) return { limited: true, used: outcome.used, cap: outcome.cap, sessionId };
 
-  const activeSessionId = sessionId ?? (await createSession(supabase, user.id));
+  const activeSessionId = sessionId ?? (await createSession(supabase, user.id, spaceId));
   await appendUserMessage(supabase, activeSessionId, question);
   const messageId = await appendAssistantMessage(
     supabase,
@@ -67,13 +89,13 @@ export async function askInsights(
   return { result: outcome.result, sessionId: activeSessionId, messageId };
 }
 
-export async function listInsightsSessions(): Promise<SessionSummary[]> {
+export async function listInsightsSessions(spaceId: string | null = null): Promise<SessionSummary[]> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return [];
-  return listSessions(supabase, user.id);
+  return listSessions(supabase, user.id, spaceId);
 }
 
 export async function loadInsightsSession(sessionId: string): Promise<SessionWithMessages | null> {
@@ -128,4 +150,93 @@ export async function listPinnedMessages(): Promise<PinnedMessage[]> {
   } = await supabase.auth.getUser();
   if (!user) return [];
   return listPinnedMessagesCore(supabase, user.id);
+}
+
+export async function listInsightsSpaces(): Promise<SpaceSummary[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  return listSpacesCore(supabase, user.id);
+}
+
+export async function createInsightsSpace(input: {
+  name: string;
+  accountId: string | null;
+  contextNotes: string | null;
+}): Promise<string | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  return createSpaceCore(supabase, user.id, input);
+}
+
+export async function updateInsightsSpaceNotes(spaceId: string, contextNotes: string): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+  await updateSpaceNotesCore(supabase, user.id, spaceId, contextNotes);
+}
+
+/** Minimal account list for the "+ New Space" account picker. Accounts have
+ * blanket authenticated-access RLS (same as everywhere else in the app), so
+ * this is a plain read, no ownership filtering needed. */
+export async function listAccountsForSpacePicker(): Promise<{ id: string; name: string }[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("accounts").select("id, name").order("name");
+  return data ?? [];
+}
+
+export type RunAnalysisResult = { report: ReportItem } | { limited: true; used: number; cap: number } | { error: string };
+
+/**
+ * Analyst Mode — a single larger Claude call producing a full structured
+ * report, reusing askInsightsCore's "analysis" mode (same usage cap, same
+ * data snapshot/space-scoping, same anti-hallucination system prompt) but
+ * persisted to insights_reports instead of a chat session, since a report
+ * isn't a conversational turn.
+ */
+export async function runFullAnalysis(spaceId: string | null = null): Promise<RunAnalysisResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+
+  const space = spaceId ? await getSpace(supabase, user.id, spaceId) : null;
+  const question = space
+    ? `Run a full analysis of the "${space.name}" focus space.`
+    : "Run a full analysis of the business.";
+
+  const outcome = await askInsightsCore(
+    supabase,
+    { id: user.id, email: user.email ?? "unknown" },
+    question,
+    {
+      mode: "analysis",
+      space: space ? { name: space.name, accountId: space.accountId, contextNotes: space.contextNotes } : undefined,
+    },
+  );
+
+  if ("error" in outcome) return { error: outcome.error };
+  if ("limited" in outcome) return { limited: true, used: outcome.used, cap: outcome.cap };
+
+  const report = await saveReport(supabase, user.id, spaceId, outcome.result);
+  if (!report) return { error: "Analysis generated but couldn't be saved." };
+
+  return { report };
+}
+
+export async function listInsightsReports(): Promise<ReportItem[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  return listReportsCore(supabase, user.id);
 }

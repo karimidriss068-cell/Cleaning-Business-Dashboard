@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/lib/supabase/database.types";
 import type { InsightsAnswer } from "@/lib/insights-ask";
 
-export type SessionSummary = { id: string; title: string; updatedAt: string };
+export type SessionSummary = { id: string; title: string; updatedAt: string; spaceId: string | null };
 
 export type StoredMessage = {
   id: string;
@@ -17,6 +17,7 @@ export type StoredMessage = {
 export type SessionWithMessages = {
   id: string;
   title: string;
+  spaceId: string | null;
   messages: StoredMessage[];
 };
 
@@ -31,19 +32,33 @@ function titleFromQuestion(question: string): string {
 
 /** Sessions belonging to the caller, most recently active first. RLS already
  * restricts rows to the caller's own via auth.uid(), the .eq() here is just
- * belt-and-suspenders on top of that. */
+ * belt-and-suspenders on top of that.
+ *
+ * `spaceId` selects which bucket to list: omitted/null lists only
+ * general/unscoped sessions (space_id IS NULL); passing a space's id lists
+ * only that Space's sessions — the two are deliberately kept separate
+ * rather than one combined list with a tag, per the Focus Spaces design. */
 export async function listSessions(
   supabase: SupabaseClient<Database>,
   userId: string,
+  spaceId: string | null = null,
 ): Promise<SessionSummary[]> {
-  const { data, error } = await supabase
+  let query = supabase
     .from("insights_sessions")
-    .select("id, title, updated_at")
+    .select("id, title, updated_at, space_id")
     .eq("user_id", userId)
     .order("updated_at", { ascending: false });
+  query = spaceId ? query.eq("space_id", spaceId) : query.is("space_id", null);
+
+  const { data, error } = await query;
 
   if (error || !data) return [];
-  return data.map((s) => ({ id: s.id, title: s.title ?? "New chat", updatedAt: s.updated_at }));
+  return data.map((s) => ({
+    id: s.id,
+    title: s.title ?? "New chat",
+    updatedAt: s.updated_at,
+    spaceId: s.space_id,
+  }));
 }
 
 export async function getSession(
@@ -53,7 +68,7 @@ export async function getSession(
 ): Promise<SessionWithMessages | null> {
   const { data: session } = await supabase
     .from("insights_sessions")
-    .select("id, title")
+    .select("id, title, space_id")
     .eq("id", sessionId)
     .eq("user_id", userId)
     .maybeSingle();
@@ -68,6 +83,7 @@ export async function getSession(
   return {
     id: session.id,
     title: session.title ?? "New chat",
+    spaceId: session.space_id,
     messages: (messages ?? []).map((m) => ({
       id: m.id,
       role: m.role,
@@ -83,10 +99,11 @@ export async function getSession(
 export async function createSession(
   supabase: SupabaseClient<Database>,
   userId: string,
+  spaceId: string | null = null,
 ): Promise<string> {
   const { data, error } = await supabase
     .from("insights_sessions")
-    .insert({ user_id: userId })
+    .insert({ user_id: userId, space_id: spaceId })
     .select("id")
     .single();
   if (error || !data) throw new Error(error?.message ?? "Failed to create session");

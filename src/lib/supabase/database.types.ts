@@ -420,11 +420,53 @@ export type Database = {
           },
         ]
       }
+      insights_reports: {
+        Row: {
+          caveat: string | null
+          content: string
+          created_at: string
+          follow_ups: Json | null
+          id: string
+          mentioned_entities: Json | null
+          space_id: string | null
+          user_id: string
+        }
+        Insert: {
+          caveat?: string | null
+          content: string
+          created_at?: string
+          follow_ups?: Json | null
+          id?: string
+          mentioned_entities?: Json | null
+          space_id?: string | null
+          user_id: string
+        }
+        Update: {
+          caveat?: string | null
+          content?: string
+          created_at?: string
+          follow_ups?: Json | null
+          id?: string
+          mentioned_entities?: Json | null
+          space_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insights_reports_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "insights_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       insights_sessions: {
         Row: {
           account_id: string | null
           created_at: string
           id: string
+          space_id: string | null
           title: string | null
           updated_at: string
           user_id: string
@@ -433,6 +475,7 @@ export type Database = {
           account_id?: string | null
           created_at?: string
           id?: string
+          space_id?: string | null
           title?: string | null
           updated_at?: string
           user_id: string
@@ -441,6 +484,7 @@ export type Database = {
           account_id?: string | null
           created_at?: string
           id?: string
+          space_id?: string | null
           title?: string | null
           updated_at?: string
           user_id?: string
@@ -448,6 +492,48 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "insights_sessions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insights_sessions_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "insights_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      insights_spaces: {
+        Row: {
+          account_id: string | null
+          context_notes: string | null
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          context_notes?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          context_notes?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insights_spaces_account_id_fkey"
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "accounts"

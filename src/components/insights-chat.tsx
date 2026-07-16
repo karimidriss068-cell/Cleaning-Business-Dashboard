@@ -13,11 +13,19 @@ import {
   togglePin,
   listPinnedMessageIds,
   listPinnedMessages,
+  listInsightsSpaces,
+  createInsightsSpace,
+  updateInsightsSpaceNotes,
+  listAccountsForSpacePicker,
+  runFullAnalysis,
+  listInsightsReports,
   type InsightsAnswer,
   type SessionSummary,
   type StoredMessage,
   type DigestItem,
   type PinnedMessage,
+  type SpaceSummary,
+  type ReportItem,
 } from "@/app/(app)/insights/actions";
 import { Button } from "@/components/ui/button";
 import { UsageRing } from "@/components/usage-ring";
@@ -31,6 +39,9 @@ import {
   X,
   Pin,
   PinOff,
+  Compass,
+  ChevronLeft,
+  FileText,
 } from "lucide-react";
 
 const SUGGESTIONS = [
@@ -42,7 +53,8 @@ const SUGGESTIONS = [
 
 type Exchange =
   | { q: string; kind: "answer"; result: InsightsAnswer; messageId: string | null }
-  | { q: string; kind: "limited"; used: number; cap: number };
+  | { q: string; kind: "limited"; used: number; cap: number }
+  | { kind: "report"; result: InsightsAnswer; createdAt: string };
 
 const ENTER = { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const };
 
@@ -238,24 +250,220 @@ function formatSessionDate(iso: string): string {
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+function formatReportDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, { month: "long", day: "numeric" });
+}
+
+type SidebarTab = "chats" | "spaces" | "pinned" | "analyses";
+
+function NewSpaceForm({
+  accounts,
+  onCancel,
+  onCreate,
+}: {
+  accounts: { id: string; name: string }[];
+  onCancel: () => void;
+  onCreate: (input: { name: string; accountId: string | null; contextNotes: string | null }) => void;
+}) {
+  const [name, setName] = useState("");
+  const [accountId, setAccountId] = useState("");
+  const [notes, setNotes] = useState("");
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!name.trim()) return;
+        onCreate({ name: name.trim(), accountId: accountId || null, contextNotes: notes.trim() || null });
+      }}
+      className="mx-3 mb-3 space-y-2 rounded-lg border border-border p-3"
+    >
+      <input
+        autoFocus
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Space name"
+        className="w-full rounded-md bg-[var(--bg-surface)] px-2.5 py-1.5 text-[13px] text-[var(--text-primary)] outline-none placeholder:text-muted-foreground"
+      />
+      <select
+        value={accountId}
+        onChange={(e) => setAccountId(e.target.value)}
+        className="w-full rounded-md bg-[var(--bg-surface)] px-2.5 py-1.5 text-[13px] text-[var(--text-primary)] outline-none"
+      >
+        <option value="">No linked account (cross-account)</option>
+        {accounts.map((a) => (
+          <option key={a.id} value={a.id}>
+            {a.name}
+          </option>
+        ))}
+      </select>
+      <textarea
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        placeholder="Context notes (optional) — e.g. &quot;owner is picky about creative&quot;"
+        rows={2}
+        className="w-full resize-none rounded-md bg-[var(--bg-surface)] px-2.5 py-1.5 text-[13px] text-[var(--text-primary)] outline-none placeholder:text-muted-foreground"
+      />
+      <div className="flex items-center justify-end gap-2 pt-0.5">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="text-[12px] text-muted-foreground transition-colors hover:text-[var(--text-primary)]"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={!name.trim()}
+          className="rounded-full bg-[var(--accent-primary)] px-3 py-1 text-[12px] font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--accent-bright)] disabled:opacity-50"
+        >
+          Create
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function SpaceDetail({
+  space,
+  sessions,
+  currentSessionId,
+  onSelect,
+  onNewChat,
+  onBack,
+  onSaveNotes,
+}: {
+  space: SpaceSummary;
+  sessions: SessionSummary[];
+  currentSessionId: string | null;
+  onSelect: (id: string) => void;
+  onNewChat: () => void;
+  onBack: () => void;
+  onSaveNotes: (notes: string) => void;
+}) {
+  const [notes, setNotes] = useState(space.contextNotes ?? "");
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    setNotes(space.contextNotes ?? "");
+    setDirty(false);
+  }, [space.id, space.contextNotes]);
+
+  return (
+    <>
+      <button
+        onClick={onBack}
+        className="mx-3 mt-1 flex items-center gap-1 text-[12px] text-muted-foreground transition-colors hover:text-cream-rich"
+      >
+        <ChevronLeft className="h-3.5 w-3.5" />
+        All spaces
+      </button>
+
+      <div className="mx-3 mt-2 space-y-1.5">
+        <p className="truncate text-sm font-medium text-cream-rich">{space.name}</p>
+        {space.accountName && (
+          <p className="text-[11px] text-muted-foreground">Linked to {space.accountName}</p>
+        )}
+        <textarea
+          value={notes}
+          onChange={(e) => {
+            setNotes(e.target.value);
+            setDirty(true);
+          }}
+          onBlur={() => {
+            if (dirty) {
+              onSaveNotes(notes);
+              setDirty(false);
+            }
+          }}
+          placeholder="Context notes for this space…"
+          rows={3}
+          className="w-full resize-none rounded-md border border-border bg-[var(--bg-surface)] px-2.5 py-1.5 text-[12px] text-[var(--text-primary)] outline-none placeholder:text-muted-foreground"
+        />
+      </div>
+
+      <button
+        onClick={onNewChat}
+        className="mx-3 mt-3 flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:border-[color-mix(in_srgb,var(--accent-primary)_60%,transparent)] hover:text-cream-rich"
+      >
+        <Plus className="h-3.5 w-3.5" />
+        New chat in this space
+      </button>
+
+      <div className="mt-4 flex-1 space-y-0.5 overflow-y-auto px-2 pb-4">
+        {sessions.length === 0 ? (
+          <p className="px-3 py-2 text-xs text-muted-foreground">No conversations in this space yet</p>
+        ) : (
+          sessions.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => onSelect(s.id)}
+              title={s.title}
+              className={cn(
+                "block w-full truncate rounded-md px-3 py-2 text-left text-[13px] transition-colors",
+                s.id === currentSessionId
+                  ? "bg-[var(--bg-surface)] text-cream-rich"
+                  : "text-muted-foreground hover:bg-[var(--bg-surface)]/60 hover:text-[var(--text-primary)]",
+              )}
+            >
+              <span className="block truncate">{s.title}</span>
+              <span className="block text-[10px] text-muted-foreground/70">{formatSessionDate(s.updatedAt)}</span>
+            </button>
+          ))
+        )}
+      </div>
+    </>
+  );
+}
+
 function HistorySidebar({
   open,
   onToggle,
+  tab,
+  onTabChange,
   sessions,
   currentSessionId,
   onSelect,
   onNewChat,
   pinnedMessages,
+  spaces,
+  spaceAccounts,
+  currentSpaceId,
+  onEnterSpace,
+  onExitSpace,
+  onCreateSpace,
+  onSaveSpaceNotes,
+  reports,
+  onSelectReport,
 }: {
   open: boolean;
   onToggle: () => void;
+  tab: SidebarTab;
+  onTabChange: (t: SidebarTab) => void;
   sessions: SessionSummary[];
   currentSessionId: string | null;
   onSelect: (id: string) => void;
   onNewChat: () => void;
   pinnedMessages: PinnedMessage[];
+  spaces: SpaceSummary[];
+  spaceAccounts: { id: string; name: string }[];
+  currentSpaceId: string | null;
+  onEnterSpace: (id: string) => void;
+  onExitSpace: () => void;
+  onCreateSpace: (input: { name: string; accountId: string | null; contextNotes: string | null }) => void;
+  onSaveSpaceNotes: (notes: string) => void;
+  reports: ReportItem[];
+  onSelectReport: (report: ReportItem) => void;
 }) {
-  const [tab, setTab] = useState<"chats" | "pinned">("chats");
+  const [showNewSpaceForm, setShowNewSpaceForm] = useState(false);
+  const activeSpace = spaces.find((s) => s.id === currentSpaceId) ?? null;
+
+  const TABS: { key: SidebarTab; label: string }[] = [
+    { key: "chats", label: "Chats" },
+    { key: "spaces", label: "Spaces" },
+    { key: "pinned", label: "Pinned" },
+    { key: "analyses", label: "Analyses" },
+  ];
 
   return (
     <>
@@ -266,90 +474,174 @@ function HistorySidebar({
         )}
         style={{ left: MAIN_NAV_PX }}
       >
-        <div className="flex items-center gap-1 px-3 pt-4 pb-2">
-          <button
-            onClick={() => setTab("chats")}
-            className={cn(
-              "rounded-full px-3 py-1 text-[11px] font-medium tracking-[0.1em] uppercase transition-colors",
-              tab === "chats" ? "bg-[var(--bg-surface)] text-cream-rich" : "text-muted-foreground hover:text-[var(--text-primary)]",
-            )}
-          >
-            Chats
-          </button>
-          <button
-            onClick={() => setTab("pinned")}
-            className={cn(
-              "rounded-full px-3 py-1 text-[11px] font-medium tracking-[0.1em] uppercase transition-colors",
-              tab === "pinned" ? "bg-[var(--bg-surface)] text-cream-rich" : "text-muted-foreground hover:text-[var(--text-primary)]",
-            )}
-          >
-            Pinned
-          </button>
+        <div className="flex items-center justify-end px-3 pt-3">
           <button
             onClick={onToggle}
-            className="ml-auto text-muted-foreground transition-colors hover:text-cream-rich"
+            className="text-muted-foreground transition-colors hover:text-cream-rich"
             aria-label="Collapse history"
           >
             <PanelLeftClose className="h-4 w-4" />
           </button>
         </div>
+        <div className="flex flex-wrap gap-1 px-3 pt-1 pb-2">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => onTabChange(t.key)}
+              className={cn(
+                "rounded-full px-2.5 py-1 text-[11px] font-medium tracking-[0.06em] uppercase transition-colors",
+                tab === t.key
+                  ? "bg-[var(--bg-surface)] text-cream-rich"
+                  : "text-muted-foreground hover:text-[var(--text-primary)]",
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
 
         {tab === "chats" && (
-          <button
-            onClick={onNewChat}
-            className="mx-3 flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:border-[color-mix(in_srgb,var(--accent-primary)_60%,transparent)] hover:text-cream-rich"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            New chat
-          </button>
+          <>
+            <button
+              onClick={onNewChat}
+              className="mx-3 flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:border-[color-mix(in_srgb,var(--accent-primary)_60%,transparent)] hover:text-cream-rich"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              New chat
+            </button>
+            <div className="mt-4 flex-1 space-y-0.5 overflow-y-auto px-2 pb-4">
+              {sessions.length === 0 ? (
+                <p className="px-3 py-2 text-xs text-muted-foreground">No conversations yet</p>
+              ) : (
+                sessions.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => onSelect(s.id)}
+                    title={s.title}
+                    className={cn(
+                      "block w-full truncate rounded-md px-3 py-2 text-left text-[13px] transition-colors",
+                      s.id === currentSessionId
+                        ? "bg-[var(--bg-surface)] text-cream-rich"
+                        : "text-muted-foreground hover:bg-[var(--bg-surface)]/60 hover:text-[var(--text-primary)]",
+                    )}
+                  >
+                    <span className="block truncate">{s.title}</span>
+                    <span className="block text-[10px] text-muted-foreground/70">
+                      {formatSessionDate(s.updatedAt)}
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+          </>
         )}
 
-        <div className="mt-4 flex-1 space-y-0.5 overflow-y-auto px-2 pb-4">
-          {tab === "chats" ? (
-            sessions.length === 0 ? (
-              <p className="px-3 py-2 text-xs text-muted-foreground">No conversations yet</p>
-            ) : (
-              sessions.map((s) => (
+        {tab === "spaces" &&
+          (activeSpace ? (
+            <SpaceDetail
+              space={activeSpace}
+              sessions={sessions}
+              currentSessionId={currentSessionId}
+              onSelect={onSelect}
+              onNewChat={onNewChat}
+              onBack={onExitSpace}
+              onSaveNotes={onSaveSpaceNotes}
+            />
+          ) : (
+            <>
+              {showNewSpaceForm ? (
+                <NewSpaceForm
+                  accounts={spaceAccounts}
+                  onCancel={() => setShowNewSpaceForm(false)}
+                  onCreate={(input) => {
+                    onCreateSpace(input);
+                    setShowNewSpaceForm(false);
+                  }}
+                />
+              ) : (
                 <button
-                  key={s.id}
-                  onClick={() => onSelect(s.id)}
-                  title={s.title}
-                  className={cn(
-                    "block w-full truncate rounded-md px-3 py-2 text-left text-[13px] transition-colors",
-                    s.id === currentSessionId
-                      ? "bg-[var(--bg-surface)] text-cream-rich"
-                      : "text-muted-foreground hover:bg-[var(--bg-surface)]/60 hover:text-[var(--text-primary)]",
-                  )}
+                  onClick={() => setShowNewSpaceForm(true)}
+                  className="mx-3 flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:border-[color-mix(in_srgb,var(--accent-primary)_60%,transparent)] hover:text-cream-rich"
                 >
-                  <span className="block truncate">{s.title}</span>
-                  <span className="block text-[10px] text-muted-foreground/70">
-                    {formatSessionDate(s.updatedAt)}
-                  </span>
+                  <Plus className="h-3.5 w-3.5" />
+                  New Space
+                </button>
+              )}
+              <div className="mt-4 flex-1 space-y-0.5 overflow-y-auto px-2 pb-4">
+                {spaces.length === 0 ? (
+                  <p className="px-3 py-2 text-xs text-muted-foreground">
+                    No spaces yet — create one to keep an account&apos;s context ready without re-typing it.
+                  </p>
+                ) : (
+                  spaces.map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => onEnterSpace(s.id)}
+                      title={s.name}
+                      className="block w-full truncate rounded-md px-3 py-2 text-left text-[13px] text-muted-foreground transition-colors hover:bg-[var(--bg-surface)]/60 hover:text-[var(--text-primary)]"
+                    >
+                      <span className="block truncate">{s.name}</span>
+                      {s.accountName && (
+                        <span className="block text-[10px] text-muted-foreground/70">{s.accountName}</span>
+                      )}
+                    </button>
+                  ))
+                )}
+              </div>
+            </>
+          ))}
+
+        {tab === "pinned" && (
+          <div className="mt-4 flex-1 space-y-0.5 overflow-y-auto px-2 pb-4">
+            {pinnedMessages.length === 0 ? (
+              <p className="px-3 py-2 text-xs text-muted-foreground">No pinned answers yet</p>
+            ) : (
+              pinnedMessages.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => onSelect(p.sessionId)}
+                  title={p.content}
+                  className="block w-full truncate rounded-md px-3 py-2 text-left text-[13px] text-muted-foreground transition-colors hover:bg-[var(--bg-surface)]/60 hover:text-[var(--text-primary)]"
+                >
+                  {p.content}
                 </button>
               ))
-            )
-          ) : pinnedMessages.length === 0 ? (
-            <p className="px-3 py-2 text-xs text-muted-foreground">No pinned answers yet</p>
-          ) : (
-            pinnedMessages.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => onSelect(p.sessionId)}
-                title={p.content}
-                className="block w-full truncate rounded-md px-3 py-2 text-left text-[13px] text-muted-foreground transition-colors hover:bg-[var(--bg-surface)]/60 hover:text-[var(--text-primary)]"
-              >
-                {p.content}
-              </button>
-            ))
-          )}
-        </div>
+            )}
+          </div>
+        )}
+
+        {tab === "analyses" && (
+          <div className="mt-2 flex-1 space-y-0.5 overflow-y-auto px-2 pb-4">
+            {reports.length === 0 ? (
+              <p className="px-3 py-2 text-xs text-muted-foreground">
+                No analyses yet — run a full analysis from the input bar.
+              </p>
+            ) : (
+              reports.map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => onSelectReport(r)}
+                  title={r.content}
+                  className="block w-full rounded-md px-3 py-2 text-left text-[13px] text-muted-foreground transition-colors hover:bg-[var(--bg-surface)]/60 hover:text-[var(--text-primary)]"
+                >
+                  <span className="block text-[11px] font-medium text-cream-rich">
+                    {formatReportDate(r.createdAt)}
+                  </span>
+                  <span className="line-clamp-2 text-[12px] leading-snug">{r.content}</span>
+                </button>
+              ))
+            )}
+          </div>
+        )}
       </aside>
 
       {!open && (
         <button
           onClick={onToggle}
           aria-label="Open history"
-          className="fixed top-5 z-30 hidden rounded-full border border-border bg-[var(--bg-surface)] p-2 text-muted-foreground transition-colors hover:text-cream-rich md:flex"
+          // Sits below the page header row (title + description), never
+          // beside it — top-5 used to land right on top of "Insights".
+          className="fixed top-24 z-30 hidden rounded-full border border-border bg-[var(--bg-surface)] p-2 text-muted-foreground transition-colors hover:text-cream-rich md:flex"
           style={{ left: MAIN_NAV_PX + 12 }}
         >
           <PanelLeftOpen className="h-4 w-4" />
@@ -378,10 +670,16 @@ export function InsightsChat({
   const [historyOpen, setHistoryOpen] = useState(true);
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
   const [pinnedMessages, setPinnedMessages] = useState<PinnedMessage[]>([]);
+  const [sidebarTab, setSidebarTab] = useState<SidebarTab>("chats");
+  const [spaces, setSpaces] = useState<SpaceSummary[]>([]);
+  const [spaceAccounts, setSpaceAccounts] = useState<{ id: string; name: string }[]>([]);
+  const [currentSpaceId, setCurrentSpaceId] = useState<string | null>(null);
+  const [reports, setReports] = useState<ReportItem[]>([]);
+  const [analyzing, setAnalyzing] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
-  const refreshSessions = useCallback(() => {
-    listInsightsSessions().then(setSessions);
+  const refreshSessions = useCallback((spaceId: string | null) => {
+    listInsightsSessions(spaceId).then(setSessions);
   }, []);
 
   const refreshPins = useCallback(() => {
@@ -389,10 +687,27 @@ export function InsightsChat({
     listPinnedMessages().then(setPinnedMessages);
   }, []);
 
+  const refreshSpaces = useCallback(() => {
+    listInsightsSpaces().then(setSpaces);
+  }, []);
+
+  const refreshReports = useCallback(() => {
+    listInsightsReports().then(setReports);
+  }, []);
+
   useEffect(() => {
-    refreshSessions();
+    refreshSessions(null);
     refreshPins();
-  }, [refreshSessions, refreshPins]);
+    refreshSpaces();
+    refreshReports();
+    listAccountsForSpacePicker().then(setSpaceAccounts);
+  }, [refreshSessions, refreshPins, refreshSpaces, refreshReports]);
+
+  // Sidebar session list follows whichever scope is currently being browsed:
+  // general (Chats tab) or a specific Space's history (Spaces tab, entered).
+  useEffect(() => {
+    refreshSessions(sidebarTab === "spaces" ? currentSpaceId : null);
+  }, [sidebarTab, currentSpaceId, refreshSessions]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -403,7 +718,7 @@ export function InsightsChat({
     if (!q || loading) return;
     setLoading(true);
     setInput("");
-    const res = await askInsights(q, currentSessionId);
+    const res = await askInsights(q, currentSessionId, currentSpaceId);
     setLoading(false);
     if ("error" in res) {
       toast.error(res.error);
@@ -419,7 +734,7 @@ export function InsightsChat({
     }
     setExchanges((prev) => [...prev, { q, kind: "answer", result: res.result, messageId: res.messageId }]);
     setUsage((prev) => ({ ...prev, queryCount: prev.queryCount + 1 }));
-    refreshSessions();
+    refreshSessions(sidebarTab === "spaces" ? currentSpaceId : null);
   }
 
   function togglePinned(messageId: string | null) {
@@ -444,6 +759,7 @@ export function InsightsChat({
       return;
     }
     setCurrentSessionId(session.id);
+    setCurrentSpaceId(session.spaceId);
     setExchanges(messagesToExchanges(session.messages));
   }
 
@@ -451,6 +767,37 @@ export function InsightsChat({
     if (loading) return;
     setCurrentSessionId(null);
     setExchanges([]);
+    // Chats-tab "New chat" is always general; a Space's own "New chat in
+    // this space" button reuses this same handler but currentSpaceId is
+    // already set from having entered that space, so it's preserved here.
+    if (sidebarTab === "chats") setCurrentSpaceId(null);
+  }
+
+  function handleTabChange(t: SidebarTab) {
+    setSidebarTab(t);
+    if (t === "chats") setCurrentSpaceId(null);
+  }
+
+  function enterSpace(id: string) {
+    setCurrentSpaceId(id);
+  }
+
+  function exitSpace() {
+    setCurrentSpaceId(null);
+  }
+
+  async function handleCreateSpace(input: { name: string; accountId: string | null; contextNotes: string | null }) {
+    const id = await createInsightsSpace(input);
+    refreshSpaces();
+    if (id) setCurrentSpaceId(id);
+  }
+
+  function handleSaveSpaceNotes(notes: string) {
+    if (!currentSpaceId) return;
+    setSpaces((prev) => prev.map((s) => (s.id === currentSpaceId ? { ...s, contextNotes: notes } : s)));
+    updateInsightsSpaceNotes(currentSpaceId, notes).catch(() => {
+      toast.error("Couldn't save space notes.");
+    });
   }
 
   function dismissFlag(id: string) {
@@ -458,6 +805,56 @@ export function InsightsChat({
     dismissDigestFinding(id).catch(() => {
       toast.error("Couldn't dismiss that flag.");
     });
+  }
+
+  /** Appends the fresh report to whatever's currently on screen (rather than
+   * replacing it) — it's saved separately to insights_reports either way, so
+   * running an analysis mid-chat doesn't lose the conversation you were in. */
+  async function handleRunAnalysis() {
+    if (analyzing || loading) return;
+    setAnalyzing(true);
+    const res = await runFullAnalysis(currentSpaceId);
+    setAnalyzing(false);
+    if ("error" in res) {
+      toast.error(res.error);
+      return;
+    }
+    if ("limited" in res) {
+      toast.error(`Monthly limit reached (${res.used}/${res.cap}).`);
+      return;
+    }
+    setExchanges((prev) => [
+      ...prev,
+      {
+        kind: "report",
+        createdAt: res.report.createdAt,
+        result: {
+          answer: res.report.content,
+          caveat: res.report.caveat,
+          follow_ups: res.report.followUps,
+          data_available: true,
+          mentioned_entities: res.report.mentionedEntities,
+        },
+      },
+    ]);
+    refreshReports();
+  }
+
+  function handleSelectReport(report: ReportItem) {
+    setCurrentSessionId(null);
+    setExchanges([
+      {
+        kind: "report",
+        createdAt: report.createdAt,
+        result: {
+          answer: report.content,
+          caveat: report.caveat,
+          follow_ups: report.followUps,
+          data_available: true,
+          mentioned_entities: report.mentionedEntities,
+        },
+      },
+    ]);
   }
 
   if (!configured) {
@@ -478,17 +875,29 @@ export function InsightsChat({
 
   const contentOffsetClass = historyOpen ? "md:pl-64" : "md:pl-0";
   const inputLeftClass = historyOpen ? "md:left-[31rem]" : "md:left-60";
+  const activeSpace = spaces.find((s) => s.id === currentSpaceId) ?? null;
 
   return (
     <div className="relative">
       <HistorySidebar
         open={historyOpen}
         onToggle={() => setHistoryOpen((v) => !v)}
+        tab={sidebarTab}
+        onTabChange={handleTabChange}
         sessions={sessions}
         currentSessionId={currentSessionId}
         onSelect={selectSession}
         onNewChat={startNewChat}
         pinnedMessages={pinnedMessages}
+        spaces={spaces}
+        spaceAccounts={spaceAccounts}
+        currentSpaceId={currentSpaceId}
+        onEnterSpace={enterSpace}
+        onExitSpace={exitSpace}
+        onCreateSpace={handleCreateSpace}
+        onSaveSpaceNotes={handleSaveSpaceNotes}
+        reports={reports}
+        onSelectReport={handleSelectReport}
       />
 
       <div className={cn("transition-[padding] duration-200", contentOffsetClass)}>
@@ -524,7 +933,7 @@ export function InsightsChat({
             </div>
           )}
 
-          {exchanges.length === 0 && !loading ? (
+          {exchanges.length === 0 && !loading && !analyzing ? (
             <div className="pt-10">
               <p className="mb-4 text-[15px] text-muted-foreground">
                 Ask anything about your live data. Try:
@@ -551,10 +960,12 @@ export function InsightsChat({
                   transition={ENTER}
                   className="group space-y-3"
                 >
-                  {/* User message — plain, right-aligned, secondary */}
-                  <p className="ml-auto w-fit max-w-[80%] rounded-2xl bg-[var(--bg-surface)]/50 px-4 py-2 text-right text-[14px] text-[var(--text-muted)]">
-                    {ex.q}
-                  </p>
+                  {/* User message — plain, right-aligned, secondary. Reports have no question. */}
+                  {ex.kind !== "report" && (
+                    <p className="ml-auto w-fit max-w-[80%] rounded-2xl bg-[var(--bg-surface)]/50 px-4 py-2 text-right text-[14px] text-[var(--text-muted)]">
+                      {ex.q}
+                    </p>
+                  )}
 
                   {ex.kind === "limited" ? (
                     <p className="flex items-start gap-1.5 text-[15px] text-[var(--warning)]">
@@ -564,6 +975,30 @@ export function InsightsChat({
                       You&apos;ve used {ex.used} of {ex.cap} queries this month — the
                       limit resets at the start of next calendar month.
                     </p>
+                  ) : ex.kind === "report" ? (
+                    <>
+                      <div>
+                        <p className="mb-2 flex items-center gap-1.5 text-[11px] font-medium tracking-[0.12em] text-muted-foreground uppercase">
+                          <FileText className="h-3 w-3" />
+                          Full Analysis — {formatReportDate(ex.createdAt)}
+                        </p>
+                        <InsightAnswer result={ex.result} />
+                      </div>
+                      {!!ex.result.follow_ups?.length && (
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          {ex.result.follow_ups.map((f) => (
+                            <button
+                              key={f}
+                              onClick={() => ask(f)}
+                              disabled={loading}
+                              className="rounded-full border border-border px-3.5 py-1.5 text-left text-[13px] text-muted-foreground transition-colors hover:border-[color-mix(in_srgb,var(--accent-primary)_60%,transparent)] hover:text-cream-rich disabled:opacity-50"
+                            >
+                              {f}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <>
                       <div className="relative">
@@ -603,7 +1038,7 @@ export function InsightsChat({
                   )}
                 </motion.div>
               ))}
-              {loading && <ThinkingIndicator />}
+              {(loading || analyzing) && <ThinkingIndicator />}
             </div>
           )}
           <div ref={endRef} />
@@ -612,6 +1047,31 @@ export function InsightsChat({
         {/* Input — fixed to the bottom of the viewport, offset past the sidebar(s) on desktop */}
         <div className={cn("fixed inset-x-0 bottom-0 z-20 transition-[left] duration-200", inputLeftClass)}>
           <div className="bg-gradient-to-t from-background via-background/95 to-transparent px-6 pt-8 pb-6 sm:px-10">
+            {activeSpace && (
+              <div className="mx-auto mb-2 flex w-full max-w-[760px] items-center gap-1.5 text-[12px] text-muted-foreground">
+                <Compass className="h-3 w-3" />
+                <span>
+                  Asking in <span className="text-cream-rich">{activeSpace.name}</span>
+                </span>
+                <button
+                  onClick={exitSpace}
+                  aria-label="Exit space"
+                  className="ml-0.5 transition-colors hover:text-cream-rich"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            )}
+            <div className="mx-auto mb-2 flex w-full max-w-[760px] justify-end">
+              <button
+                onClick={handleRunAnalysis}
+                disabled={analyzing || loading}
+                className="flex items-center gap-1.5 text-[12px] text-muted-foreground transition-colors hover:text-cream-rich disabled:opacity-50"
+              >
+                <FileText className="h-3 w-3" />
+                {analyzing ? "Analyzing…" : "Run a full analysis"}
+              </button>
+            </div>
             <form
               onSubmit={(e) => {
                 e.preventDefault();

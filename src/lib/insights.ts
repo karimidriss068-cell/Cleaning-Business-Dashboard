@@ -500,6 +500,31 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
   };
 }
 
+/**
+ * Narrows a full snapshot down to one account — used by Focus Spaces (and
+ * Analyst Mode run inside a Space) so a scoped conversation only ever sees
+ * that account's data, not the whole business. Computed by filtering the
+ * already-aggregated snapshot rather than re-querying, since the rollups
+ * are cheap in-memory work once fetched.
+ */
+export function scopeSnapshotToAccount(
+  data: Awaited<ReturnType<typeof getInsightsData>>,
+  accountId: string,
+): Awaited<ReturnType<typeof getInsightsData>> {
+  const accountCampaignIds = new Set(
+    data.campaigns.filter((c) => c.account_id === accountId).map((c) => c.id),
+  );
+  return {
+    ...data,
+    accounts: data.accounts.filter((a) => a.id === accountId),
+    campaigns: data.campaigns.filter((c) => c.account_id === accountId),
+    creatives: data.creatives.filter((c) => c.account_id === accountId),
+    unacknowledged_alerts: data.unacknowledged_alerts.filter(
+      (a) => a.campaign_id && accountCampaignIds.has(a.campaign_id),
+    ),
+  };
+}
+
 function blank() {
   return { spend: 0, leads: 0, appts: 0 };
 }

@@ -3,7 +3,7 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
-import { getInsightsData } from "@/lib/insights";
+import { getInsightsData, scopeSnapshotToAccount } from "@/lib/insights";
 import { getMonthlyUsage, logInsightsQuery } from "@/lib/insights-usage";
 
 const BASE_SYSTEM = `You are a sharp, no-fluff business analyst embedded in "MAKI Ops", the internal dashboard of MAKI, a marketing agency. You answer questions about MAKI's own client-acquisition ads AND the ad accounts MAKI runs for its clients.
@@ -40,6 +40,19 @@ WEB MODE: This answer is rendered as a natural chat response, like Claude or Cha
 - \`caveat\`: a single short clause ONLY if something material is missing or uncertain (e.g. "no historical data to project from yet"). Null otherwise — never repeat a disclaimer verbosely or by default.
 - \`follow_ups\`: 2-3 short, natural follow-up questions the user would plausibly ask next, based SPECIFICALLY on the data you just surfaced in this answer — not generic questions like "how can I improve this?". If your answer names an at-risk account, a plausible follow-up asks about that specific account by name; if it flags a declining metric, a plausible follow-up asks why or what to do about it. Phrase each one the way the user would actually type it (short, casual, no "Would you like to know..." framing). Null only if there is truly nothing sensible to follow up on.
 - Never use markdown syntax (no **, no #, no markdown links, no brackets) — plain prose text only. The UI styles numbers and entity names on its own from \`mentioned_entities\`.`;
+
+const ANALYSIS_ADDENDUM = `
+
+ANALYSIS MODE: This is not a single Q&A — you are generating a full structured business analysis report, still read as natural prose (same style as web mode: flowing paragraphs, no markdown). Fill \`answer\` with a comprehensive report, covering these topics IN ORDER as separate paragraphs (blank line between each, no headers — just a clear topic-led sentence opening each one):
+1. Top performers — which accounts/campaigns/creatives are winning and specifically why, citing the numbers.
+2. Underperformers / at-risk accounts — pull directly from each account's risk_assessment; be specific about why each is flagged, not vague.
+3. Recommended actions — concrete, prioritized next steps, each tied to a specific number or named account/campaign/creative. Not "consider reviewing X" — say exactly what to do and why, in priority order.
+4. Notable trends vs the prior period — pull from week_over_week/month_over_month fields, call out the most significant movements (up or down).
+If the snapshot genuinely has nothing to say for a section (e.g. no at-risk accounts right now), say that briefly in one sentence rather than omitting the section silently. \`follow_ups\`: 2-3 natural deep-dive questions a reader would plausibly want to ask after reading this report. \`caveat\`: only if something material is missing. Never use markdown syntax.`;
+
+const SPACE_ADDENDUM_TEMPLATE = (name: string, scopedToAccount: boolean, contextNotes: string | null) => `
+
+FOCUS SPACE CONTEXT: This conversation is happening inside the "${name}" focus space${scopedToAccount ? " — the data snapshot below has already been narrowed to ONLY that account's data, so treat it as the full scope of what's being discussed" : ""}.${contextNotes ? ` Persistent notes for this space (always keep these in mind): ${contextNotes}` : ""} When the user asks something like "how are we doing" without naming an account, they mean this space's context — do not ask them to clarify which account.`;
 
 const AnswerSchema = z.object({
   answer: z
@@ -91,7 +104,11 @@ export async function askInsightsCore(
   supabase: SupabaseClient<Database>,
   user: { id: string; email: string },
   question: string,
-  opts?: { mode?: "web" | "sms" | "voice"; callerPhone?: string },
+  opts?: {
+    mode?: "web" | "sms" | "voice" | "analysis";
+    callerPhone?: string;
+    space?: { name: string; accountId: string | null; contextNotes: string | null };
+  },
 ): Promise<AskInsightsResult> {
   const q = question.trim();
   if (!q) return { error: "Ask a question first." };
@@ -111,19 +128,28 @@ export async function askInsightsCore(
     return { limited: true, used: usage.queryCount, cap: usage.cap };
   }
 
-  const data = await getInsightsData(supabase);
+  let data = await getInsightsData(supabase);
+  if (opts?.space?.accountId) {
+    data = scopeSnapshotToAccount(data, opts.space.accountId);
+  }
+
   const client = new Anthropic({ apiKey });
-  const system =
+  let system =
     mode === "sms"
       ? BASE_SYSTEM + SMS_ADDENDUM
       : mode === "voice"
         ? BASE_SYSTEM + VOICE_ADDENDUM
-        : BASE_SYSTEM + WEB_ADDENDUM;
+        : mode === "analysis"
+          ? BASE_SYSTEM + ANALYSIS_ADDENDUM
+          : BASE_SYSTEM + WEB_ADDENDUM;
+  if (opts?.space) {
+    system += SPACE_ADDENDUM_TEMPLATE(opts.space.name, !!opts.space.accountId, opts.space.contextNotes);
+  }
 
   try {
     const message = await client.messages.parse({
       model: "claude-opus-4-8",
-      max_tokens: 2048,
+      max_tokens: mode === "analysis" ? 4096 : 2048,
       thinking: { type: "adaptive" },
       system,
       messages: [

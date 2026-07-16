@@ -62,7 +62,7 @@ export async function logInsightsQuery(
     question: string;
     inputTokens: number;
     outputTokens: number;
-    channel?: "web" | "sms" | "voice";
+    channel?: "web" | "sms" | "voice" | "analysis";
     callerPhone?: string;
   },
 ) {
