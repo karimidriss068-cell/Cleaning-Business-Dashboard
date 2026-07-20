@@ -1,12 +1,19 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 
-/** Digits-only comparison so "+1 929-317-3127", "+19293173127", and
- * "19293173127" all match the same number regardless of formatting. Exported
- * for reuse by other channels (e.g. the Retell voice route) that need the
- * same normalization for their own allowlist checks. */
+/** Digits-only comparison so "+1 929-317-3127", "+19293173127",
+ * "19293173127", and the bare US-formatted "(929) 317-3127" all match the
+ * same number regardless of formatting. GHL sends both an E.164-ish
+ * top-level `phone` (with the leading "1" country code) and, when a workflow
+ * defines a Custom Data phone field, a "(xxx) xxx-xxxx" formatted value with
+ * no country code at all for the SAME number — so a leading NANP "1" is
+ * stripped whenever the digits-only result is 11 long, normalizing both
+ * shapes down to the same 10-digit value. Exported for reuse by other
+ * channels (e.g. the Retell voice route) that need the same normalization
+ * for their own allowlist checks. */
 export function normalizePhone(phone: string): string {
-  return phone.replace(/[^\d]/g, "");
+  const digits = phone.replace(/[^\d]/g, "");
+  return digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
 }
 
 /**
