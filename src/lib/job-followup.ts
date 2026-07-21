@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
-import { sendGhlSms } from "@/lib/ghl";
+import { sendGhlSms, setGhlAwaitingJobFollowup } from "@/lib/ghl";
 
 const DAY = 86400000;
 
@@ -95,6 +95,20 @@ export async function sendJobFollowUps(
     } catch {
       // Leave follow_up_sent_at null so the next scheduled run retries.
       result.failed++;
+      continue;
+    }
+
+    // GHL-side scoping nicety for the reply workflow's trigger — not the
+    // source of truth for job-closed data, so a failure here never blocks
+    // or reverts the SMS/DB write that already succeeded above.
+    try {
+      await setGhlAwaitingJobFollowup(lead.ghl_contact_id, true);
+    } catch (e) {
+      console.error(
+        "[job-followup] failed to check awaiting_job_followup for contact",
+        lead.ghl_contact_id,
+        e instanceof Error ? e.message : e,
+      );
     }
   }
 
@@ -175,6 +189,19 @@ export async function recordJobReply(
       closed_recorded_at: new Date().toISOString(),
     })
     .eq("id", appt.id);
+
+  // GHL-side scoping nicety, mirrors the check in sendJobFollowUps — not
+  // the source of truth, so a failure here never blocks the Supabase write
+  // that already succeeded above.
+  try {
+    await setGhlAwaitingJobFollowup(ghlContactId, false);
+  } catch (e) {
+    console.error(
+      "[job-followup] failed to uncheck awaiting_job_followup for contact",
+      ghlContactId,
+      e instanceof Error ? e.message : e,
+    );
+  }
 
   return { appointmentId: appt.id, parsed };
 }

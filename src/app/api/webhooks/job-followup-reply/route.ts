@@ -32,7 +32,10 @@ export const dynamic = "force-dynamic";
  * source, not Custom Data, for both fields.
  *
  * Matches the reply to that contact's most recent appointment still
- * awaiting a reply and writes job_closed/job_revenue.
+ * awaiting a reply and writes job_closed/job_revenue. After a successful
+ * parse+write, also unchecks the contact's GHL "Awaiting Job Followup"
+ * checkbox (best effort — mirrors the check job-followup-send sets, never
+ * blocks the Supabase write if the GHL sync itself fails).
  *
  * No phone allowlist here (unlike /api/insights/sms, which grants access to
  * an internal AI assistant) — this only ever writes a boolean and a number

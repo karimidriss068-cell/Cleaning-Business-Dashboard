@@ -22,7 +22,10 @@ export const maxDuration = 60;
  * auto-resolved as not-closed without texting anyone; appointments that
  * actually happened ('showed') get a one-time SMS asking whether it became
  * a job and roughly what it was worth, via the same GHL SMS integration
- * /api/insights/sms already uses (sendGhlSms).
+ * /api/insights/sms already uses (sendGhlSms). After a successful send,
+ * also checks the contact's GHL "Awaiting Job Followup" checkbox (best
+ * effort — a scoping nicety for the reply workflow's trigger, never blocks
+ * the SMS/DB write if the GHL sync itself fails).
  */
 async function handle(req: NextRequest) {
   if (!verifyWebhookSecret(req) && !verifyCronSecret(req)) {
