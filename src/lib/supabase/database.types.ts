@@ -749,6 +749,60 @@ export type Database = {
         }
         Relationships: []
       }
+      packages: {
+        Row: {
+          account_id: string
+          created_at: string
+          expiration_date: string | null
+          id: string
+          package_name: string
+          patient_id: string
+          price: number | null
+          purchase_date: string
+          sessions_total: number
+          sessions_used: number
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          expiration_date?: string | null
+          id?: string
+          package_name: string
+          patient_id: string
+          price?: number | null
+          purchase_date?: string
+          sessions_total: number
+          sessions_used?: number
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          expiration_date?: string | null
+          id?: string
+          package_name?: string
+          patient_id?: string
+          price?: number | null
+          purchase_date?: string
+          sessions_total?: number
+          sessions_used?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "packages_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "packages_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patients: {
         Row: {
           account_id: string
@@ -945,6 +999,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "treatments_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "treatments_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
@@ -987,6 +1048,7 @@ export type Database = {
         | "creative_cpa_spike"
         | "ghost_leads"
         | "slow_response"
+        | "package_expiring"
       insights_message_role: "user" | "assistant"
       lead_status: "new" | "contacted" | "qualified" | "booked" | "dead"
       outreach_channel: "sms" | "cold_call" | "dm" | "email"
@@ -1146,6 +1208,7 @@ export const Constants = {
         "creative_cpa_spike",
         "ghost_leads",
         "slow_response",
+        "package_expiring",
       ],
       insights_message_role: ["user", "assistant"],
       lead_status: ["new", "contacted", "qualified", "booked", "dead"],

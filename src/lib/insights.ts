@@ -5,6 +5,7 @@ import { computeFunnel } from "@/lib/outreach";
 import { getUncontactedLeads, WARNING_MINUTES, CRITICAL_HOURS } from "@/lib/lead-response";
 import { computeClientHealthScore } from "@/lib/client-health";
 import { computePriorities } from "@/lib/priorities";
+import { getExpiringPackages } from "@/lib/package-expiration";
 
 const DAY = 86400000;
 const NO_ACTIVITY_THRESHOLD_DAYS = 14;
@@ -601,6 +602,9 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
   // ---- Phase 4: prioritization engine — ranked, dollar-quantified actions ----
   const priorities = await computePriorities(supabase);
 
+  // ---- Phase 2 (med-spa rebuild): package/membership expiration tracker ----
+  const expiringPackages = await getExpiringPackages(supabase);
+
   return {
     context:
       "MAKI Ops — marketing agency internal dashboard. 'internal' accounts are MAKI's own client-acquisition ads; 'client' accounts are ads MAKI runs for clients. Money is USD. This snapshot is the ONLY data available — nothing outside it is known.",
@@ -622,6 +626,21 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
     outreach_totals: outreachTotals,
     lead_response: leadResponse,
     priorities,
+    packages_expiring: expiringPackages.map((p) => ({
+      package_id: p.packageId,
+      patient_id: p.patientId,
+      patient_name: p.patientName,
+      account_id: p.accountId,
+      account: p.accountName,
+      package_name: p.packageName,
+      sessions_total: p.sessionsTotal,
+      sessions_used: p.sessionsUsed,
+      sessions_remaining: p.sessionsRemaining,
+      expiration_date: p.expirationDate,
+      days_until_expiration: p.daysUntilExpiration,
+      urgency: p.urgency,
+      unredeemed_value: p.unredeemedValue,
+    })),
     unacknowledged_alerts: (alerts ?? []).map((a) => ({
       type: a.type,
       message: a.message,
@@ -658,6 +677,7 @@ export function scopeSnapshotToAccount(
       by_account: data.lead_response.by_account.filter((b) => b.account_id === accountId),
     },
     priorities: data.priorities.filter((p) => p.accountId === accountId),
+    packages_expiring: data.packages_expiring.filter((p) => p.account_id === accountId),
   };
 }
 

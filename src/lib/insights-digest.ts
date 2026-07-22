@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import { currentWeekRange, money } from "@/lib/format";
 import { getUncontactedLeads } from "@/lib/lead-response";
+import { getExpiringPackages } from "@/lib/package-expiration";
 
 const DAY = 86400000;
 
@@ -10,7 +11,8 @@ export type DigestFindingType =
   | "cpa_above_threshold"
   | "creative_cpa_spike"
   | "ghost_leads"
-  | "slow_response";
+  | "slow_response"
+  | "package_expiring";
 
 export type DigestFinding = {
   accountId: string;
@@ -220,6 +222,22 @@ export async function computeDailyDigest(
         estimatedImpact: pricePerAppt ? Math.round(pricePerAppt * v.warning * 0.5) : null,
       });
     }
+  }
+
+  // 5. Package/membership expiration tracker (Phase 2) — one finding per
+  // package with unused sessions expiring within 30 days.
+  const expiringPackages = await getExpiringPackages(supabase);
+  for (const p of expiringPackages) {
+    const who = p.patientName ?? "A patient";
+    findings.push({
+      accountId: p.accountId,
+      accountName: p.accountName,
+      campaignId: null,
+      creativeId: null,
+      findingType: "package_expiring",
+      message: `${who}'s ${p.packageName} (${p.sessionsRemaining} of ${p.sessionsTotal} sessions left) expires ${p.expirationDate} — ${p.daysUntilExpiration} day${p.daysUntilExpiration === 1 ? "" : "s"} away.`,
+      estimatedImpact: p.unredeemedValue,
+    });
   }
 
   return findings;
