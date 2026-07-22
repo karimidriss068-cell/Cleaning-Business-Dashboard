@@ -60,7 +60,7 @@ export default async function AccountsPage() {
                     <EmptyState
                       icon={Building2}
                       title="No accounts yet"
-                      description="Accounts are where campaigns, spend, and appointments roll up — internal or client. Create your first one to start tracking."
+                      description="Accounts are where campaigns, spend, and consults roll up — internal or client. Create your first one to start tracking."
                       action={<NewAccountDialog />}
                     />
                   </TableCell>

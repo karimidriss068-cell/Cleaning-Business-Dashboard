@@ -64,7 +64,7 @@ export default async function CampaignsPage() {
                       description={
                         (accounts ?? []).length === 0
                           ? "Create an account first, then launch a campaign under it."
-                          : "Launch your first campaign to start tracking spend, leads, and appointments."
+                          : "Launch your first campaign to start tracking spend, inquiries, and consults."
                       }
                       action={
                         (accounts ?? []).length > 0 ? (

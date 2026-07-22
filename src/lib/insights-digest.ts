@@ -114,8 +114,8 @@ export async function computeDailyDigest(
         creativeId: null,
         findingType: "zero_leads",
         message: last
-          ? `${a.name} has had no new leads since ${last} — 7+ days quiet.`
-          : `${a.name} has had no new leads in the last 7 days.`,
+          ? `${a.name} hasn't had a new patient inquiry since ${last} — 7+ days quiet.`
+          : `${a.name} hasn't had a new patient inquiry in the last 7 days.`,
         // No historical baseline to estimate a lost-revenue figure from —
         // this is a lead-gen problem, not a quantifiable-yet dollar loss.
         estimatedImpact: null,
@@ -140,7 +140,7 @@ export async function computeDailyDigest(
         campaignId: c.id,
         creativeId: null,
         findingType: "cpa_above_threshold",
-        message: `${c.name}'s CPA this week is ${money(cpa7)}, above ${account.name}'s ${money(account.cpa_alert_threshold)} alert threshold.`,
+        message: `${c.name}'s cost per consult this week is ${money(cpa7)}, above ${account.name}'s ${money(account.cpa_alert_threshold)} alert threshold.`,
         estimatedImpact: overspend > 0 ? Math.round(overspend) : null,
       });
     }
@@ -173,7 +173,7 @@ export async function computeDailyDigest(
         campaignId: null,
         creativeId: cr.id,
         findingType: "creative_cpa_spike",
-        message: `${cr.name}'s CPA is up ${pctUp}% week over week (${money(cpaLastWeek)} → ${money(cpaThisWeek)}).`,
+        message: `${cr.name}'s cost per consult is up ${pctUp}% week over week (${money(cpaLastWeek)} → ${money(cpaThisWeek)}).`,
         estimatedImpact: excessSpend > 0 ? Math.round(excessSpend) : null,
       });
     }
@@ -200,7 +200,7 @@ export async function computeDailyDigest(
         campaignId: null,
         creativeId: null,
         findingType: "ghost_leads",
-        message: `${v.accountName} has ${v.critical} lead${v.critical > 1 ? "s" : ""} uncontacted for 24+ hours — likely lost without follow-up.`,
+        message: `${v.accountName} has ${v.critical} patient inquir${v.critical > 1 ? "ies" : "y"} sitting uncontacted for 24+ hours — likely lost without follow-up.`,
         // Each ghost lead treated as one missed appointment at this
         // account's usual value — a direct, defensible read of
         // price_per_appointment, not an invented conversion-rate guess.
@@ -214,7 +214,7 @@ export async function computeDailyDigest(
         campaignId: null,
         creativeId: null,
         findingType: "slow_response",
-        message: `${v.accountName} has ${v.warning} lead${v.warning > 1 ? "s" : ""} past the fast-response window, not yet contacted.`,
+        message: `${v.accountName} has ${v.warning} patient inquir${v.warning > 1 ? "ies" : "y"} past the fast-response window, not yet contacted.`,
         // Half weight vs. a ghost lead — these are still recoverable, this
         // is "at elevated risk," not "likely already lost."
         estimatedImpact: pricePerAppt ? Math.round(pricePerAppt * v.warning * 0.5) : null,

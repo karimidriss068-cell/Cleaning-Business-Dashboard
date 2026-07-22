@@ -106,13 +106,13 @@ export function LeadsTable({
       toast.error("Could not update status", { description: error.message });
       return;
     }
-    toast.success("Lead status updated");
+    toast.success("Inquiry status updated");
     router.refresh();
   }
 
   async function convertToAppointment(lead: LeadRow) {
     if (!lead.accountId) {
-      toast.error("Lead has no account — cannot create appointment");
+      toast.error("Inquiry has no account — cannot create consult");
       return;
     }
     setBusyId(lead.id);
@@ -125,14 +125,14 @@ export function LeadsTable({
     });
     if (apptError) {
       setBusyId(null);
-      toast.error("Could not create appointment", {
+      toast.error("Could not create consult", {
         description: apptError.message,
       });
       return;
     }
     await supabase.from("leads").update({ status: "booked" }).eq("id", lead.id);
     setBusyId(null);
-    toast.success("Appointment created");
+    toast.success("Consult created");
     router.refresh();
   }
 
@@ -198,7 +198,7 @@ export function LeadsTable({
         </Select>
 
         <span className="ml-auto self-center text-sm text-muted-foreground tabular-nums">
-          {filtered.length} lead{filtered.length === 1 ? "" : "s"}
+          {filtered.length} inquir{filtered.length === 1 ? "y" : "ies"}
         </span>
       </div>
 
@@ -223,10 +223,10 @@ export function LeadsTable({
                 <TableCell colSpan={8} className="p-0">
                   <EmptyState
                     icon={Users}
-                    title={leads.length === 0 ? "No leads yet" : "No leads match these filters"}
+                    title={leads.length === 0 ? "No inquiries yet" : "No inquiries match these filters"}
                     description={
                       leads.length === 0
-                        ? "Leads flow in automatically from your campaigns and outreach — this list fills in as they arrive."
+                        ? "Patient inquiries flow in automatically from your campaigns and outreach — this list fills in as they arrive."
                         : "Try widening your account, campaign, or status filters."
                     }
                   />
@@ -292,7 +292,7 @@ export function LeadsTable({
                         loading={busyId === lead.id}
                         onClick={() => convertToAppointment(lead)}
                       >
-                        Convert to appt
+                        Convert to consult
                       </Button>
                     ) : (
                       <span className="text-xs text-muted-foreground/50">—</span>

@@ -122,7 +122,7 @@ export function NewAccountDialog() {
                 setName(e.target.value);
                 if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
               }}
-              placeholder="MAKI or client business name"
+              placeholder="MAKI or client med spa name"
               aria-invalid={!!errors.name}
             />
             <FieldError>{errors.name}</FieldError>
@@ -150,7 +150,7 @@ export function NewAccountDialog() {
                 id="niche"
                 value={niche}
                 onChange={(e) => setNiche(e.target.value)}
-                placeholder="roofing, mobile detailing…"
+                placeholder="injectables, laser, med spa memberships…"
               />
             </div>
           </div>
@@ -165,7 +165,7 @@ export function NewAccountDialog() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="price">Price / appointment</Label>
+              <Label htmlFor="price">Price / consult</Label>
               <Input
                 id="price"
                 type="number"

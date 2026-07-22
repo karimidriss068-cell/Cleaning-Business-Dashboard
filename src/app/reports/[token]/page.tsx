@@ -102,12 +102,12 @@ export default async function PublicReportPage({
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Stat label="Total spend" value={money(data.spend)} />
-        <Stat label="Leads" value={num(data.leads)} />
-        <Stat label="Appointments booked" value={num(data.booked)} />
-        <Stat label="Appointments showed" value={num(data.showed)} />
-        <Stat label="Revenue" value={money(data.revenue)} />
+        <Stat label="Patient inquiries" value={num(data.leads)} />
+        <Stat label="Consults booked" value={num(data.booked)} />
+        <Stat label="Consults showed" value={num(data.showed)} />
+        <Stat label="Treatment revenue" value={money(data.revenue)} />
         <Stat
-          label="Cost / appointment"
+          label="Cost / consult"
           value={perUnit(data.spend, data.booked)}
           hero
         />
@@ -127,7 +127,7 @@ export default async function PublicReportPage({
 
 function ReportFunnel({ data }: { data: ReportData }) {
   const stages = [
-    { label: "Leads", count: data.leads },
+    { label: "Inquiries", count: data.leads },
     { label: "Contacted", count: data.contacted },
     { label: "Qualified", count: data.qualified },
     { label: "Booked", count: data.booked },

@@ -156,7 +156,7 @@ export default async function DashboardPage() {
     <>
       <PageHeader
         title="Dashboard"
-        description="MAKI (internal client-acquisition) vs. client accounts."
+        description="MAKI's own patient-acquisition ads vs. client med spas."
       />
       {!hasAccounts ? (
         <div className="p-6 sm:p-10">

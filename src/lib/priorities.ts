@@ -86,7 +86,7 @@ async function computeNoShowRisk(supabase: SupabaseClient<Database>): Promise<Pr
       accountId,
       accountName: account.name,
       category: "no_show_risk",
-      message: `${account.name} had ${count} no-shows in the last 30 days — tightening confirmations/reminders could recover this booked-but-wasted appointment value.`,
+      message: `${account.name} had ${count} no-shows in the last 30 days — tightening confirmations/reminders could recover this booked-but-wasted consult value.`,
       estimatedImpact: impact,
     });
   }
@@ -142,7 +142,7 @@ async function computeScaleWinners(supabase: SupabaseClient<Database>): Promise<
       accountId: cr.account_id,
       accountName: account.name,
       category: "scale_winner",
-      message: `${cr.name} (${account.name}) is a winning creative running comfortably under the account's CPA threshold — a candidate to scale with more budget.`,
+      message: `${cr.name} (${account.name}) is a winning creative running comfortably under the account's cost-per-consult threshold — a candidate to scale with more budget.`,
       estimatedImpact: null,
     });
   }

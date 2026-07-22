@@ -124,7 +124,7 @@ export default async function CampaignDetailPage({
   const cpa = apptTotal > 0 ? totalSpend / apptTotal : null;
 
   const funnel = [
-    { label: "Leads", value: leadsTotal },
+    { label: "Inquiries", value: leadsTotal },
     { label: "Contacted", value: contacted },
     { label: "Qualified", value: qualified },
     { label: "Booked", value: apptTotal },
@@ -170,21 +170,21 @@ export default async function CampaignDetailPage({
 
       <StaggerPage>
         <HeroStatCard
-          label="Cost per appointment"
+          label="Cost per consult"
           value={cpa}
           format="money"
-          sub="Total spend ÷ appointments booked"
+          sub="Total spend ÷ consults booked"
           sparklineData={cpaSparkline}
         />
 
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <StatCard label="Total spend" value={totalSpend} format="money" />
-          <StatCard label="Leads" value={leadsTotal} format="num" />
+          <StatCard label="Inquiries" value={leadsTotal} format="num" />
           <StatCard
             label="CPL"
             value={cpl ?? "—"}
             format={cpl !== null ? "money" : undefined}
-            sub="Cost per lead"
+            sub="Cost per inquiry"
           />
         </section>
 

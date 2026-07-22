@@ -49,9 +49,9 @@ export function DashboardView({
 
       <motion.div variants={fadeUpItem}>
         <DominantStat
-          label="Cost per appointment"
+          label="Cost per consult"
           value={combinedCpa}
-          sub="Blended spend ÷ appointments booked, this week"
+          sub="Blended spend ÷ consults booked, this week"
           internal={internalCpa}
           client={clientCpa}
           sparklineData={cpaSparkline}
@@ -72,13 +72,13 @@ export function DashboardView({
           format="money"
         />
         <SupportingStat
-          label="Leads · this week"
+          label="Inquiries · this week"
           internal={stats.internal.leads}
           client={stats.client.leads}
           format="num"
         />
         <SupportingStat
-          label="Appts booked · this week"
+          label="Consults booked · this week"
           internal={stats.internal.appts}
           client={stats.client.appts}
           format="num"
@@ -98,7 +98,7 @@ export function DashboardView({
                 gradientId="spendGradient"
               />
             </ChartPanel>
-            <ChartPanel title="CPA trend" sub="Weekly cost per appointment, last 8 weeks">
+            <ChartPanel title="CPA trend" sub="Weekly cost per consult, last 8 weeks">
               <TrendAreaChart
                 data={cpaTrend}
                 xKey="period"

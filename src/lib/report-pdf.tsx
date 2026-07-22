@@ -58,7 +58,7 @@ function Box({ label, value, accent }: { label: string; value: string; accent?: 
 
 export async function reportPdfBuffer(data: ReportData): Promise<Buffer> {
   const stages = [
-    { label: "Leads", count: data.leads },
+    { label: "Inquiries", count: data.leads },
     { label: "Contacted", count: data.contacted },
     { label: "Qualified", count: data.qualified },
     { label: "Booked", count: data.booked },
@@ -83,12 +83,12 @@ export async function reportPdfBuffer(data: ReportData): Promise<Buffer> {
 
         <View style={s.grid}>
           <Box label="Total spend" value={money(data.spend)} />
-          <Box label="Leads" value={num(data.leads)} />
-          <Box label="Appointments booked" value={num(data.booked)} />
-          <Box label="Appointments showed" value={num(data.showed)} />
-          <Box label="Revenue" value={money(data.revenue)} />
+          <Box label="Patient inquiries" value={num(data.leads)} />
+          <Box label="Consults booked" value={num(data.booked)} />
+          <Box label="Consults showed" value={num(data.showed)} />
+          <Box label="Treatment revenue" value={money(data.revenue)} />
           <Box
-            label="Cost per appointment"
+            label="Cost per consult"
             value={data.cpa != null ? money(data.cpa) : "—"}
             accent
           />

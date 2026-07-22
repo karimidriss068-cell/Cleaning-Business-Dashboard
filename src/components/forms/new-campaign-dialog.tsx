@@ -124,7 +124,7 @@ export function NewCampaignDialog({
                 setName(e.target.value);
                 if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
               }}
-              placeholder="Roofing — cold traffic Q3"
+              placeholder="Botox launch — cold traffic Q3"
               aria-invalid={!!errors.name}
             />
             <FieldError>{errors.name}</FieldError>
@@ -180,7 +180,7 @@ export function NewCampaignDialog({
                 id="c-obj"
                 value={objective}
                 onChange={(e) => setObjective(e.target.value)}
-                placeholder="Lead gen"
+                placeholder="Patient inquiries"
               />
             </div>
             <div className="space-y-2">
@@ -216,7 +216,7 @@ export function NewCampaignDialog({
                 id="c-ghl"
                 value={ghlTag}
                 onChange={(e) => setGhlTag(e.target.value)}
-                placeholder="for n8n lead mapping"
+                placeholder="for n8n inquiry mapping"
               />
             </div>
           </div>

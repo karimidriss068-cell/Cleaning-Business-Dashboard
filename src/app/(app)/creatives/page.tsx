@@ -157,7 +157,7 @@ export default async function CreativesPage() {
           </Table>
         </CardShell>
         <p className="mt-3 text-xs text-muted-foreground">
-          Rolled-up CPA = total spend ÷ total appointments across every campaign a
+          Rolled-up CPA = total spend ÷ total consults across every campaign a
           creative is attached to (campaign-level attribution).
         </p>
         </FadeInSection>

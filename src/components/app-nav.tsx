@@ -20,7 +20,7 @@ const links = [
   { href: "/accounts", label: "Accounts", icon: Building2 },
   { href: "/campaigns", label: "Campaigns", icon: Megaphone },
   { href: "/creatives", label: "Creatives", icon: Clapperboard },
-  { href: "/leads", label: "Leads", icon: Users },
+  { href: "/leads", label: "Inquiries", icon: Users },
   { href: "/alerts", label: "Alerts", icon: Bell },
   { href: "/insights", label: "Insights", icon: Sparkles },
 ];

@@ -117,7 +117,7 @@ export function NewCreativeDialog({ accounts }: { accounts: AccountOption[] }) {
                 setName(e.target.value);
                 if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
               }}
-              placeholder="Walk-and-talk driveway hook v3"
+              placeholder="Before/after Botox hook v3"
               aria-invalid={!!errors.name}
             />
             <FieldError>{errors.name}</FieldError>

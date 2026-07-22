@@ -141,8 +141,8 @@ export default async function AccountDetailPage({
 
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <StatCard label="Total spend" value={totalSpend} format="money" />
-          <StatCard label="Total leads" value={totalLeads} format="num" />
-          <StatCard label="Appointments" value={apptTotal} format="num" />
+          <StatCard label="Total inquiries" value={totalLeads} format="num" />
+          <StatCard label="Consults" value={apptTotal} format="num" />
           <StatCard label="Showed" value={showed} format="num" />
           <StatCard label="Revenue owed" value={revenueOwed} format="money" />
         </section>
@@ -194,7 +194,7 @@ export default async function AccountDetailPage({
                       <EmptyState
                         icon={Megaphone}
                         title="No campaigns for this account"
-                        description="Create a campaign under this account from the Campaigns page to start tracking spend and leads."
+                        description="Create a campaign under this account from the Campaigns page to start tracking spend and inquiries."
                       />
                     </TableCell>
                   </TableRow>

@@ -19,10 +19,11 @@ export type FollowUpSendResult = {
 };
 
 /**
- * Finds appointments ready for a job-closed follow-up and either sends the
- * SMS or auto-resolves the obvious non-jobs without texting anyone. Fully
- * niche-agnostic — the SMS wording never mentions a specific trade, only
- * the account name (which carries whatever niche it belongs to).
+ * Finds consults (stored as `appointments`) ready for a treatment-closed
+ * follow-up and either sends the SMS or auto-resolves the obvious
+ * non-conversions without texting anyone. Written for MAKI's med spa
+ * clients specifically — the SMS asks about booking a treatment/package,
+ * not a generic "job."
  */
 export async function sendJobFollowUps(
   supabase: SupabaseClient<Database>,
@@ -85,8 +86,8 @@ export async function sendJobFollowUps(
       continue;
     }
 
-    const accountName = (a.account as { name: string } | null)?.name ?? "your recent appointment";
-    const message = `Hi! Quick follow-up on the ${accountName} appointment on ${a.appointment_date} — did it turn into a job, and roughly what was it worth? Reply e.g. "Yes $2400" or "No".`;
+    const accountName = (a.account as { name: string } | null)?.name ?? "your recent consult";
+    const message = `Hi! Quick follow-up on your ${accountName} consult on ${a.appointment_date} — did you end up booking your treatment or package, and roughly what was it worth? Reply e.g. "Yes $2400" or "No".`;
 
     try {
       await sendGhlSms(lead.ghl_contact_id, message);

@@ -37,8 +37,8 @@ export default async function LeadsPage() {
   return (
     <>
       <PageHeader
-        title="Leads"
-        description="All leads across campaigns. Update status inline or convert qualified/booked leads to appointments."
+        title="Inquiries"
+        description="All patient inquiries across campaigns. Update status inline or convert qualified/booked inquiries to consults."
       />
       <StaggerPage>
         <FadeInSection>
