@@ -5,6 +5,7 @@ import { getUncontactedLeads } from "@/lib/lead-response";
 import { getExpiringPackages } from "@/lib/package-expiration";
 import { getRebookingFlags } from "@/lib/rebooking";
 import { getUpsellOpportunities } from "@/lib/upsell";
+import { getMissingConsentTreatments } from "@/lib/compliance";
 
 const DAY = 86400000;
 
@@ -16,7 +17,8 @@ export type DigestFindingType =
   | "slow_response"
   | "package_expiring"
   | "rebooking_due"
-  | "upsell_opportunity";
+  | "upsell_opportunity"
+  | "consent_missing";
 
 export type DigestFinding = {
   accountId: string;
@@ -284,6 +286,24 @@ export async function computeDailyDigest(
       message: `${who}: ${u.suggestion} — ${u.reason}.`,
       // Rule-based pattern match, not a priced conversion estimate — no
       // defensible dollar figure without knowing whether they'll buy in.
+      estimatedImpact: null,
+    });
+  }
+
+  // 8. Consent/compliance flag (Phase 6) — treatments already performed
+  // with no consent form on file. Deliberately kept as its own finding
+  // type so the UI can style it as a risk/compliance matter, not a
+  // performance optimization.
+  const missingConsent = await getMissingConsentTreatments(supabase);
+  for (const c of missingConsent) {
+    const who = c.patientName ?? "A patient";
+    findings.push({
+      accountId: c.accountId,
+      accountName: c.accountName,
+      campaignId: null,
+      creativeId: null,
+      findingType: "consent_missing",
+      message: `${who}'s ${c.treatmentType} treatment${c.treatmentDate ? ` on ${c.treatmentDate}` : ""} has no consent form on file.`,
       estimatedImpact: null,
     });
   }

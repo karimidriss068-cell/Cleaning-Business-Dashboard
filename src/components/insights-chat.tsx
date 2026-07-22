@@ -46,6 +46,7 @@ import {
   FileText,
   Target,
   TrendingUp,
+  ShieldAlert,
 } from "lucide-react";
 
 const SUGGESTIONS = [
@@ -775,10 +776,14 @@ export function InsightsChat({
   const [loading, setLoading] = useState(false);
   const [usage, setUsage] = useState(initialUsage);
   const [digest, setDigest] = useState<DigestItem[]>(initialDigest ?? []);
-  // Upsell opportunities are a growth signal, not a "something's wrong"
-  // flag — kept out of the flags list and rendered as their own section.
-  const flagDigest = digest.filter((d) => d.findingType !== "upsell_opportunity");
+  // Upsell opportunities are a growth signal and consent gaps are a
+  // compliance/risk matter — both kept out of the performance flags list
+  // and rendered as their own distinct sections.
+  const flagDigest = digest.filter(
+    (d) => d.findingType !== "upsell_opportunity" && d.findingType !== "consent_missing",
+  );
   const upsellDigest = digest.filter((d) => d.findingType === "upsell_opportunity");
+  const complianceDigest = digest.filter((d) => d.findingType === "consent_missing");
   const [priorities] = useState<PriorityItem[]>(initialPriorities ?? []);
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -1042,6 +1047,33 @@ export function InsightsChat({
           className="mx-auto w-full max-w-[760px] px-6 pt-6 sm:px-10"
           style={{ paddingBottom: inputBarHeight + 32 }}
         >
+          {/* Compliance gaps are a risk matter, not a performance one —
+              rendered in a bordered alert box (same visual language as the
+              critical CPA alert on campaign pages) so it reads as
+              categorically different from the flags/upsell lists below. */}
+          {complianceDigest.length > 0 && (
+            <div className="mb-8 space-y-2 rounded-md border border-[var(--accent-bright)] bg-[color-mix(in_srgb,var(--accent-bright)_12%,transparent)] p-4">
+              <p className="flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.14em] text-[var(--accent-bright)] uppercase">
+                <ShieldAlert className="h-3.5 w-3.5" />
+                Compliance
+              </p>
+              {complianceDigest.map((d) => (
+                <div key={d.id} className="flex items-start justify-between gap-3">
+                  <p className="text-[14px] leading-relaxed font-medium text-[var(--text-primary)]">
+                    {d.message}
+                  </p>
+                  <button
+                    onClick={() => dismissFlag(d.id)}
+                    aria-label="Dismiss"
+                    className="mt-0.5 shrink-0 text-muted-foreground transition-colors hover:text-cream-rich"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
           {flagDigest.length > 0 && (
             <div className="mb-8 space-y-2 border-b border-border/60 pb-6">
               <p className="text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">

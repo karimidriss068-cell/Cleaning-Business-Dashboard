@@ -953,6 +953,8 @@ export type Database = {
         Row: {
           account_id: string
           appointment_id: string | null
+          consent_date: string | null
+          consent_on_file: boolean
           created_at: string
           id: string
           package_id: string | null
@@ -964,6 +966,8 @@ export type Database = {
         Insert: {
           account_id: string
           appointment_id?: string | null
+          consent_date?: string | null
+          consent_on_file?: boolean
           created_at?: string
           id?: string
           package_id?: string | null
@@ -975,6 +979,8 @@ export type Database = {
         Update: {
           account_id?: string
           appointment_id?: string | null
+          consent_date?: string | null
+          consent_on_file?: boolean
           created_at?: string
           id?: string
           package_id?: string | null
@@ -1051,6 +1057,7 @@ export type Database = {
         | "package_expiring"
         | "rebooking_due"
         | "upsell_opportunity"
+        | "consent_missing"
       insights_message_role: "user" | "assistant"
       lead_status: "new" | "contacted" | "qualified" | "booked" | "dead"
       outreach_channel: "sms" | "cold_call" | "dm" | "email"
@@ -1213,6 +1220,7 @@ export const Constants = {
         "package_expiring",
         "rebooking_due",
         "upsell_opportunity",
+        "consent_missing",
       ],
       insights_message_role: ["user", "assistant"],
       lead_status: ["new", "contacted", "qualified", "booked", "dead"],
