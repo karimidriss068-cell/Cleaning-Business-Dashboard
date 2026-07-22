@@ -1049,6 +1049,7 @@ export type Database = {
         | "ghost_leads"
         | "slow_response"
         | "package_expiring"
+        | "rebooking_due"
       insights_message_role: "user" | "assistant"
       lead_status: "new" | "contacted" | "qualified" | "booked" | "dead"
       outreach_channel: "sms" | "cold_call" | "dm" | "email"
@@ -1209,6 +1210,7 @@ export const Constants = {
         "ghost_leads",
         "slow_response",
         "package_expiring",
+        "rebooking_due",
       ],
       insights_message_role: ["user", "assistant"],
       lead_status: ["new", "contacted", "qualified", "booked", "dead"],

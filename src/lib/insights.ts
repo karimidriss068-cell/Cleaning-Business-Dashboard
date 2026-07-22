@@ -6,6 +6,7 @@ import { getUncontactedLeads, WARNING_MINUTES, CRITICAL_HOURS } from "@/lib/lead
 import { computeClientHealthScore } from "@/lib/client-health";
 import { computePriorities } from "@/lib/priorities";
 import { getExpiringPackages } from "@/lib/package-expiration";
+import { getRebookingFlags } from "@/lib/rebooking";
 
 const DAY = 86400000;
 const NO_ACTIVITY_THRESHOLD_DAYS = 14;
@@ -605,6 +606,9 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
   // ---- Phase 2 (med-spa rebuild): package/membership expiration tracker ----
   const expiringPackages = await getExpiringPackages(supabase);
 
+  // ---- Phase 3 (med-spa rebuild): treatment-cadence rebooking engine ----
+  const rebookingFlags = await getRebookingFlags(supabase);
+
   return {
     context:
       "MAKI Ops — marketing agency internal dashboard. 'internal' accounts are MAKI's own client-acquisition ads; 'client' accounts are ads MAKI runs for clients. Money is USD. This snapshot is the ONLY data available — nothing outside it is known.",
@@ -640,6 +644,17 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
       days_until_expiration: p.daysUntilExpiration,
       urgency: p.urgency,
       unredeemed_value: p.unredeemedValue,
+    })),
+    rebooking_flags: rebookingFlags.map((r) => ({
+      patient_id: r.patientId,
+      patient_name: r.patientName,
+      account_id: r.accountId,
+      account: r.accountName,
+      treatment_type: r.treatmentLabel,
+      last_treatment_date: r.lastTreatmentDate,
+      days_since_treatment: r.daysSinceTreatment,
+      cadence_window_days: r.cadenceWindow,
+      status: r.status,
     })),
     unacknowledged_alerts: (alerts ?? []).map((a) => ({
       type: a.type,
@@ -678,6 +693,7 @@ export function scopeSnapshotToAccount(
     },
     priorities: data.priorities.filter((p) => p.accountId === accountId),
     packages_expiring: data.packages_expiring.filter((p) => p.account_id === accountId),
+    rebooking_flags: data.rebooking_flags.filter((r) => r.account_id === accountId),
   };
 }
 

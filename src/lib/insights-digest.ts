@@ -3,6 +3,7 @@ import type { Database } from "@/lib/supabase/database.types";
 import { currentWeekRange, money } from "@/lib/format";
 import { getUncontactedLeads } from "@/lib/lead-response";
 import { getExpiringPackages } from "@/lib/package-expiration";
+import { getRebookingFlags } from "@/lib/rebooking";
 
 const DAY = 86400000;
 
@@ -12,7 +13,8 @@ export type DigestFindingType =
   | "creative_cpa_spike"
   | "ghost_leads"
   | "slow_response"
-  | "package_expiring";
+  | "package_expiring"
+  | "rebooking_due";
 
 export type DigestFinding = {
   accountId: string;
@@ -237,6 +239,31 @@ export async function computeDailyDigest(
       findingType: "package_expiring",
       message: `${who}'s ${p.packageName} (${p.sessionsRemaining} of ${p.sessionsTotal} sessions left) expires ${p.expirationDate} — ${p.daysUntilExpiration} day${p.daysUntilExpiration === 1 ? "" : "s"} away.`,
       estimatedImpact: p.unredeemedValue,
+    });
+  }
+
+  // 6. Treatment-cadence rebooking engine (Phase 3) — one finding per
+  // patient/treatment-type combo that's approaching, due, or overdue for
+  // their next visit based on TREATMENT_CADENCE windows.
+  const rebookingFlags = await getRebookingFlags(supabase);
+  for (const r of rebookingFlags) {
+    const who = r.patientName ?? "A patient";
+    const verb =
+      r.status === "overdue"
+        ? `is overdue for their next ${r.treatmentLabel} treatment`
+        : r.status === "due"
+          ? `is due for their next ${r.treatmentLabel} treatment`
+          : `is approaching their next ${r.treatmentLabel} rebooking window`;
+    findings.push({
+      accountId: r.accountId,
+      accountName: r.accountName,
+      campaignId: null,
+      creativeId: null,
+      findingType: "rebooking_due",
+      message: `${who} ${verb} — last treated ${r.lastTreatmentDate}, ${r.daysSinceTreatment} days ago.`,
+      // No defensible dollar figure without knowing whether they'll actually
+      // rebook — this is a follow-up prompt, not a quantifiable loss.
+      estimatedImpact: null,
     });
   }
 
