@@ -4,6 +4,7 @@ import { currentWeekRange, money } from "@/lib/format";
 import { getUncontactedLeads } from "@/lib/lead-response";
 import { getExpiringPackages } from "@/lib/package-expiration";
 import { getRebookingFlags } from "@/lib/rebooking";
+import { getUpsellOpportunities } from "@/lib/upsell";
 
 const DAY = 86400000;
 
@@ -14,7 +15,8 @@ export type DigestFindingType =
   | "ghost_leads"
   | "slow_response"
   | "package_expiring"
-  | "rebooking_due";
+  | "rebooking_due"
+  | "upsell_opportunity";
 
 export type DigestFinding = {
   accountId: string;
@@ -263,6 +265,25 @@ export async function computeDailyDigest(
       message: `${who} ${verb} — last treated ${r.lastTreatmentDate}, ${r.daysSinceTreatment} days ago.`,
       // No defensible dollar figure without knowing whether they'll actually
       // rebook — this is a follow-up prompt, not a quantifiable loss.
+      estimatedImpact: null,
+    });
+  }
+
+  // 7. Rule-based upsell opportunities (Phase 5) — one finding per
+  // (patient, matched rule), kept as its own distinct finding type so the
+  // UI can render it as a growth signal, not a "something's wrong" flag.
+  const upsellOpportunities = await getUpsellOpportunities(supabase);
+  for (const u of upsellOpportunities) {
+    const who = u.patientName ?? "A patient";
+    findings.push({
+      accountId: u.accountId,
+      accountName: u.accountName,
+      campaignId: null,
+      creativeId: null,
+      findingType: "upsell_opportunity",
+      message: `${who}: ${u.suggestion} — ${u.reason}.`,
+      // Rule-based pattern match, not a priced conversion estimate — no
+      // defensible dollar figure without knowing whether they'll buy in.
       estimatedImpact: null,
     });
   }

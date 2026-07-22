@@ -8,6 +8,7 @@ import { computePriorities } from "@/lib/priorities";
 import { getExpiringPackages } from "@/lib/package-expiration";
 import { getRebookingFlags } from "@/lib/rebooking";
 import { getProviderPerformance } from "@/lib/provider-performance";
+import { getUpsellOpportunities } from "@/lib/upsell";
 
 const DAY = 86400000;
 const NO_ACTIVITY_THRESHOLD_DAYS = 14;
@@ -613,6 +614,9 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
   // ---- Phase 4 (med-spa rebuild): provider utilization & revenue ----
   const providerPerformance = await getProviderPerformance(supabase);
 
+  // ---- Phase 5 (med-spa rebuild): rule-based upsell recommendations ----
+  const upsellOpportunities = await getUpsellOpportunities(supabase);
+
   return {
     context:
       "MAKI Ops — marketing agency internal dashboard. 'internal' accounts are MAKI's own client-acquisition ads; 'client' accounts are ads MAKI runs for clients. Money is USD. This snapshot is the ONLY data available — nothing outside it is known.",
@@ -672,6 +676,15 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
       revenue_30d: p.revenue30d,
       utilization_rate_available: p.utilizationRateAvailable,
     })),
+    upsell_opportunities: upsellOpportunities.map((u) => ({
+      patient_id: u.patientId,
+      patient_name: u.patientName,
+      account_id: u.accountId,
+      account: u.accountName,
+      rule_key: u.ruleKey,
+      suggestion: u.suggestion,
+      reason: u.reason,
+    })),
     unacknowledged_alerts: (alerts ?? []).map((a) => ({
       type: a.type,
       message: a.message,
@@ -711,6 +724,7 @@ export function scopeSnapshotToAccount(
     packages_expiring: data.packages_expiring.filter((p) => p.account_id === accountId),
     rebooking_flags: data.rebooking_flags.filter((r) => r.account_id === accountId),
     provider_performance: data.provider_performance.filter((p) => p.account_id === accountId),
+    upsell_opportunities: data.upsell_opportunities.filter((u) => u.account_id === accountId),
   };
 }
 

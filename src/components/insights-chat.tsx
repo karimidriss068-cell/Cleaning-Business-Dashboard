@@ -45,6 +45,7 @@ import {
   ChevronLeft,
   FileText,
   Target,
+  TrendingUp,
 } from "lucide-react";
 
 const SUGGESTIONS = [
@@ -774,6 +775,10 @@ export function InsightsChat({
   const [loading, setLoading] = useState(false);
   const [usage, setUsage] = useState(initialUsage);
   const [digest, setDigest] = useState<DigestItem[]>(initialDigest ?? []);
+  // Upsell opportunities are a growth signal, not a "something's wrong"
+  // flag — kept out of the flags list and rendered as their own section.
+  const flagDigest = digest.filter((d) => d.findingType !== "upsell_opportunity");
+  const upsellDigest = digest.filter((d) => d.findingType === "upsell_opportunity");
   const [priorities] = useState<PriorityItem[]>(initialPriorities ?? []);
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -1037,12 +1042,12 @@ export function InsightsChat({
           className="mx-auto w-full max-w-[760px] px-6 pt-6 sm:px-10"
           style={{ paddingBottom: inputBarHeight + 32 }}
         >
-          {digest.length > 0 && (
+          {flagDigest.length > 0 && (
             <div className="mb-8 space-y-2 border-b border-border/60 pb-6">
               <p className="text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
                 Today&apos;s flags
               </p>
-              {digest.map((d) => {
+              {flagDigest.map((d) => {
                 // Ghost leads (24h+ uncontacted) are critical, not just a
                 // warning — reads in the brighter alert red, everything
                 // else stays the standard amber "flag" tone.
@@ -1070,6 +1075,34 @@ export function InsightsChat({
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Upsell opportunities read as a growth signal, not a problem —
+              kept in its own section with a copper/positive tone so it never
+              blends into the warning-red "something's wrong" flags above. */}
+          {upsellDigest.length > 0 && (
+            <div className="mb-8 space-y-2 border-b border-border/60 pb-6">
+              <p className="text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+                Upsell opportunities
+              </p>
+              {upsellDigest.map((d) => (
+                <div key={d.id} className="flex items-start justify-between gap-3">
+                  <p className="flex items-start gap-1.5 text-[14px] leading-relaxed text-copper">
+                    <span className="mt-0.5">
+                      <TrendingUp className="h-3.5 w-3.5" />
+                    </span>
+                    <span>{d.message}</span>
+                  </p>
+                  <button
+                    onClick={() => dismissFlag(d.id)}
+                    aria-label="Dismiss"
+                    className="mt-0.5 shrink-0 text-muted-foreground transition-colors hover:text-cream-rich"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
             </div>
           )}
 
