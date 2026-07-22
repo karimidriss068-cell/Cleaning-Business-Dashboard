@@ -7,6 +7,7 @@ import { computeClientHealthScore } from "@/lib/client-health";
 import { computePriorities } from "@/lib/priorities";
 import { getExpiringPackages } from "@/lib/package-expiration";
 import { getRebookingFlags } from "@/lib/rebooking";
+import { getProviderPerformance } from "@/lib/provider-performance";
 
 const DAY = 86400000;
 const NO_ACTIVITY_THRESHOLD_DAYS = 14;
@@ -609,6 +610,9 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
   // ---- Phase 3 (med-spa rebuild): treatment-cadence rebooking engine ----
   const rebookingFlags = await getRebookingFlags(supabase);
 
+  // ---- Phase 4 (med-spa rebuild): provider utilization & revenue ----
+  const providerPerformance = await getProviderPerformance(supabase);
+
   return {
     context:
       "MAKI Ops — marketing agency internal dashboard. 'internal' accounts are MAKI's own client-acquisition ads; 'client' accounts are ads MAKI runs for clients. Money is USD. This snapshot is the ONLY data available — nothing outside it is known.",
@@ -656,6 +660,18 @@ export async function getInsightsData(supabase: SupabaseClient<Database>) {
       cadence_window_days: r.cadenceWindow,
       status: r.status,
     })),
+    provider_performance: providerPerformance.map((p) => ({
+      provider_id: p.providerId,
+      provider_name: p.providerName,
+      role: p.role,
+      account_id: p.accountId,
+      account: p.accountName,
+      appointments_booked_30d: p.appointmentsBooked30d,
+      appointments_showed_30d: p.appointmentsShowed30d,
+      jobs_closed_30d: p.jobsClosed30d,
+      revenue_30d: p.revenue30d,
+      utilization_rate_available: p.utilizationRateAvailable,
+    })),
     unacknowledged_alerts: (alerts ?? []).map((a) => ({
       type: a.type,
       message: a.message,
@@ -694,6 +710,7 @@ export function scopeSnapshotToAccount(
     priorities: data.priorities.filter((p) => p.accountId === accountId),
     packages_expiring: data.packages_expiring.filter((p) => p.account_id === accountId),
     rebooking_flags: data.rebooking_flags.filter((r) => r.account_id === accountId),
+    provider_performance: data.provider_performance.filter((p) => p.account_id === accountId),
   };
 }
 
