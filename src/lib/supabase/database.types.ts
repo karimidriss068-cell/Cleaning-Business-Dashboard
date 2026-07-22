@@ -100,6 +100,7 @@ export type Database = {
           job_closed: boolean | null
           job_revenue: number | null
           lead_id: string
+          provider_id: string | null
           revenue_owed: number | null
           status: Database["public"]["Enums"]["appointment_status"]
         }
@@ -114,6 +115,7 @@ export type Database = {
           job_closed?: boolean | null
           job_revenue?: number | null
           lead_id: string
+          provider_id?: string | null
           revenue_owed?: number | null
           status?: Database["public"]["Enums"]["appointment_status"]
         }
@@ -128,6 +130,7 @@ export type Database = {
           job_closed?: boolean | null
           job_revenue?: number | null
           lead_id?: string
+          provider_id?: string | null
           revenue_owed?: number | null
           status?: Database["public"]["Enums"]["appointment_status"]
         }
@@ -144,6 +147,13 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
             referencedColumns: ["id"]
           },
         ]
@@ -739,6 +749,73 @@ export type Database = {
         }
         Relationships: []
       }
+      patients: {
+        Row: {
+          account_id: string
+          created_at: string
+          ghl_contact_id: string | null
+          id: string
+          name: string | null
+          phone: string | null
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          ghl_contact_id?: string | null
+          id?: string
+          name?: string | null
+          phone?: string | null
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          ghl_contact_id?: string | null
+          id?: string
+          name?: string | null
+          phone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patients_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      providers: {
+        Row: {
+          account_id: string
+          created_at: string
+          id: string
+          name: string
+          role: string | null
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          id?: string
+          name: string
+          role?: string | null
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "providers_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       report_shares: {
         Row: {
           account_id: string
@@ -814,6 +891,71 @@ export type Database = {
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      treatments: {
+        Row: {
+          account_id: string
+          appointment_id: string | null
+          created_at: string
+          id: string
+          package_id: string | null
+          patient_id: string
+          provider_id: string | null
+          treatment_date: string | null
+          treatment_type: string
+        }
+        Insert: {
+          account_id: string
+          appointment_id?: string | null
+          created_at?: string
+          id?: string
+          package_id?: string | null
+          patient_id: string
+          provider_id?: string | null
+          treatment_date?: string | null
+          treatment_type: string
+        }
+        Update: {
+          account_id?: string
+          appointment_id?: string | null
+          created_at?: string
+          id?: string
+          package_id?: string | null
+          patient_id?: string
+          provider_id?: string | null
+          treatment_date?: string | null
+          treatment_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treatments_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatments_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatments_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
             referencedColumns: ["id"]
           },
         ]
