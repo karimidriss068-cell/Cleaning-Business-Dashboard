@@ -481,6 +481,53 @@ export type Database = {
           },
         ]
       }
+      goals: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          metric: Database["public"]["Enums"]["goal_metric"]
+          notes: string | null
+          period: Database["public"]["Enums"]["goal_period"]
+          period_end: string
+          period_start: string
+          target_value: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          metric: Database["public"]["Enums"]["goal_metric"]
+          notes?: string | null
+          period: Database["public"]["Enums"]["goal_period"]
+          period_end: string
+          period_start: string
+          target_value: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          metric?: Database["public"]["Enums"]["goal_metric"]
+          notes?: string | null
+          period?: Database["public"]["Enums"]["goal_period"]
+          period_end?: string
+          period_start?: string
+          target_value?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goals_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       integration_settings: {
         Row: {
           config: Json
@@ -2047,6 +2094,14 @@ export type Database = {
         | "software"
         | "insurance"
         | "other"
+      goal_metric:
+        | "revenue_cents"
+        | "jobs_completed"
+        | "leads"
+        | "new_clients"
+        | "close_rate_bps"
+        | "avg_first_response_minutes"
+      goal_period: "week" | "month" | "quarter" | "year"
       invoice_status: "draft" | "open" | "paid" | "void" | "uncollectible"
       job_photo_kind: "before" | "after" | "issue"
       job_status:
@@ -2236,6 +2291,15 @@ export const Constants = {
         "insurance",
         "other",
       ],
+      goal_metric: [
+        "revenue_cents",
+        "jobs_completed",
+        "leads",
+        "new_clients",
+        "close_rate_bps",
+        "avg_first_response_minutes",
+      ],
+      goal_period: ["week", "month", "quarter", "year"],
       invoice_status: ["draft", "open", "paid", "void", "uncollectible"],
       job_photo_kind: ["before", "after", "issue"],
       job_status: [
