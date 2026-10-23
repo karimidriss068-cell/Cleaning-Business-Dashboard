@@ -129,3 +129,5 @@ Once Vitest is set up, every new table ships with RLS tests and every webhook sh
 - [ ] Set up **Vitest** (`npm test`) for `src/lib/**` and the webhook handlers.
 - [ ] Add a **CI step** that runs `tsc --noEmit`, `npm run lint`, `npm test`, and `npm run build` on every push and PR.
 - [ ] Fix the **12 existing lint errors**: impure `Date.now()` during render in the accounts, campaigns, and dashboard pages; unescaped entities in `not-found.tsx` and `meta-campaign-id-form.tsx`; and setState-in-effect in `insights-chat.tsx` and `use-count-up.ts`.
+- [ ] Show a **"Demo data loaded, purge before launch" banner** in the app shell whenever any row with an id starting `5eed0000-` exists (demo data from `scripts/seed.mts`).
+- [ ] **Run the purge before real customers go in**: `node scripts/seed.mts --project-ref lijsaulkeaqlriwqgxty --purge`. It also removes the seeded goals and the two test logins (`seed+ana@example.com`, `seed+luis@example.com`); re-enter the real goals afterwards.
