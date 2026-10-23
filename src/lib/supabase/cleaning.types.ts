@@ -14,6 +14,396 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounts: {
+        Row: {
+          created_at: string
+          id: string
+          industry: string | null
+          monthly_value_cents: number | null
+          name: string
+          notes: string | null
+          payment_terms: Database["public"]["Enums"]["payment_terms"]
+          primary_contact_id: string | null
+          renewal_date: string | null
+          status: Database["public"]["Enums"]["account_status"]
+          stripe_customer_id: string | null
+          updated_at: string
+          visits_per_month: number | null
+          walkthrough_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          industry?: string | null
+          monthly_value_cents?: number | null
+          name: string
+          notes?: string | null
+          payment_terms?: Database["public"]["Enums"]["payment_terms"]
+          primary_contact_id?: string | null
+          renewal_date?: string | null
+          status?: Database["public"]["Enums"]["account_status"]
+          stripe_customer_id?: string | null
+          updated_at?: string
+          visits_per_month?: number | null
+          walkthrough_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          industry?: string | null
+          monthly_value_cents?: number | null
+          name?: string
+          notes?: string | null
+          payment_terms?: Database["public"]["Enums"]["payment_terms"]
+          primary_contact_id?: string | null
+          renewal_date?: string | null
+          status?: Database["public"]["Enums"]["account_status"]
+          stripe_customer_id?: string | null
+          updated_at?: string
+          visits_per_month?: number | null
+          walkthrough_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounts_primary_contact_id_fkey"
+            columns: ["primary_contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      activities: {
+        Row: {
+          account_id: string | null
+          actor_user_id: string | null
+          body: string | null
+          contact_id: string | null
+          created_at: string
+          direction: Database["public"]["Enums"]["activity_direction"] | null
+          external_id: string | null
+          id: string
+          job_id: string | null
+          lead_id: string | null
+          occurred_at: string
+          subject: string | null
+          type: Database["public"]["Enums"]["activity_type"]
+          updated_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          actor_user_id?: string | null
+          body?: string | null
+          contact_id?: string | null
+          created_at?: string
+          direction?: Database["public"]["Enums"]["activity_direction"] | null
+          external_id?: string | null
+          id?: string
+          job_id?: string | null
+          lead_id?: string | null
+          occurred_at?: string
+          subject?: string | null
+          type: Database["public"]["Enums"]["activity_type"]
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          actor_user_id?: string | null
+          body?: string | null
+          contact_id?: string | null
+          created_at?: string
+          direction?: Database["public"]["Enums"]["activity_direction"] | null
+          external_id?: string | null
+          id?: string
+          job_id?: string | null
+          lead_id?: string | null
+          occurred_at?: string
+          subject?: string | null
+          type?: Database["public"]["Enums"]["activity_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activities_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activities_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "activities_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activities_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contacts: {
+        Row: {
+          account_id: string | null
+          address_line1: string | null
+          address_line2: string | null
+          borough: Database["public"]["Enums"]["borough"] | null
+          city: string | null
+          created_at: string
+          email: string | null
+          first_name: string
+          ghl_contact_id: string | null
+          id: string
+          last_name: string | null
+          notes: string | null
+          phone: string | null
+          source: string | null
+          state: string
+          stripe_customer_id: string | null
+          type: Database["public"]["Enums"]["contact_type"]
+          updated_at: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+          zip: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          address_line1?: string | null
+          address_line2?: string | null
+          borough?: Database["public"]["Enums"]["borough"] | null
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          first_name: string
+          ghl_contact_id?: string | null
+          id?: string
+          last_name?: string | null
+          notes?: string | null
+          phone?: string | null
+          source?: string | null
+          state?: string
+          stripe_customer_id?: string | null
+          type?: Database["public"]["Enums"]["contact_type"]
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          zip?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          address_line1?: string | null
+          address_line2?: string | null
+          borough?: Database["public"]["Enums"]["borough"] | null
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          first_name?: string
+          ghl_contact_id?: string | null
+          id?: string
+          last_name?: string | null
+          notes?: string | null
+          phone?: string | null
+          source?: string | null
+          state?: string
+          stripe_customer_id?: string | null
+          type?: Database["public"]["Enums"]["contact_type"]
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contacts_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          bathrooms: number | null
+          bedrooms: number | null
+          campaign_id: string | null
+          contact_id: string
+          created_at: string
+          first_response_at: string | null
+          ghl_opportunity_id: string | null
+          id: string
+          lost_reason: string | null
+          notes: string | null
+          requested_date: string | null
+          service_id: string | null
+          source: string | null
+          sqft: number | null
+          stage: Database["public"]["Enums"]["lead_stage"]
+          updated_at: string
+        }
+        Insert: {
+          bathrooms?: number | null
+          bedrooms?: number | null
+          campaign_id?: string | null
+          contact_id: string
+          created_at?: string
+          first_response_at?: string | null
+          ghl_opportunity_id?: string | null
+          id?: string
+          lost_reason?: string | null
+          notes?: string | null
+          requested_date?: string | null
+          service_id?: string | null
+          source?: string | null
+          sqft?: number | null
+          stage?: Database["public"]["Enums"]["lead_stage"]
+          updated_at?: string
+        }
+        Update: {
+          bathrooms?: number | null
+          bedrooms?: number | null
+          campaign_id?: string | null
+          contact_id?: string
+          created_at?: string
+          first_response_at?: string | null
+          ghl_opportunity_id?: string | null
+          id?: string
+          lost_reason?: string | null
+          notes?: string | null
+          requested_date?: string | null
+          service_id?: string | null
+          source?: string | null
+          sqft?: number | null
+          stage?: Database["public"]["Enums"]["lead_stage"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_campaigns: {
+        Row: {
+          budget_cents: number | null
+          created_at: string
+          end_date: string | null
+          external_id: string | null
+          id: string
+          name: string
+          platform: Database["public"]["Enums"]["marketing_platform"]
+          start_date: string | null
+          status: Database["public"]["Enums"]["campaign_status"]
+          updated_at: string
+        }
+        Insert: {
+          budget_cents?: number | null
+          created_at?: string
+          end_date?: string | null
+          external_id?: string | null
+          id?: string
+          name: string
+          platform: Database["public"]["Enums"]["marketing_platform"]
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["campaign_status"]
+          updated_at?: string
+        }
+        Update: {
+          budget_cents?: number | null
+          created_at?: string
+          end_date?: string | null
+          external_id?: string | null
+          id?: string
+          name?: string
+          platform?: Database["public"]["Enums"]["marketing_platform"]
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["campaign_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      marketing_daily_stats: {
+        Row: {
+          campaign_id: string
+          clicks: number
+          created_at: string
+          date: string
+          id: string
+          impressions: number
+          leads: number
+          spend_cents: number
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          clicks?: number
+          created_at?: string
+          date: string
+          id?: string
+          impressions?: number
+          leads?: number
+          spend_cents?: number
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          clicks?: number
+          created_at?: string
+          date?: string
+          id?: string
+          impressions?: number
+          leads?: number
+          spend_cents?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_daily_stats_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -44,6 +434,117 @@ export type Database = {
           subcontractor_id?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      properties: {
+        Row: {
+          access_instructions: string | null
+          account_id: string | null
+          address_line1: string
+          address_line2: string | null
+          bathrooms: number | null
+          bedrooms: number | null
+          borough: Database["public"]["Enums"]["borough"]
+          city: string | null
+          contact_id: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          label: string | null
+          sqft: number | null
+          state: string
+          updated_at: string
+          zip: string
+        }
+        Insert: {
+          access_instructions?: string | null
+          account_id?: string | null
+          address_line1: string
+          address_line2?: string | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          borough: Database["public"]["Enums"]["borough"]
+          city?: string | null
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          sqft?: number | null
+          state?: string
+          updated_at?: string
+          zip: string
+        }
+        Update: {
+          access_instructions?: string | null
+          account_id?: string | null
+          address_line1?: string
+          address_line2?: string | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          borough?: Database["public"]["Enums"]["borough"]
+          city?: string | null
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          sqft?: number | null
+          state?: string
+          updated_at?: string
+          zip?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "properties_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "properties_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      services: {
+        Row: {
+          base_price_cents: number
+          created_at: string
+          default_duration_minutes: number
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          pricing_model: Database["public"]["Enums"]["pricing_model"]
+          updated_at: string
+        }
+        Insert: {
+          base_price_cents: number
+          created_at?: string
+          default_duration_minutes: number
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          pricing_model?: Database["public"]["Enums"]["pricing_model"]
+          updated_at?: string
+        }
+        Update: {
+          base_price_cents?: number
+          created_at?: string
+          default_duration_minutes?: number
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          pricing_model?: Database["public"]["Enums"]["pricing_model"]
+          updated_at?: string
         }
         Relationships: []
       }
@@ -88,8 +589,30 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      account_status: "prospect" | "active" | "paused" | "churned"
+      activity_direction: "inbound" | "outbound"
+      activity_type:
+        | "call"
+        | "sms"
+        | "email"
+        | "note"
+        | "meeting"
+        | "status_change"
       app_role: "owner" | "admin" | "staff" | "subcontractor"
       borough: "manhattan" | "brooklyn" | "queens" | "bronx" | "staten_island"
+      campaign_status: "draft" | "active" | "paused" | "ended"
+      contact_type: "residential" | "commercial"
+      lead_stage: "new" | "contacted" | "quoted" | "won" | "lost"
+      marketing_platform:
+        | "meta"
+        | "google"
+        | "tiktok"
+        | "nextdoor"
+        | "yelp"
+        | "thumbtack"
+        | "other"
+      payment_terms: "due_on_receipt" | "net_15" | "net_30" | "net_45"
+      pricing_model: "flat" | "hourly" | "per_sqft"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -217,8 +740,32 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_status: ["prospect", "active", "paused", "churned"],
+      activity_direction: ["inbound", "outbound"],
+      activity_type: [
+        "call",
+        "sms",
+        "email",
+        "note",
+        "meeting",
+        "status_change",
+      ],
       app_role: ["owner", "admin", "staff", "subcontractor"],
       borough: ["manhattan", "brooklyn", "queens", "bronx", "staten_island"],
+      campaign_status: ["draft", "active", "paused", "ended"],
+      contact_type: ["residential", "commercial"],
+      lead_stage: ["new", "contacted", "quoted", "won", "lost"],
+      marketing_platform: [
+        "meta",
+        "google",
+        "tiktok",
+        "nextdoor",
+        "yelp",
+        "thumbtack",
+        "other",
+      ],
+      payment_terms: ["due_on_receipt", "net_15", "net_30", "net_45"],
+      pricing_model: ["flat", "hourly", "per_sqft"],
     },
   },
 } as const
