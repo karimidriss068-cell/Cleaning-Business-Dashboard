@@ -1285,6 +1285,7 @@ export type Database = {
           job_assignment_id: string
           payout_id: string
           updated_at: string
+          voided: boolean
         }
         Insert: {
           amount_cents: number
@@ -1293,6 +1294,7 @@ export type Database = {
           job_assignment_id: string
           payout_id: string
           updated_at?: string
+          voided?: boolean
         }
         Update: {
           amount_cents?: number
@@ -1301,12 +1303,13 @@ export type Database = {
           job_assignment_id?: string
           payout_id?: string
           updated_at?: string
+          voided?: boolean
         }
         Relationships: [
           {
             foreignKeyName: "payout_items_job_assignment_id_fkey"
             columns: ["job_assignment_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "job_assignments"
             referencedColumns: ["id"]
           },
@@ -1334,6 +1337,9 @@ export type Database = {
           subcontractor_id: string
           total_cents: number
           updated_at: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
         }
         Insert: {
           approved_at?: string | null
@@ -1349,6 +1355,9 @@ export type Database = {
           subcontractor_id: string
           total_cents?: number
           updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
         }
         Update: {
           approved_at?: string | null
@@ -1364,6 +1373,9 @@ export type Database = {
           subcontractor_id?: string
           total_cents?: number
           updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
         }
         Relationships: [
           {
@@ -1379,6 +1391,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "subcontractors"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payouts_voided_by_fkey"
+            columns: ["voided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
         ]
       }
