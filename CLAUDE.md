@@ -71,15 +71,18 @@ Every env var is documented in `.env.example`. When you add a variable, add it t
 
 ## Test / verify
 
-There is **no test runner yet** (see the to-do below). Until one exists, run these before every commit:
+Run these before every commit. CI (`.github/workflows/ci.yml`) runs the same on every push to `main` or `cleaning-platform` and on every PR:
 
 ```bash
-npx tsc --noEmit                # must pass
+npm run typecheck               # tsc --noEmit, must pass
 npm run lint                    # must pass with 0 errors
+npm test                        # Vitest: src/**/*.test.ts
 npm run build
 ```
 
-Once Vitest is set up, every new table ships with RLS tests and every webhook ships with tests covering a bad signature, a duplicate event, and invalid input.
+- Unit tests live next to the code (`src/lib/format.test.ts`). Anything touching dates must pass under any machine time zone; CI also runs the suite with `TZ=Pacific/Kiritimati`.
+- Database behavior (RLS, triggers, functions) is tested by the rolled-back SQL files in `supabase/tests/`.
+- Every new table ships with RLS tests, and every webhook ships with tests covering a bad signature, a duplicate event, and invalid input.
 
 ## Adding a migration (new cleaning project only)
 
@@ -126,8 +129,8 @@ Once Vitest is set up, every new table ships with RLS tests and every webhook sh
 
 ## To-do
 
-- [ ] Set up **Vitest** (`npm test`) for `src/lib/**` and the webhook handlers.
-- [ ] Add a **CI step** that runs `tsc --noEmit`, `npm run lint`, `npm test`, and `npm run build` on every push and PR.
+- [x] ~~Set up Vitest (`npm test`).~~ Done; webhook handler tests come with the first webhook.
+- [x] ~~Add a CI step running typecheck, lint, test and build.~~ Done; it runs once the branch is pushed to GitHub.
 - [x] ~~Fix the 12 existing lint errors.~~ Done: 11 were in MAKI files deleted during the conversion; the last (`not-found.tsx`) was fixed.
 - [ ] Show a **"Demo data loaded, purge before launch" banner** in the app shell whenever any row with an id starting `5eed0000-` exists (demo data from `scripts/seed.mts`).
 - [ ] **Run the purge before real customers go in**: `node scripts/seed.mts --project-ref lijsaulkeaqlriwqgxty --purge`. It also removes the seeded goals and the two test logins (`seed+ana@example.com`, `seed+luis@example.com`); re-enter the real goals afterwards.
