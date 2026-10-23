@@ -2120,6 +2120,9 @@ export type Database = {
         | "new_clients"
         | "close_rate_bps"
         | "avg_first_response_minutes"
+        | "google_reviews"
+        | "residential_jobs_completed"
+        | "commercial_contracts_signed"
       goal_period: "week" | "month" | "quarter" | "year"
       invoice_status: "draft" | "open" | "paid" | "void" | "uncollectible"
       job_photo_kind: "before" | "after" | "issue"
@@ -2317,6 +2320,9 @@ export const Constants = {
         "new_clients",
         "close_rate_bps",
         "avg_first_response_minutes",
+        "google_reviews",
+        "residential_jobs_completed",
+        "commercial_contracts_signed",
       ],
       goal_period: ["week", "month", "quarter", "year"],
       invoice_status: ["draft", "open", "paid", "void", "uncollectible"],

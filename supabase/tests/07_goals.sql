@@ -19,6 +19,11 @@ begin
       values ('leads', 'week', '2026-11-09', '2026-11-02', 40);
     r := r || 'end-before-start:ALLOWED(BAD) ';
   exception when check_violation then r := r || 'end-before-start:rejected '; end;
+  insert into public.goals (metric, period, period_start, period_end, target_value) values
+    ('google_reviews', 'month', '2026-11-01', '2026-11-30', 15),
+    ('residential_jobs_completed', 'month', '2026-11-01', '2026-11-30', 25),
+    ('commercial_contracts_signed', 'month', '2026-11-01', '2026-11-30', 1);
+  r := r || 'owner-target-metrics:ok ';
   execute 'reset role';
 
   perform set_config('request.jwt.claims', json_build_object('sub', staff, 'role', 'authenticated')::text, true);
