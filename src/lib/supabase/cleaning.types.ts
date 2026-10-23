@@ -242,6 +242,80 @@ export type Database = {
           },
         ]
       }
+      crew_members: {
+        Row: {
+          created_at: string
+          crew_id: string
+          id: string
+          subcontractor_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          crew_id: string
+          id?: string
+          subcontractor_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          crew_id?: string
+          id?: string
+          subcontractor_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crew_members_crew_id_fkey"
+            columns: ["crew_id"]
+            isOneToOne: false
+            referencedRelation: "crews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crew_members_subcontractor_id_fkey"
+            columns: ["subcontractor_id"]
+            isOneToOne: false
+            referencedRelation: "subcontractors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crews: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          lead_subcontractor_id: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          lead_subcontractor_id?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          lead_subcontractor_id?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crews_lead_subcontractor_id_fkey"
+            columns: ["lead_subcontractor_id"]
+            isOneToOne: false
+            referencedRelation: "subcontractors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           bathrooms: number | null
@@ -435,7 +509,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_subcontractor_id_fkey"
+            columns: ["subcontractor_id"]
+            isOneToOne: true
+            referencedRelation: "subcontractors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       properties: {
         Row: {
@@ -704,6 +786,114 @@ export type Database = {
         }
         Relationships: []
       }
+      subcontractor_documents: {
+        Row: {
+          created_at: string
+          expires_on: string | null
+          id: string
+          storage_path: string
+          subcontractor_id: string
+          type: Database["public"]["Enums"]["subcontractor_document_type"]
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_on?: string | null
+          id?: string
+          storage_path: string
+          subcontractor_id: string
+          type: Database["public"]["Enums"]["subcontractor_document_type"]
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_on?: string | null
+          id?: string
+          storage_path?: string
+          subcontractor_id?: string
+          type?: Database["public"]["Enums"]["subcontractor_document_type"]
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subcontractor_documents_subcontractor_id_fkey"
+            columns: ["subcontractor_id"]
+            isOneToOne: false
+            referencedRelation: "subcontractors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subcontractor_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      subcontractors: {
+        Row: {
+          boroughs_served: Database["public"]["Enums"]["borough"][]
+          business_entity: Database["public"]["Enums"]["business_entity"]
+          coi_expires_on: string | null
+          created_at: string
+          display_name: string
+          email: string | null
+          id: string
+          legal_name: string | null
+          notes: string | null
+          pay_rate_bps: number | null
+          pay_rate_cents: number | null
+          pay_type: Database["public"]["Enums"]["pay_type"]
+          payout_vendor_ref: string | null
+          phone: string | null
+          status: Database["public"]["Enums"]["subcontractor_status"]
+          updated_at: string
+          w9_received_at: string | null
+        }
+        Insert: {
+          boroughs_served?: Database["public"]["Enums"]["borough"][]
+          business_entity?: Database["public"]["Enums"]["business_entity"]
+          coi_expires_on?: string | null
+          created_at?: string
+          display_name: string
+          email?: string | null
+          id?: string
+          legal_name?: string | null
+          notes?: string | null
+          pay_rate_bps?: number | null
+          pay_rate_cents?: number | null
+          pay_type?: Database["public"]["Enums"]["pay_type"]
+          payout_vendor_ref?: string | null
+          phone?: string | null
+          status?: Database["public"]["Enums"]["subcontractor_status"]
+          updated_at?: string
+          w9_received_at?: string | null
+        }
+        Update: {
+          boroughs_served?: Database["public"]["Enums"]["borough"][]
+          business_entity?: Database["public"]["Enums"]["business_entity"]
+          coi_expires_on?: string | null
+          created_at?: string
+          display_name?: string
+          email?: string | null
+          id?: string
+          legal_name?: string | null
+          notes?: string | null
+          pay_rate_bps?: number | null
+          pay_rate_cents?: number | null
+          pay_type?: Database["public"]["Enums"]["pay_type"]
+          payout_vendor_ref?: string | null
+          phone?: string | null
+          status?: Database["public"]["Enums"]["subcontractor_status"]
+          updated_at?: string
+          w9_received_at?: string | null
+        }
+        Relationships: []
+      }
       webhook_events: {
         Row: {
           error: string | null
@@ -756,6 +946,7 @@ export type Database = {
         | "status_change"
       app_role: "owner" | "admin" | "staff" | "subcontractor"
       borough: "manhattan" | "brooklyn" | "queens" | "bronx" | "staten_island"
+      business_entity: "individual" | "llc" | "corporation"
       campaign_status: "draft" | "active" | "paused" | "ended"
       contact_type: "residential" | "commercial"
       lead_stage: "new" | "contacted" | "quoted" | "won" | "lost"
@@ -767,9 +958,12 @@ export type Database = {
         | "yelp"
         | "thumbtack"
         | "other"
+      pay_type: "flat" | "percent" | "hourly"
       payment_terms: "due_on_receipt" | "net_15" | "net_30" | "net_45"
       pricing_model: "flat" | "hourly" | "per_sqft"
       quote_status: "draft" | "sent" | "accepted" | "declined" | "expired"
+      subcontractor_document_type: "w9" | "coi" | "agreement" | "other"
+      subcontractor_status: "onboarding" | "active" | "inactive"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -909,6 +1103,7 @@ export const Constants = {
       ],
       app_role: ["owner", "admin", "staff", "subcontractor"],
       borough: ["manhattan", "brooklyn", "queens", "bronx", "staten_island"],
+      business_entity: ["individual", "llc", "corporation"],
       campaign_status: ["draft", "active", "paused", "ended"],
       contact_type: ["residential", "commercial"],
       lead_stage: ["new", "contacted", "quoted", "won", "lost"],
@@ -921,9 +1116,12 @@ export const Constants = {
         "thumbtack",
         "other",
       ],
+      pay_type: ["flat", "percent", "hourly"],
       payment_terms: ["due_on_receipt", "net_15", "net_30", "net_45"],
       pricing_model: ["flat", "hourly", "per_sqft"],
       quote_status: ["draft", "sent", "accepted", "declined", "expired"],
+      subcontractor_document_type: ["w9", "coi", "agreement", "other"],
+      subcontractor_status: ["onboarding", "active", "inactive"],
     },
   },
 } as const
