@@ -160,6 +160,100 @@ export type Database = {
           },
         ]
       }
+      automation_runs: {
+        Row: {
+          automation_id: string
+          created_at: string
+          dedupe_key: string
+          error: string | null
+          finished_at: string | null
+          id: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["automation_run_status"]
+          subject_id: string | null
+          subject_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          automation_id: string
+          created_at?: string
+          dedupe_key: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["automation_run_status"]
+          subject_id?: string | null
+          subject_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          automation_id?: string
+          created_at?: string
+          dedupe_key?: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["automation_run_status"]
+          subject_id?: string | null
+          subject_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_runs_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "automations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automations: {
+        Row: {
+          actions: Json
+          conditions: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          is_enabled: boolean
+          name: string
+          trigger_event: string
+          updated_at: string
+        }
+        Insert: {
+          actions?: Json
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_enabled?: boolean
+          name: string
+          trigger_event: string
+          updated_at?: string
+        }
+        Update: {
+          actions?: Json
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_enabled?: boolean
+          name?: string
+          trigger_event?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       contacts: {
         Row: {
           account_id: string | null
@@ -386,6 +480,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      integration_settings: {
+        Row: {
+          config: Json
+          connected_at: string | null
+          created_at: string
+          id: string
+          is_enabled: boolean
+          provider: string
+          updated_at: string
+          vault_secret_id: string | null
+        }
+        Insert: {
+          config?: Json
+          connected_at?: string | null
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          provider: string
+          updated_at?: string
+          vault_secret_id?: string | null
+        }
+        Update: {
+          config?: Json
+          connected_at?: string | null
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          provider?: string
+          updated_at?: string
+          vault_secret_id?: string | null
+        }
+        Relationships: []
       }
       invoice_line_items: {
         Row: {
@@ -1017,6 +1144,39 @@ export type Database = {
           },
         ]
       }
+      opt_outs: {
+        Row: {
+          channel: Database["public"]["Enums"]["opt_out_channel"]
+          created_at: string
+          id: string
+          opted_out_at: string
+          reason: string | null
+          source: Database["public"]["Enums"]["opt_out_source"]
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          channel: Database["public"]["Enums"]["opt_out_channel"]
+          created_at?: string
+          id?: string
+          opted_out_at?: string
+          reason?: string | null
+          source?: Database["public"]["Enums"]["opt_out_source"]
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["opt_out_channel"]
+          created_at?: string
+          id?: string
+          opted_out_at?: string
+          reason?: string | null
+          source?: Database["public"]["Enums"]["opt_out_source"]
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount_cents: number
@@ -1447,6 +1607,65 @@ export type Database = {
           },
         ]
       }
+      scheduled_tasks: {
+        Row: {
+          attempts: number
+          automation_run_id: string | null
+          completed_at: string | null
+          created_at: string
+          dedupe_key: string | null
+          id: string
+          kind: string
+          last_error: string | null
+          locked_until: string | null
+          max_attempts: number
+          payload: Json
+          run_at: string
+          status: Database["public"]["Enums"]["task_status"]
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          automation_run_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          dedupe_key?: string | null
+          id?: string
+          kind: string
+          last_error?: string | null
+          locked_until?: string | null
+          max_attempts?: number
+          payload?: Json
+          run_at?: string
+          status?: Database["public"]["Enums"]["task_status"]
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          automation_run_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          dedupe_key?: string | null
+          id?: string
+          kind?: string
+          last_error?: string | null
+          locked_until?: string | null
+          max_attempts?: number
+          payload?: Json
+          run_at?: string
+          status?: Database["public"]["Enums"]["task_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_tasks_automation_run_id_fkey"
+            columns: ["automation_run_id"]
+            isOneToOne: false
+            referencedRelation: "automation_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       services: {
         Row: {
           base_price_cents: number
@@ -1591,6 +1810,63 @@ export type Database = {
         }
         Relationships: []
       }
+      sync_queue: {
+        Row: {
+          attempts: number
+          completed_at: string | null
+          created_at: string
+          direction: Database["public"]["Enums"]["sync_direction"]
+          entity_id: string | null
+          entity_type: string
+          id: string
+          last_error: string | null
+          locked_until: string | null
+          max_attempts: number
+          next_attempt_at: string
+          operation: string
+          payload: Json
+          provider: string
+          status: Database["public"]["Enums"]["sync_status"]
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          completed_at?: string | null
+          created_at?: string
+          direction: Database["public"]["Enums"]["sync_direction"]
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          last_error?: string | null
+          locked_until?: string | null
+          max_attempts?: number
+          next_attempt_at?: string
+          operation: string
+          payload?: Json
+          provider: string
+          status?: Database["public"]["Enums"]["sync_status"]
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          completed_at?: string | null
+          created_at?: string
+          direction?: Database["public"]["Enums"]["sync_direction"]
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          last_error?: string | null
+          locked_until?: string | null
+          max_attempts?: number
+          next_attempt_at?: string
+          operation?: string
+          payload?: Json
+          provider?: string
+          status?: Database["public"]["Enums"]["sync_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       vendors: {
         Row: {
           category: Database["public"]["Enums"]["expense_category"] | null
@@ -1665,7 +1941,60 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_scheduled_tasks: {
+        Args: { p_limit?: number; p_lock_seconds?: number }
+        Returns: {
+          attempts: number
+          automation_run_id: string | null
+          completed_at: string | null
+          created_at: string
+          dedupe_key: string | null
+          id: string
+          kind: string
+          last_error: string | null
+          locked_until: string | null
+          max_attempts: number
+          payload: Json
+          run_at: string
+          status: Database["public"]["Enums"]["task_status"]
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "scheduled_tasks"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      claim_sync_queue: {
+        Args: { p_limit?: number; p_lock_seconds?: number }
+        Returns: {
+          attempts: number
+          completed_at: string | null
+          created_at: string
+          direction: Database["public"]["Enums"]["sync_direction"]
+          entity_id: string | null
+          entity_type: string
+          id: string
+          last_error: string | null
+          locked_until: string | null
+          max_attempts: number
+          next_attempt_at: string
+          operation: string
+          payload: Json
+          provider: string
+          status: Database["public"]["Enums"]["sync_status"]
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "sync_queue"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       complete_job: { Args: { p_job_id: string }; Returns: undefined }
+      get_integration_secret: { Args: { p_provider: string }; Returns: string }
       my_jobs: {
         Args: { p_from?: string; p_to?: string }
         Returns: {
@@ -1684,6 +2013,10 @@ export type Database = {
           zip: string
         }[]
       }
+      set_integration_secret: {
+        Args: { p_provider: string; p_secret: string }
+        Returns: undefined
+      }
     }
     Enums: {
       account_status: "prospect" | "active" | "paused" | "churned"
@@ -1696,6 +2029,12 @@ export type Database = {
         | "meeting"
         | "status_change"
       app_role: "owner" | "admin" | "staff" | "subcontractor"
+      automation_run_status:
+        | "pending"
+        | "running"
+        | "succeeded"
+        | "failed"
+        | "skipped"
       borough: "manhattan" | "brooklyn" | "queens" | "bronx" | "staten_island"
       business_entity: "individual" | "llc" | "corporation"
       campaign_status: "draft" | "active" | "paused" | "ended"
@@ -1725,6 +2064,8 @@ export type Database = {
         | "yelp"
         | "thumbtack"
         | "other"
+      opt_out_channel: "sms" | "email"
+      opt_out_source: "stop_keyword" | "manual" | "ghl" | "unsubscribe_link"
       pay_type: "flat" | "percent" | "hourly"
       payment_method: "card" | "ach" | "check" | "cash" | "zelle" | "other"
       payment_status: "pending" | "succeeded" | "failed" | "refunded"
@@ -1734,6 +2075,9 @@ export type Database = {
       quote_status: "draft" | "sent" | "accepted" | "declined" | "expired"
       subcontractor_document_type: "w9" | "coi" | "agreement" | "other"
       subcontractor_status: "onboarding" | "active" | "inactive"
+      sync_direction: "outbound" | "inbound"
+      sync_status: "pending" | "running" | "succeeded" | "failed" | "dead"
+      task_status: "pending" | "running" | "succeeded" | "failed" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1872,6 +2216,13 @@ export const Constants = {
         "status_change",
       ],
       app_role: ["owner", "admin", "staff", "subcontractor"],
+      automation_run_status: [
+        "pending",
+        "running",
+        "succeeded",
+        "failed",
+        "skipped",
+      ],
       borough: ["manhattan", "brooklyn", "queens", "bronx", "staten_island"],
       business_entity: ["individual", "llc", "corporation"],
       campaign_status: ["draft", "active", "paused", "ended"],
@@ -1904,6 +2255,8 @@ export const Constants = {
         "thumbtack",
         "other",
       ],
+      opt_out_channel: ["sms", "email"],
+      opt_out_source: ["stop_keyword", "manual", "ghl", "unsubscribe_link"],
       pay_type: ["flat", "percent", "hourly"],
       payment_method: ["card", "ach", "check", "cash", "zelle", "other"],
       payment_status: ["pending", "succeeded", "failed", "refunded"],
@@ -1913,6 +2266,9 @@ export const Constants = {
       quote_status: ["draft", "sent", "accepted", "declined", "expired"],
       subcontractor_document_type: ["w9", "coi", "agreement", "other"],
       subcontractor_status: ["onboarding", "active", "inactive"],
+      sync_direction: ["outbound", "inbound"],
+      sync_status: ["pending", "running", "succeeded", "failed", "dead"],
+      task_status: ["pending", "running", "succeeded", "failed", "cancelled"],
     },
   },
 } as const
