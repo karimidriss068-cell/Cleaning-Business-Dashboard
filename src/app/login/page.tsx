@@ -46,16 +46,12 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center px-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="space-y-2 text-center">
-          <div className="mx-auto flex items-center gap-2">
-            <span className="font-heading text-2xl font-bold tracking-tight text-primary">
-              MAKI
-            </span>
-            <span className="font-heading text-2xl font-light tracking-tight text-muted-foreground">
-              Ops
-            </span>
-          </div>
+          {/* Placeholder wordmark until the new brand lands. */}
+          <span className="mx-auto font-heading text-2xl font-bold tracking-tight text-primary">
+            Cleaning Ops
+          </span>
           <CardTitle className="text-lg font-medium">Sign in</CardTitle>
-          <CardDescription>Internal command center — operators only.</CardDescription>
+          <CardDescription>Team and crew members only.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

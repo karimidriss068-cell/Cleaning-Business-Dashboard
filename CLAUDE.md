@@ -53,7 +53,7 @@ On the server, check the user with `auth.getUser()`, not `getSession()`. The pro
 
 - Pages are async Server Components that fetch with `Promise.all`, map the rows into typed view models, and pass them to client components. Each page has a sibling `loading.tsx`.
 - Colors and fonts come only from the tokens in `globals.css`, never from ad-hoc hex values. The tokens will be replaced with the new brand.
-- Forms show field errors with `FieldError`. Report results with `toast.success` / `toast.error`, then call `router.refresh()`.
+- Forms show field errors inline next to the field. Report results with `toast.success` / `toast.error`, then call `router.refresh()`.
 - Route handlers set `export const runtime = "nodejs"` and `dynamic = "force-dynamic"`.
 - Domain logic goes in `src/lib/<feature>.ts` as pure functions that take a `SupabaseClient<Database>`, so it can be tested.
 - Comments explain *why*. Match the existing comment density.
@@ -75,7 +75,7 @@ There is **no test runner yet** (see the to-do below). Until one exists, run the
 
 ```bash
 npx tsc --noEmit                # must pass
-npm run lint                    # 12 errors already exist; don't add new ones
+npm run lint                    # must pass with 0 errors
 npm run build
 ```
 
@@ -128,6 +128,6 @@ Once Vitest is set up, every new table ships with RLS tests and every webhook sh
 
 - [ ] Set up **Vitest** (`npm test`) for `src/lib/**` and the webhook handlers.
 - [ ] Add a **CI step** that runs `tsc --noEmit`, `npm run lint`, `npm test`, and `npm run build` on every push and PR.
-- [ ] Fix the **12 existing lint errors**: impure `Date.now()` during render in the accounts, campaigns, and dashboard pages; unescaped entities in `not-found.tsx` and `meta-campaign-id-form.tsx`; and setState-in-effect in `insights-chat.tsx` and `use-count-up.ts`.
+- [x] ~~Fix the 12 existing lint errors.~~ Done: 11 were in MAKI files deleted during the conversion; the last (`not-found.tsx`) was fixed.
 - [ ] Show a **"Demo data loaded, purge before launch" banner** in the app shell whenever any row with an id starting `5eed0000-` exists (demo data from `scripts/seed.mts`).
 - [ ] **Run the purge before real customers go in**: `node scripts/seed.mts --project-ref lijsaulkeaqlriwqgxty --purge`. It also removes the seeded goals and the two test logins (`seed+ana@example.com`, `seed+luis@example.com`); re-enter the real goals afterwards.

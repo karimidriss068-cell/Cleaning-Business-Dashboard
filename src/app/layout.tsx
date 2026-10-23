@@ -26,10 +26,10 @@ const ibmPlexMono = IBM_Plex_Mono({
   display: "swap",
 });
 
+// Placeholder title and description until the new brand lands.
 export const metadata: Metadata = {
-  title: "MAKI Ops",
-  description:
-    "Internal command center for MAKI — track ad campaigns, leads, and booked appointments across internal and client accounts.",
+  title: "Cleaning Ops",
+  description: "Operations dashboard for a residential and commercial cleaning company in New York City.",
 };
 
 export default function RootLayout({

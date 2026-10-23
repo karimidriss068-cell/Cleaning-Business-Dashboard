@@ -1,9 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "crons": [
-    {
-      "path": "/api/webhooks/job-followup-send",
-      "schedule": "0 14 * * *"
-    }
-  ]
+  "crons": []
 }

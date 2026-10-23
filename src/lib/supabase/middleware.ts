@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 /**
  * Refreshes the Supabase auth session on every request and guards routes.
  * Unauthenticated users are redirected to /login (except the login page and
- * the n8n webhook route, which authenticates via its own shared secret).
+ * inbound webhooks, which verify their own signatures).
  *
  * Uses getSession() rather than getUser() deliberately: getUser() makes a
  * network round-trip to Supabase's Auth API on every single request (measured
@@ -46,16 +46,9 @@ export async function updateSession(request: NextRequest) {
   const user = session?.user ?? null;
 
   const { pathname } = request.nextUrl;
-  const isAuthRoute =
-    pathname.startsWith("/login") || pathname.startsWith("/dev-login");
-  // Public routes with their own auth: webhooks (secret header) and shareable
-  // read-only client reports (unguessable token).
-  const isPublicApi =
-    pathname.startsWith("/api/webhooks") ||
-    pathname.startsWith("/api/insights/sms") ||
-    pathname.startsWith("/api/retell/query-insights") ||
-    pathname.startsWith("/api/reports") ||
-    pathname.startsWith("/reports");
+  const isAuthRoute = pathname.startsWith("/login");
+  // Public routes with their own auth: inbound webhooks verify signatures.
+  const isPublicApi = pathname.startsWith("/api/webhooks");
 
   if (!user && !isAuthRoute && !isPublicApi) {
     const url = request.nextUrl.clone();

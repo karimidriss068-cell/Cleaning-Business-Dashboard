@@ -13,7 +13,7 @@ export default function NotFound() {
           Page not found
         </p>
         <p className="max-w-sm text-sm text-muted-foreground">
-          That page doesn't exist, or it moved. Let's get you back on track.
+          That page doesn&apos;t exist, or it moved. Let&apos;s get you back on track.
         </p>
       </div>
       <Link href="/dashboard">
