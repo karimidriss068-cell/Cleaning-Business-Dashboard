@@ -145,6 +145,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "activities_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "activities_lead_id_fkey"
             columns: ["lead_id"]
             isOneToOne: false
@@ -312,6 +319,339 @@ export type Database = {
             columns: ["lead_subcontractor_id"]
             isOneToOne: false
             referencedRelation: "subcontractors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_assignments: {
+        Row: {
+          computed_pay_cents: number | null
+          created_at: string
+          id: string
+          job_id: string
+          minutes_worked: number | null
+          pay_cents: number | null
+          pay_override_cents: number | null
+          pay_rate_bps: number | null
+          pay_rate_cents: number | null
+          pay_type: Database["public"]["Enums"]["pay_type"]
+          subcontractor_id: string
+          updated_at: string
+        }
+        Insert: {
+          computed_pay_cents?: number | null
+          created_at?: string
+          id?: string
+          job_id: string
+          minutes_worked?: number | null
+          pay_cents?: number | null
+          pay_override_cents?: number | null
+          pay_rate_bps?: number | null
+          pay_rate_cents?: number | null
+          pay_type: Database["public"]["Enums"]["pay_type"]
+          subcontractor_id: string
+          updated_at?: string
+        }
+        Update: {
+          computed_pay_cents?: number | null
+          created_at?: string
+          id?: string
+          job_id?: string
+          minutes_worked?: number | null
+          pay_cents?: number | null
+          pay_override_cents?: number | null
+          pay_rate_bps?: number | null
+          pay_rate_cents?: number | null
+          pay_type?: Database["public"]["Enums"]["pay_type"]
+          subcontractor_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_assignments_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_assignments_subcontractor_id_fkey"
+            columns: ["subcontractor_id"]
+            isOneToOne: false
+            referencedRelation: "subcontractors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_photos: {
+        Row: {
+          created_at: string
+          id: string
+          job_id: string
+          kind: Database["public"]["Enums"]["job_photo_kind"]
+          storage_path: string
+          taken_at: string | null
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_id: string
+          kind?: Database["public"]["Enums"]["job_photo_kind"]
+          storage_path: string
+          taken_at?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_id?: string
+          kind?: Database["public"]["Enums"]["job_photo_kind"]
+          storage_path?: string
+          taken_at?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_photos_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_photos_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      job_series: {
+        Row: {
+          account_id: string | null
+          contact_id: string | null
+          created_at: string
+          default_crew_id: string | null
+          duration_minutes: number
+          end_date: string | null
+          generated_through: string | null
+          id: string
+          is_active: boolean
+          local_start_time: string
+          notes: string | null
+          price_cents: number
+          property_id: string
+          recurrence_rule: string
+          service_id: string
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          default_crew_id?: string | null
+          duration_minutes: number
+          end_date?: string | null
+          generated_through?: string | null
+          id?: string
+          is_active?: boolean
+          local_start_time: string
+          notes?: string | null
+          price_cents: number
+          property_id: string
+          recurrence_rule: string
+          service_id: string
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          default_crew_id?: string | null
+          duration_minutes?: number
+          end_date?: string | null
+          generated_through?: string | null
+          id?: string
+          is_active?: boolean
+          local_start_time?: string
+          notes?: string | null
+          price_cents?: number
+          property_id?: string
+          recurrence_rule?: string
+          service_id?: string
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_series_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_series_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_series_default_crew_id_fkey"
+            columns: ["default_crew_id"]
+            isOneToOne: false
+            referencedRelation: "crews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_series_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_series_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jobs: {
+        Row: {
+          account_id: string | null
+          cancellation_reason: string | null
+          completed_at: string | null
+          completed_by: string | null
+          contact_id: string | null
+          created_at: string
+          crew_id: string | null
+          crew_notes: string | null
+          external_id: string | null
+          ghl_appointment_id: string | null
+          id: string
+          notes: string | null
+          price_cents: number
+          property_id: string
+          quote_id: string | null
+          scheduled_end: string
+          scheduled_start: string
+          series_id: string | null
+          service_id: string
+          status: Database["public"]["Enums"]["job_status"]
+          updated_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          cancellation_reason?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          contact_id?: string | null
+          created_at?: string
+          crew_id?: string | null
+          crew_notes?: string | null
+          external_id?: string | null
+          ghl_appointment_id?: string | null
+          id?: string
+          notes?: string | null
+          price_cents: number
+          property_id: string
+          quote_id?: string | null
+          scheduled_end: string
+          scheduled_start: string
+          series_id?: string | null
+          service_id: string
+          status?: Database["public"]["Enums"]["job_status"]
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          cancellation_reason?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          contact_id?: string | null
+          created_at?: string
+          crew_id?: string | null
+          crew_notes?: string | null
+          external_id?: string | null
+          ghl_appointment_id?: string | null
+          id?: string
+          notes?: string | null
+          price_cents?: number
+          property_id?: string
+          quote_id?: string | null
+          scheduled_end?: string
+          scheduled_start?: string
+          series_id?: string | null
+          service_id?: string
+          status?: Database["public"]["Enums"]["job_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "jobs_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_crew_id_fkey"
+            columns: ["crew_id"]
+            isOneToOne: false
+            referencedRelation: "crews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "job_series"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
             referencedColumns: ["id"]
           },
         ]
@@ -932,7 +1272,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      complete_job: { Args: { p_job_id: string }; Returns: undefined }
+      my_jobs: {
+        Args: { p_from?: string; p_to?: string }
+        Returns: {
+          access_instructions: string
+          address_line1: string
+          address_line2: string
+          borough: Database["public"]["Enums"]["borough"]
+          client_name: string
+          crew_notes: string
+          job_id: string
+          photo_count: number
+          scheduled_end: string
+          scheduled_start: string
+          service_name: string
+          status: Database["public"]["Enums"]["job_status"]
+          zip: string
+        }[]
+      }
     }
     Enums: {
       account_status: "prospect" | "active" | "paused" | "churned"
@@ -949,6 +1307,13 @@ export type Database = {
       business_entity: "individual" | "llc" | "corporation"
       campaign_status: "draft" | "active" | "paused" | "ended"
       contact_type: "residential" | "commercial"
+      job_photo_kind: "before" | "after" | "issue"
+      job_status:
+        | "scheduled"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
+        | "no_access"
       lead_stage: "new" | "contacted" | "quoted" | "won" | "lost"
       marketing_platform:
         | "meta"
@@ -1106,6 +1471,14 @@ export const Constants = {
       business_entity: ["individual", "llc", "corporation"],
       campaign_status: ["draft", "active", "paused", "ended"],
       contact_type: ["residential", "commercial"],
+      job_photo_kind: ["before", "after", "issue"],
+      job_status: [
+        "scheduled",
+        "in_progress",
+        "completed",
+        "cancelled",
+        "no_access",
+      ],
       lead_stage: ["new", "contacted", "quoted", "won", "lost"],
       marketing_platform: [
         "meta",
