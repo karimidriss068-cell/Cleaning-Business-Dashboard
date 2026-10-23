@@ -512,6 +512,162 @@ export type Database = {
           },
         ]
       }
+      quote_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          line_total_cents: number | null
+          quantity: number
+          quote_id: string
+          service_id: string | null
+          sort_order: number
+          unit_price_cents: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          line_total_cents?: number | null
+          quantity?: number
+          quote_id: string
+          service_id?: string | null
+          sort_order?: number
+          unit_price_cents: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          line_total_cents?: number | null
+          quantity?: number
+          quote_id?: string
+          service_id?: string | null
+          sort_order?: number
+          unit_price_cents?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_items_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotes: {
+        Row: {
+          accepted_at: string | null
+          account_id: string | null
+          contact_id: string | null
+          created_at: string
+          created_by: string | null
+          declined_at: string | null
+          discount_cents: number
+          id: string
+          lead_id: string | null
+          notes: string | null
+          property_id: string | null
+          quote_number: number
+          sent_at: string | null
+          status: Database["public"]["Enums"]["quote_status"]
+          subtotal_cents: number
+          tax_cents: number
+          total_cents: number | null
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          account_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          declined_at?: string | null
+          discount_cents?: number
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          property_id?: string | null
+          quote_number?: never
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["quote_status"]
+          subtotal_cents?: number
+          tax_cents?: number
+          total_cents?: number | null
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          account_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          declined_at?: string | null
+          discount_cents?: number
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          property_id?: string | null
+          quote_number?: never
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["quote_status"]
+          subtotal_cents?: number
+          tax_cents?: number
+          total_cents?: number | null
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "quotes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       services: {
         Row: {
           base_price_cents: number
@@ -613,6 +769,7 @@ export type Database = {
         | "other"
       payment_terms: "due_on_receipt" | "net_15" | "net_30" | "net_45"
       pricing_model: "flat" | "hourly" | "per_sqft"
+      quote_status: "draft" | "sent" | "accepted" | "declined" | "expired"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -766,6 +923,7 @@ export const Constants = {
       ],
       payment_terms: ["due_on_receipt", "net_15", "net_30", "net_45"],
       pricing_model: ["flat", "hourly", "per_sqft"],
+      quote_status: ["draft", "sent", "accepted", "declined", "expired"],
     },
   },
 } as const
