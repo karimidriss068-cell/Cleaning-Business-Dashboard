@@ -2,442 +2,183 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/*
+ * Keystone Clean design system (DESIGN.md). Token VALUES live only in
+ * src/config/brand.ts and are rendered as --kc-* variables by the root layout
+ * (src/lib/theme/tokens-css.ts). This file only maps names onto them.
+ */
+
 @custom-variant dark (&:is(.dark *));
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
-  --font-heading: var(--font-heading);
-  --color-success: var(--success);
-  --color-warning: var(--warning);
-  --color-accent-bright: var(--accent-bright);
-  --color-accent-secondary: var(--accent-secondary);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.8);
-  --radius-md: var(--radius);
-  --radius-lg: calc(var(--radius) * 1.2);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+/* shadcn semantic names, aliased onto the brand tokens. */
+:root,
+.light,
+.dark {
+  --background: var(--kc-canvas);
+  --foreground: var(--kc-text);
+  --card: var(--kc-surface);
+  --card-foreground: var(--kc-text);
+  --popover: var(--kc-surface);
+  --popover-foreground: var(--kc-text);
+  --primary: var(--kc-primary);
+  --primary-foreground: var(--kc-primary-label);
+  --secondary: var(--kc-surface-raised);
+  --secondary-foreground: var(--kc-text);
+  --muted: var(--kc-surface-raised);
+  --muted-foreground: var(--kc-text-muted);
+  /* shadcn "accent" is the hover/selected background, not the brand teal. */
+  --accent: var(--kc-surface-raised);
+  --accent-foreground: var(--kc-text);
+  --destructive: var(--kc-danger-fill);
+  --border: var(--kc-border-subtle);
+  --input: var(--kc-border-input);
+  --ring: var(--kc-focus);
+  --radius: var(--kc-radius-sm);
+  --chart-1: var(--kc-chart1);
+  --chart-2: var(--kc-chart2);
+  --chart-3: var(--kc-chart3);
+  --chart-4: var(--kc-chart4);
+  --chart-5: var(--kc-chart5);
+  --sidebar: var(--kc-sidebar);
+  --sidebar-foreground: var(--kc-sidebar-text);
+  --sidebar-primary: var(--kc-sidebar-active-text);
+  --sidebar-primary-foreground: var(--kc-sidebar);
+  --sidebar-accent: var(--kc-sidebar-active-bg);
+  --sidebar-accent-foreground: var(--kc-sidebar-text);
+  --sidebar-border: var(--kc-sidebar-active-bg);
+  --sidebar-ring: var(--kc-focus);
 }
 
-/*
- * MAKI Ops design system — a contractor's trading terminal: weathered
- * asphalt-shingle near-black, brick/clay-tile red, aged-copper secondary
- * accent. Every color in the app derives from these brand tokens (plus the
- * hand-mirrored copies in src/app/icon.tsx and src/lib/report-pdf.tsx,
- * which render outside the CSS cascade and can't reference var()). No ad
- * hoc hex anywhere else.
- */
-:root,
+/* Dark surfaces popovers one step up so menus separate from cards. */
 .dark {
-  /* Brand tokens */
-  --bg-base: #17110f; /* weathered asphalt shingle, not pure black */
-  --bg-surface: #2a1512; /* cards, panels, rows */
-  --bg-surface-raised: #3d2018; /* modals, dropdowns, hover */
-  --bg-panel: #4a2620; /* visibly lifted surface — Stat/chart panels only */
-  --accent-primary: #9b2c2c; /* brick/clay-tile red — desaturated, material, not flat crimson */
-  --accent-bright: #c4463c; /* brighter brick-red — hover/alerts only */
-  --accent-secondary: #b8895a; /* aged copper/patina — secondary emphasis, active states, thinking-glow */
-  --accent-cream-rich: #d9c9a3; /* deep aged-parchment cream — reserved for ONE dominant element per page */
-  --text-primary: #ede6d6; /* warm cream */
-  --text-muted: #a89a87; /* dusty cream-tan */
-  --success: #6b8e5a; /* muted sage — showed/closed only */
-  --warning: #c48a3d; /* muted amber — at-risk */
-  --field-error: #c97b82; /* muted dusty rose — inline field validation, distinct from alert crimson */
+  --popover: var(--kc-surface-raised);
+}
 
-  /* shadcn semantic tokens mapped onto the brand palette */
-  --background: var(--bg-base);
-  --foreground: var(--text-primary);
-  --card: var(--bg-surface);
-  --card-foreground: var(--text-primary);
-  --popover: var(--bg-surface-raised);
-  --popover-foreground: var(--text-primary);
-  --primary: var(--accent-primary);
-  --primary-foreground: var(--text-primary);
-  --secondary: var(--bg-surface-raised);
-  --secondary-foreground: var(--text-primary);
-  --muted: var(--bg-surface);
-  --muted-foreground: var(--text-muted);
-  --accent: var(--bg-surface-raised);
-  --accent-foreground: var(--text-primary);
-  --destructive: var(--accent-bright);
-  --border: #3d2420; /* hairline dividers, table/card borders */
-  --input: #3d2420;
-  --ring: var(--accent-primary);
-  --chart-1: var(--accent-primary);
-  --chart-2: var(--accent-bright);
-  --chart-3: var(--warning);
-  --chart-4: var(--success);
-  --chart-5: var(--text-muted);
-  --radius: 0.3125rem; /* ~5px — precision instrument, not consumer app */
-  --sidebar: #140e0c;
-  --sidebar-foreground: var(--text-muted);
-  --sidebar-primary: var(--accent-primary);
-  --sidebar-primary-foreground: var(--text-primary);
-  --sidebar-accent: var(--bg-surface);
-  --sidebar-accent-foreground: var(--text-primary);
-  --sidebar-border: var(--border);
-  --sidebar-ring: var(--accent-primary);
+@theme inline {
+  --font-sans: var(--font-dm-sans);
+  --font-heading: var(--font-mohave);
+  --font-mono: var(--font-dm-mono);
+
+  /* shadcn names (used by src/components/ui) */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Brand names (DESIGN.md section 2) */
+  --color-canvas: var(--kc-canvas);
+  --color-surface: var(--kc-surface);
+  --color-surface-raised: var(--kc-surface-raised);
+  --color-sand: var(--kc-sand);
+  --color-ink: var(--kc-text);
+  --color-ink-muted: var(--kc-text-muted);
+  --color-crew-muted: var(--kc-crew-text-muted);
+  --color-brand: var(--kc-accent);
+  --color-brand-text: var(--kc-accent-text);
+  --color-border-input: var(--kc-border-input);
+  --color-info-soft: var(--kc-info-soft);
+  --color-success: var(--kc-success-text);
+  --color-success-soft: var(--kc-success-soft);
+  --color-success-fill: var(--kc-success-fill);
+  --color-success-label: var(--kc-success-label);
+  --color-warning: var(--kc-warning-text);
+  --color-warning-soft: var(--kc-warning-soft);
+  --color-warning-fill: var(--kc-warning-fill);
+  --color-warning-label: var(--kc-warning-label);
+  --color-danger: var(--kc-danger-text);
+  --color-danger-soft: var(--kc-danger-soft);
+  --color-danger-fill: var(--kc-danger-fill);
+  --color-danger-label: var(--kc-danger-label);
+  --color-sidebar-muted: var(--kc-sidebar-text-muted);
+
+  /* Radius (DESIGN.md section 5) */
+  --radius-xs: var(--kc-radius-xs);
+  --radius-sm: var(--kc-radius-sm);
+  --radius-md: var(--kc-radius-md);
+  --radius-lg: var(--kc-radius-lg);
+
+  /* Elevation (section 6): shadow-e0 ... shadow-e3 */
+  --shadow-e0: var(--kc-elevation-0);
+  --shadow-e1: var(--kc-elevation-1);
+  --shadow-e2: var(--kc-elevation-2);
+  --shadow-e3: var(--kc-elevation-3);
+
+  /* Motion (section 7): duration-fast/base/slow, ease-standard/exit */
+  --ease-standard: var(--kc-ease-standard);
+  --ease-exit: var(--kc-ease-exit);
+}
+
+@utility duration-fast {
+  transition-duration: var(--kc-duration-fast);
+}
+@utility duration-base {
+  transition-duration: var(--kc-duration-base);
+}
+@utility duration-slow {
+  transition-duration: var(--kc-duration-slow);
+}
+
+/* Tabular figures for numbers that line up in columns and tiles. */
+@utility tabular {
+  font-variant-numeric: tabular-nums;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
   html {
     @apply font-sans;
+    -webkit-text-size-adjust: 100%;
   }
-  h1, h2, h3, h4 {
-    @apply font-heading tracking-tight;
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  h1,
+  h2 {
+    @apply font-heading;
+  }
+  :focus-visible {
+    outline: 2px solid var(--kc-focus);
+    outline-offset: 2px;
   }
 }
 
-/* Full-bleed ambient vignette — sits fixed behind everything so the page
- * never reads as a single flat fill. Barely-perceptible slow drift keeps it
- * from feeling static without ever calling attention to itself. */
-.ambient-bg {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(120% 90% at 20% -10%, color-mix(in srgb, var(--accent-primary) 14%, transparent), transparent 55%),
-    radial-gradient(100% 80% at 100% 110%, color-mix(in srgb, var(--accent-cream-rich) 6%, transparent), transparent 60%),
-    var(--bg-base);
-  animation: ambient-drift 26s ease-in-out infinite;
-}
-@keyframes ambient-drift {
-  0%, 100% { background-position: 0% 0%, 0% 0%, 0% 0%; }
-  50% { background-position: 2% 3%, -2% -2%, 0% 0%; }
-}
+/* No motion for people who ask for none: content appears in place. */
 @media (prefers-reduced-motion: reduce) {
-  .ambient-bg {
-    animation: none;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0ms !important;
+    scroll-behavior: auto !important;
   }
-}
-
-.text-cream-rich {
-  color: var(--accent-cream-rich);
-}
-
-.text-copper {
-  color: var(--accent-secondary);
-}
-
-/* Numbers you scan/compare (spend, CPA, counts, dates) render in IBM Plex Mono
- * with tabular figures so columns line up. Applies anywhere `tabular-nums` is
- * used — table cells, funnel counts, etc. (Hero KPI numerals use Fraunces via
- * .kpi-number and are intentionally exempt.) */
-.tabular-nums,
-.font-data {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum";
-}
-
-/*
- * Signature element — the "hero number". Large Fraunces numeral with a thin
- * crimson underline that sits under the number itself (fountain-pen highlight),
- * a small-caps letter-spaced label above, and a brief fade-in on load. The
- * underline is a separate element (.kpi-underline) rather than a border so
- * hero numbers can carry an animated glow independent of the number itself.
- */
-.kpi-label {
-  font-family: var(--font-sans);
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--text-muted);
-}
-.kpi-number {
-  display: inline-block;
-  font-family: var(--font-heading);
-  font-weight: 500;
-  line-height: 1;
-  letter-spacing: -0.015em;
-  color: var(--text-primary);
-  animation: kpi-fade 150ms ease-out both;
-}
-.kpi-number--muted {
-  color: var(--text-muted);
-}
-
-@keyframes kpi-fade {
-  from {
-    opacity: 0;
-    transform: translateY(2px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-.kpi-underline {
-  height: 2px;
-  margin-top: 8px;
-  border-radius: 2px;
-  background: var(--accent-primary);
-}
-.kpi-underline--muted {
-  background: color-mix(in srgb, var(--text-muted) 55%, transparent);
-}
-.kpi-underline--glow {
-  background: var(--accent-bright);
-  animation: kpi-glow 2.8s ease-in-out infinite;
-}
-@keyframes kpi-glow {
-  0%, 100% {
-    box-shadow: 0 0 4px 0 color-mix(in srgb, var(--accent-bright) 50%, transparent);
-  }
-  50% {
-    box-shadow: 0 0 16px 2px color-mix(in srgb, var(--accent-bright) 80%, transparent);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .kpi-underline--glow {
-    animation: none;
-    box-shadow: 0 0 8px 0 color-mix(in srgb, var(--accent-bright) 60%, transparent);
-  }
-}
-
-/* Soft ambient blob behind hero numbers only — an alive, breathing glow. */
-.kpi-glow-blob {
-  position: absolute;
-  inset: -30% -10%;
-  background: radial-gradient(
-    ellipse at center,
-    color-mix(in srgb, var(--accent-bright) 28%, transparent),
-    transparent 70%
-  );
-  filter: blur(18px);
-  animation: kpi-shimmer 4.5s ease-in-out infinite;
-  pointer-events: none;
-  z-index: 0;
-}
-@keyframes kpi-shimmer {
-  0%, 100% { opacity: 0.5; transform: scale(1); }
-  50% { opacity: 0.9; transform: scale(1.08); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .kpi-glow-blob {
-    animation: none;
-    opacity: 0.6;
-  }
-}
-
-/*
- * Luxury surface treatment — every elevated panel (Stat cards, chart
- * frames) visibly lifts off the page background using --bg-panel (a
- * genuinely lighter oxblood, not a near-invisible half-step), plus a warm
- * glow from the top-left corner and barely-visible grain for material depth.
- */
-.panel {
-  position: relative;
-  border-radius: var(--radius-lg);
-  border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border));
-  background:
-    radial-gradient(130% 160% at 0% 0%, color-mix(in srgb, var(--accent-bright) 12%, transparent), transparent 60%),
-    var(--bg-panel);
-  box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.5);
-  overflow: hidden;
-}
-.panel::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.05;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
-}
-
-/*
- * Glass panel — the reinvented dashboard's card surface. A diagonal gradient
- * (near-black to lifted oxblood, not a flat fill) plus a 1px inner highlight
- * along the top edge (like light catching the top of glass) and a deep soft
- * shadow so cards read as floating rather than flush with the page.
- */
-.panel-glass {
-  position: relative;
-  border-radius: var(--radius-xl);
-  border: 1px solid color-mix(in srgb, var(--accent-primary) 30%, var(--border));
-  background:
-    linear-gradient(135deg, var(--bg-panel) 0%, var(--bg-surface) 100%);
-  box-shadow:
-    0 24px 48px -20px rgba(0, 0, 0, 0.6),
-    0 1px 0 0 rgba(255, 255, 255, 0.06) inset;
-  overflow: hidden;
-}
-.panel-glass::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.05;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
-}
-
-/* Glow applied to chart line strokes — targets Recharts' own generated
- * classNames on the rendered SVG path, since Recharts doesn't expose a
- * style prop path for this. */
-.chart-glow .recharts-area-curve {
-  filter: drop-shadow(0 2px 8px color-mix(in srgb, var(--accent-bright) 55%, transparent));
-}
-
-/* A thin warm hairline (cream fading toward crimson) used to separate major
- * sections in place of a plain border — the closest thing to "gold" we get
- * without leaving the brand token system. */
-.divider-warm {
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in srgb, var(--text-primary) 50%, var(--accent-bright) 30%),
-    transparent
-  );
-  opacity: 0.55;
-}
-.divider-warm--v {
-  width: 1px;
-  height: 100%;
-  background: linear-gradient(
-    180deg,
-    transparent,
-    color-mix(in srgb, var(--text-primary) 50%, var(--accent-bright) 30%),
-    transparent
-  );
-  opacity: 0.55;
-}
-
-/*
- * Signature element — a torn/perforated work-order-stub edge, in the aged
- * copper accent. Deliberately used in exactly ONE place (the Full Analysis
- * report header in insights-chat.tsx) — it stays memorable because it's
- * rare. A zigzag "tear" (two mirrored diagonal gradients tiled edge-to-edge)
- * sitting above a dashed perforation line, like a contractor's job ticket
- * stub torn free from its counterfoil.
- */
-.job-ticket-tear {
-  height: 9px;
-  background-image:
-    linear-gradient(135deg, var(--accent-secondary) 25%, transparent 25.5%),
-    linear-gradient(225deg, var(--accent-secondary) 25%, transparent 25.5%);
-  background-size: 14px 14px;
-  background-position: 0 0;
-  background-repeat: repeat-x;
-  opacity: 0.7;
-}
-.job-ticket-tear::after {
-  content: "";
-  display: block;
-  height: 1px;
-  margin-top: 3px;
-  background-image: linear-gradient(90deg, var(--accent-secondary) 0 6px, transparent 6px 12px);
-  background-size: 12px 1px;
-  opacity: 0.45;
-}
-
-/* Subtle staggered entrance — panels/sections rise and fade in on load.
- * Combine with an inline `animationDelay` for stagger across a grid. */
-@keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-.animate-fade-up {
-  animation: fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-@media (prefers-reduced-motion: reduce) {
-  .animate-fade-up {
-    animation: none;
-  }
-}
-
-/* Skeleton loading state in brand tones (not a generic gray spinner). */
-@keyframes skeleton-pulse {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 0.9; }
-}
-.skeleton {
-  border-radius: var(--radius-md);
-  background: var(--bg-surface-raised);
-  animation: skeleton-pulse 1.6s ease-in-out infinite;
-}
-
-/* Status pills — cream/tan carries the UI; sage and amber are the only
- * saturated status colors, crimson reserved for genuine negatives. */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  border-radius: 9999px;
-  border: 1px solid transparent;
-  padding: 2px 9px;
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: capitalize;
-  white-space: nowrap;
-}
-.badge-good {
-  color: var(--success);
-  background: color-mix(in srgb, var(--success) 15%, transparent);
-  border-color: color-mix(in srgb, var(--success) 32%, transparent);
-}
-.badge-warn {
-  color: var(--warning);
-  background: color-mix(in srgb, var(--warning) 15%, transparent);
-  border-color: color-mix(in srgb, var(--warning) 32%, transparent);
-}
-.badge-bad {
-  color: var(--accent-bright);
-  background: color-mix(in srgb, var(--accent-bright) 14%, transparent);
-  border-color: color-mix(in srgb, var(--accent-bright) 32%, transparent);
-}
-.badge-muted {
-  color: var(--text-muted);
-  background: color-mix(in srgb, var(--text-muted) 10%, transparent);
-  border-color: var(--border);
 }

@@ -1,30 +1,13 @@
 import type { Metadata } from "next";
-import { Fraunces, Instrument_Sans, IBM_Plex_Mono } from "next/font/google";
+import { DM_Mono, DM_Sans, Mohave } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/theme-provider";
+import { tokensCss } from "@/lib/theme/tokens-css";
 import "./globals.css";
 
-const fraunces = Fraunces({
-  variable: "--font-heading",
-  subsets: ["latin"],
-  display: "swap",
-  style: ["normal", "italic"],
-  axes: ["opsz"],
-});
-
-// Body font — replaces Inter. Same variable name (--font-sans) so every
-// existing font-sans consumer picks it up automatically.
-const instrumentSans = Instrument_Sans({
-  variable: "--font-sans",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const ibmPlexMono = IBM_Plex_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  display: "swap",
-});
+const mohave = Mohave({ variable: "--font-mohave", subsets: ["latin"], display: "swap" });
+const dmSans = DM_Sans({ variable: "--font-dm-sans", subsets: ["latin"], display: "swap" });
+const dmMono = DM_Mono({ variable: "--font-dm-mono", subsets: ["latin"], weight: ["400", "500"], display: "swap" });
 
 // Placeholder title and description until the new brand lands.
 export const metadata: Metadata = {
@@ -38,14 +21,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    // suppressHydrationWarning: next-themes sets the theme class before hydration.
     <html
       lang="en"
-      className={`dark ${fraunces.variable} ${instrumentSans.variable} ${ibmPlexMono.variable} h-full antialiased`}
+      suppressHydrationWarning
+      className={`${mohave.variable} ${dmSans.variable} ${dmMono.variable} h-full`}
     >
+      <head>
+        {/* Design tokens from src/config/brand.ts (static, no user input). */}
+        <style id="kc-tokens" dangerouslySetInnerHTML={{ __html: tokensCss() }} />
+      </head>
       <body className="min-h-full flex flex-col">
-        <div className="ambient-bg" aria-hidden />
-        {children}
-        <Toaster richColors position="top-right" />
+        <ThemeProvider>
+          {children}
+          <Toaster position="bottom-right" />
+        </ThemeProvider>
       </body>
     </html>
   );
