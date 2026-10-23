@@ -323,6 +323,205 @@ export type Database = {
           },
         ]
       }
+      expenses: {
+        Row: {
+          amount_cents: number
+          category: Database["public"]["Enums"]["expense_category"]
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          incurred_on: string
+          job_id: string | null
+          receipt_path: string | null
+          updated_at: string
+          vendor_id: string | null
+        }
+        Insert: {
+          amount_cents: number
+          category: Database["public"]["Enums"]["expense_category"]
+          created_at?: string
+          created_by?: string | null
+          description: string
+          id?: string
+          incurred_on: string
+          job_id?: string | null
+          receipt_path?: string | null
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          category?: Database["public"]["Enums"]["expense_category"]
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          incurred_on?: string
+          job_id?: string | null
+          receipt_path?: string | null
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "expenses_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_line_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          invoice_id: string
+          job_id: string | null
+          line_total_cents: number | null
+          quantity: number
+          sort_order: number
+          unit_price_cents: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          invoice_id: string
+          job_id?: string | null
+          line_total_cents?: number | null
+          quantity?: number
+          sort_order?: number
+          unit_price_cents: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_id?: string
+          job_id?: string | null
+          line_total_cents?: number | null
+          quantity?: number
+          sort_order?: number
+          unit_price_cents?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_line_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_line_items_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: true
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          account_id: string | null
+          amount_paid_cents: number
+          contact_id: string | null
+          created_at: string
+          due_on: string | null
+          id: string
+          invoice_number: number
+          issued_on: string | null
+          notes: string | null
+          paid_at: string | null
+          sent_at: string | null
+          status: Database["public"]["Enums"]["invoice_status"]
+          stripe_hosted_invoice_url: string | null
+          stripe_invoice_id: string | null
+          subtotal_cents: number
+          tax_cents: number
+          total_cents: number | null
+          updated_at: string
+          voided_at: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          amount_paid_cents?: number
+          contact_id?: string | null
+          created_at?: string
+          due_on?: string | null
+          id?: string
+          invoice_number?: never
+          issued_on?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"]
+          stripe_hosted_invoice_url?: string | null
+          stripe_invoice_id?: string | null
+          subtotal_cents?: number
+          tax_cents?: number
+          total_cents?: number | null
+          updated_at?: string
+          voided_at?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          amount_paid_cents?: number
+          contact_id?: string | null
+          created_at?: string
+          due_on?: string | null
+          id?: string
+          invoice_number?: never
+          issued_on?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"]
+          stripe_hosted_invoice_url?: string | null
+          stripe_invoice_id?: string | null
+          subtotal_cents?: number
+          tax_cents?: number
+          total_cents?: number | null
+          updated_at?: string
+          voided_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_assignments: {
         Row: {
           computed_pay_cents: number | null
@@ -818,6 +1017,164 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          id: string
+          invoice_id: string
+          method: Database["public"]["Enums"]["payment_method"]
+          notes: string | null
+          received_at: string | null
+          refunded_at: string | null
+          status: Database["public"]["Enums"]["payment_status"]
+          stripe_charge_id: string | null
+          stripe_payment_intent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          id?: string
+          invoice_id: string
+          method?: Database["public"]["Enums"]["payment_method"]
+          notes?: string | null
+          received_at?: string | null
+          refunded_at?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          stripe_charge_id?: string | null
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          method?: Database["public"]["Enums"]["payment_method"]
+          notes?: string | null
+          received_at?: string | null
+          refunded_at?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          stripe_charge_id?: string | null
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payout_items: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          id: string
+          job_assignment_id: string
+          payout_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          id?: string
+          job_assignment_id: string
+          payout_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          id?: string
+          job_assignment_id?: string
+          payout_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_items_job_assignment_id_fkey"
+            columns: ["job_assignment_id"]
+            isOneToOne: true
+            referencedRelation: "job_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payout_items_payout_id_fkey"
+            columns: ["payout_id"]
+            isOneToOne: false
+            referencedRelation: "payouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payouts: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          paid_at: string | null
+          payout_vendor_ref: string | null
+          period_end: string
+          period_start: string
+          status: Database["public"]["Enums"]["payout_status"]
+          subcontractor_id: string
+          total_cents: number
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payout_vendor_ref?: string | null
+          period_end: string
+          period_start: string
+          status?: Database["public"]["Enums"]["payout_status"]
+          subcontractor_id: string
+          total_cents?: number
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payout_vendor_ref?: string | null
+          period_end?: string
+          period_start?: string
+          status?: Database["public"]["Enums"]["payout_status"]
+          subcontractor_id?: string
+          total_cents?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payouts_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "payouts_subcontractor_id_fkey"
+            columns: ["subcontractor_id"]
+            isOneToOne: false
+            referencedRelation: "subcontractors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -1234,6 +1591,42 @@ export type Database = {
         }
         Relationships: []
       }
+      vendors: {
+        Row: {
+          category: Database["public"]["Enums"]["expense_category"] | null
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["expense_category"] | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["expense_category"] | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       webhook_events: {
         Row: {
           error: string | null
@@ -1307,6 +1700,15 @@ export type Database = {
       business_entity: "individual" | "llc" | "corporation"
       campaign_status: "draft" | "active" | "paused" | "ended"
       contact_type: "residential" | "commercial"
+      expense_category:
+        | "supplies"
+        | "equipment"
+        | "transit"
+        | "marketing"
+        | "software"
+        | "insurance"
+        | "other"
+      invoice_status: "draft" | "open" | "paid" | "void" | "uncollectible"
       job_photo_kind: "before" | "after" | "issue"
       job_status:
         | "scheduled"
@@ -1324,7 +1726,10 @@ export type Database = {
         | "thumbtack"
         | "other"
       pay_type: "flat" | "percent" | "hourly"
+      payment_method: "card" | "ach" | "check" | "cash" | "zelle" | "other"
+      payment_status: "pending" | "succeeded" | "failed" | "refunded"
       payment_terms: "due_on_receipt" | "net_15" | "net_30" | "net_45"
+      payout_status: "draft" | "approved" | "paid" | "void"
       pricing_model: "flat" | "hourly" | "per_sqft"
       quote_status: "draft" | "sent" | "accepted" | "declined" | "expired"
       subcontractor_document_type: "w9" | "coi" | "agreement" | "other"
@@ -1471,6 +1876,16 @@ export const Constants = {
       business_entity: ["individual", "llc", "corporation"],
       campaign_status: ["draft", "active", "paused", "ended"],
       contact_type: ["residential", "commercial"],
+      expense_category: [
+        "supplies",
+        "equipment",
+        "transit",
+        "marketing",
+        "software",
+        "insurance",
+        "other",
+      ],
+      invoice_status: ["draft", "open", "paid", "void", "uncollectible"],
       job_photo_kind: ["before", "after", "issue"],
       job_status: [
         "scheduled",
@@ -1490,7 +1905,10 @@ export const Constants = {
         "other",
       ],
       pay_type: ["flat", "percent", "hourly"],
+      payment_method: ["card", "ach", "check", "cash", "zelle", "other"],
+      payment_status: ["pending", "succeeded", "failed", "refunded"],
       payment_terms: ["due_on_receipt", "net_15", "net_30", "net_45"],
+      payout_status: ["draft", "approved", "paid", "void"],
       pricing_model: ["flat", "hourly", "per_sqft"],
       quote_status: ["draft", "sent", "accepted", "declined", "expired"],
       subcontractor_document_type: ["w9", "coi", "agreement", "other"],
