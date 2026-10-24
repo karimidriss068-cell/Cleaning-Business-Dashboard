@@ -4,6 +4,8 @@ The design system for the Keystone Clean operations platform: a premium operatio
 
 Build components from this spec, then apply them. The dev-only `/design` page renders every component in the active direction, dark beside light, and is the visual reference.
 
+**Every screen and component must work in all three directions and both themes.** Use the tokens (section 3) and effects (section 4) only: no hex values, no direction-specific code paths.
+
 ## 1. Principles
 
 1. **Dark-first cockpit.** Dark is the primary theme and light is the secondary one. Screens read like instruments: calm, precise and layered, with one signal color.
@@ -15,9 +17,26 @@ Build components from this spec, then apply them. The dev-only `/design` page re
 
 **Not allowed:** gold, brass, champagne or yellow anywhere except the warning status; neon green on black; purple gradients; emoji as icons; one radius and shadow on every card; color-only status; looping animation; leftover copy from the previous product.
 
-## 2. Visual directions
+## 2. Visual directions (permanent, per user)
 
-Three complete directions are defined while the owner picks one. Each has a dark palette (primary), a light palette (secondary), a display and body font pairing, and effect values. The active direction is `data-direction` on `<html>`, set before first paint from the switcher's saved choice (default: Titanium). The switcher sits in the desktop top bar, the phone top bar, the login page and `/design`. **After the pick, delete the other two directions, their fonts and the switcher.**
+There are three permanent visual directions, and each member picks their own. Each direction has a dark palette (primary), a light palette (secondary), a display and body font pairing, and effect values. **The default is Titanium & Ice in dark.**
+
+**Where the choice lives:**
+- **Settings → Appearance:** a picker with a live mini Command Center per direction (`AppearancePicker`), plus the theme (dark, light, system).
+- **Top bars:** a compact switcher and theme toggle on desktop and phone. Both save to the account.
+- **Login and `/design`:** the compact switcher, saving to this browser only.
+
+**How it's stored and resolved:**
+- `user_preferences` holds `direction` and `theme`, one row per member with own-row RLS (crew included).
+- Order of trust: the saved preference, then the `kc-direction` cookie (a mirror the server reads), then `localStorage`, then the default. If the read fails, the local choice stays. `src/lib/theme/preferences.ts` (`resolveDirection`) is tested.
+- The server renders `data-direction` on `<html>` from the cookie, so the first paint is right. `AppearanceSync` applies the saved choice once per page load (for a change made on another device).
+
+**Fonts:**
+- Only the selected direction's two families (plus DM Mono) load.
+- Fonts don't preload, and the root layout attaches just that direction's font variables (on `<body>`; `<html>`'s class belongs to next-themes). An unreferenced `@font-face` is never downloaded.
+- Settings is the only page that loads all six faces, for its previews.
+
+**Previews:** a nested element with `data-direction="…"` takes that direction's tokens. Inside a dark page it gets the dark palette through CSS (`.dark [data-direction]`), with no script.
 
 | | Titanium & Ice | Deep Ocean & Aqua | Midnight & Periwinkle |
 |---|---|---|---|
@@ -140,9 +159,9 @@ Office tables have a comfortable / compact toggle, remembered per browser: rows 
 
 | Breakpoint | Chrome |
 |---|---|
-| Phone (< 768px) | Near-opaque top bar (brand, direction switcher, search) and a one-handed bottom tab bar (Home, Leads, Schedule, Money, More) with an accent indicator on the active tab; "More" opens a bottom sheet. |
+| Phone (< 768px) | Near-opaque top bar (brand, compact direction switcher, search) and a one-handed bottom tab bar (Home, Leads, Schedule, Money, More) with an accent indicator on the active tab; "More" opens a bottom sheet. |
 | Tablet (768–1279px) | Floating glass sidebar rail, icons only |
-| Desktop (≥ 1280px) | Rail expanded (244px) with **Operate** (Command Center, Leads & Pipeline, Schedule, Crews) and **Business** (Invoices & Payouts, Marketing, Automations, Settings) groups, collapsible and remembered; glass top bar with search (Cmd+K), the direction switcher and the theme toggle. |
+| Desktop (≥ 1280px) | Rail expanded (244px) with **Operate** (Command Center, Leads & Pipeline, Schedule, Crews) and **Business** (Invoices & Payouts, Marketing, Automations, Settings) groups, collapsible and remembered; glass top bar with search (Cmd+K) and the compact appearance controls. |
 
 The demo-data banner ("Demo data loaded, purge before launch") shows under the top bar whenever `5eed0000-` rows exist. Icons are Lucide only, at 18px in navigation and 24px in crew mode, never emoji.
 

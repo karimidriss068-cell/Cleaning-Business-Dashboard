@@ -59,6 +59,16 @@ On the server, check the user with `auth.getUser()`, not `getSession()`. The pro
 - Comments explain *why*. Match the existing comment density.
 - User-facing copy speaks cleaning-business language. Remove med-spa and ad-agency wording when you touch a screen.
 
+## UI rules (Keystone Clean design system)
+
+- **Read `DESIGN.md` before building UI.** All values come from `src/config/brand.ts`, the only place colors, fonts, effects and scales are defined.
+- **Use the token system only.** That means the Tailwind names mapped in `src/app/globals.css` (`bg-surface`, `text-ink-muted`, `border-hairline`, `text-brand-text`, `bg-success-soft`, `shadow-e1`, `glass`, `surface-layer`, `kc-enter`, `tabular`, …). No hex values, no inline colors, and no direction-specific branches.
+- **Every new screen and component must work in all three directions (Titanium & Ice, Deep Ocean & Aqua, Midnight & Periwinkle) and in both dark and light.** Check each of the 6 combinations at desktop (1440px) and phone (390px) widths before committing: no overflow, readable text, correct direction and theme. Crew screens must stay at AAA contrast.
+- **New colors go in `brand.ts` for all three directions and both themes.** `npm test` then runs the contrast, hue-distance and no-gold checks (`src/config/brand.test.ts`) for every combination; a failing pair blocks the change.
+- **Status is never color alone:** use `StatusPill` and the mappings in `src/lib/status.ts`.
+- **Motion:** use the duration and easing tokens, play once, and stay correct under `prefers-reduced-motion`.
+- **Appearance is a per-user preference** (`user_preferences`, Settings → Appearance). Don't hard-code a direction or theme anywhere.
+
 ## Run
 
 ```bash
