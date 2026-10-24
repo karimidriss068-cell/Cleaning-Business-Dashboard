@@ -5,6 +5,8 @@ import { Sidebar } from "@/components/shell/sidebar";
 import { MobileTabBar, MobileTopBar } from "@/components/shell/mobile-nav";
 import { AppCommandPalette } from "@/components/shell/app-command-palette";
 import { DemoBanner } from "@/components/shell/demo-banner";
+import { TopBar } from "@/components/shell/top-bar";
+import { Ambient } from "@/components/system/ambient";
 
 const ROLE_LABELS: Record<MemberRole, string> = {
   owner: "Owner",
@@ -32,10 +34,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const roleLabel = role ? ROLE_LABELS[role] : "No team profile";
 
   return (
-    <div className="flex min-h-dvh">
+    <div className="relative flex min-h-dvh">
+      <Ambient />
       <Sidebar role={role} userName={userName} roleLabel={roleLabel} />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="relative z-10 flex min-w-0 flex-1 flex-col">
         <MobileTopBar />
+        <TopBar />
         {demoData === true && <DemoBanner />}
         <main className="flex-1 pb-[calc(64px+env(safe-area-inset-bottom))] md:pb-0">{children}</main>
       </div>

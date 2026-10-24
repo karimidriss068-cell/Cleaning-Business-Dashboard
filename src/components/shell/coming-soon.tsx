@@ -7,7 +7,7 @@ export function ComingSoon({ title, icon, children }: { title: string; icon: Luc
   return (
     <div className="mx-auto w-full max-w-[1400px] space-y-6 px-4 py-6 md:px-6">
       <PageHeader title={title} />
-      <div className="rounded-md border border-border bg-surface">
+      <div className="kc-enter rounded-md border border-hairline bg-surface surface-layer shadow-e1" style={{ "--i": 1 } as React.CSSProperties}>
         <EmptyState icon={icon} title="This screen is next on the build list">
           {children}
         </EmptyState>

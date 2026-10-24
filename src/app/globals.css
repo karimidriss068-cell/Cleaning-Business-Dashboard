@@ -152,7 +152,8 @@
 
 /* Tabular figures for numbers that line up in columns and tiles. */
 @utility tabular {
-  font-variant-numeric: tabular-nums;
+  /* Lining as well: some display faces (Syne) default to old-style figures. */
+  font-variant-numeric: tabular-nums lining-nums;
 }
 
 /* Glass: the surface at the direction's glass opacity over a soft blur.

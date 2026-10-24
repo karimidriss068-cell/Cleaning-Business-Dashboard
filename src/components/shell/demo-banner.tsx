@@ -3,7 +3,7 @@ import { TriangleAlert } from "lucide-react";
 /** Shown whenever seed rows exist (DESIGN.md section 9). Not dismissible. */
 export function DemoBanner() {
   return (
-    <div role="status" className="flex items-start gap-2.5 border-b border-warning-fill/40 bg-warning-soft px-4 py-2.5 text-sm text-warning md:items-center md:px-6">
+    <div role="status" className="relative z-10 mx-3 mt-3 flex items-start gap-2.5 rounded-sm border border-warning/30 bg-warning-soft px-4 py-2.5 text-sm text-warning md:items-center">
       <TriangleAlert className="mt-0.5 size-4 shrink-0 md:mt-0" aria-hidden />
       <p>
         <strong className="font-semibold">Demo data loaded, purge before launch.</strong>{" "}

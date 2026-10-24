@@ -10,15 +10,18 @@ import { BrandLockup } from "@/components/system/brand-mark";
 import { ThemeToggle } from "@/components/system/theme-toggle";
 import { Drawer } from "@/components/system/drawer";
 import { openCommandPalette } from "@/components/system/command-palette";
+import { DirectionSwitcher } from "@/components/system/direction-switcher";
 import { signOut } from "@/app/(app)/actions";
 
 /** Phone top bar: brand and search. */
 export function MobileTopBar() {
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-surface px-4 md:hidden">
+    <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-hairline bg-surface/90 px-4 backdrop-blur-xl md:hidden">
       <Link href="/command-center" aria-label="Command Center">
         <BrandLockup />
       </Link>
+      <div className="flex items-center gap-1">
+      <DirectionSwitcher compact />
       <button
         type="button"
         onClick={openCommandPalette}
@@ -27,6 +30,7 @@ export function MobileTopBar() {
       >
         <Search className="size-5" aria-hidden />
       </button>
+      </div>
     </header>
   );
 }
@@ -45,14 +49,14 @@ export function MobileTabBar({ role, userName, roleLabel }: { role: MemberRole |
 
   const tabClass = (active: boolean) =>
     cn(
-      "flex min-h-12 flex-1 flex-col items-center justify-center gap-0.5 rounded-sm text-[11px] font-medium transition-colors duration-fast",
-      active ? "text-brand-text" : "text-ink-muted",
+      "relative flex min-h-12 flex-1 flex-col items-center justify-center gap-0.5 rounded-sm text-[11px] font-medium transition-colors duration-fast",
+      active ? "text-brand-text before:absolute before:top-0 before:h-0.5 before:w-8 before:rounded-full before:bg-brand before:shadow-[0_0_10px_var(--kc-glow)]" : "text-ink-muted",
     );
 
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-hairline bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
     >
       <ul className="flex h-16 items-stretch gap-1 px-2 py-1.5">
         {tabs.map((item) => {
@@ -98,7 +102,7 @@ export function MobileTabBar({ role, userName, roleLabel }: { role: MemberRole |
             );
           })}
         </ul>
-        <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+        <div className="mt-4 flex items-center justify-between border-t border-hairline pt-4">
           <span className="text-sm text-ink-muted">Theme</span>
           <ThemeToggle />
         </div>

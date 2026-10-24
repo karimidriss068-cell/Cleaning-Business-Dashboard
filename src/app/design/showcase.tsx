@@ -35,7 +35,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { StatusPill } from "@/components/system/status-pill";
 import { StatTile } from "@/components/system/stat-tile";
 import { KanbanCard } from "@/components/system/kanban-card";
-import { CalendarEvent } from "@/components/system/calendar-event";
+import { CalendarEvent, CalendarNowLine } from "@/components/system/calendar-event";
+import { AreaChart } from "@/components/system/area-chart";
 import { EmptyState } from "@/components/system/empty-state";
 import { DataTable } from "@/components/system/data-table";
 import { Drawer } from "@/components/system/drawer";
@@ -115,10 +116,15 @@ export function Showcase({ theme }: { theme: ThemeName }) {
   const p = directions[direction].palettes[theme];
 
   return (
-    <div className={cn(theme, "min-w-0 space-y-10 bg-background px-4 py-8 text-foreground md:px-6")}>
-      <div className="flex items-baseline justify-between">
-        <h1 className="font-heading text-[28px] leading-8 font-semibold">{theme === "light" ? "Light" : "Dark"}</h1>
-        <span className="text-[13px] text-ink-muted">Values from src/config/brand.ts</span>
+    <div className={cn(theme, "min-w-0 space-y-10 bg-background/70 px-4 py-8 text-foreground md:px-6")}>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <p className="text-[11px] font-semibold tracking-[0.16em] text-brand-text uppercase">{directions[direction].label}</p>
+          <h1 className="font-heading text-[32px] leading-9 font-semibold">{theme === "light" ? "Light (secondary)" : "Dark (primary)"}</h1>
+        </div>
+        <span className="text-[13px] text-ink-muted">
+          {directions[direction].fonts.display} + {directions[direction].fonts.body} · {directions[direction].mood}
+        </span>
       </div>
 
       <Section title="Color">
@@ -128,7 +134,7 @@ export function Showcase({ theme }: { theme: ThemeName }) {
               <div className="mb-2 text-[11px] font-semibold tracking-[0.06em] text-ink-muted uppercase">{g.label}</div>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {g.tokens.map((t) => (
-                  <div key={t} className="overflow-hidden rounded-sm border border-border bg-surface">
+                  <div key={t} className="overflow-hidden rounded-sm border border-hairline bg-surface">
                     <div className="h-10 border-b border-border" style={{ background: `var(${tokenVar(t)})` }} />
                     <div className="px-2 py-1.5">
                       <div className="truncate text-[12px] font-medium text-ink">{t}</div>
@@ -143,9 +149,9 @@ export function Showcase({ theme }: { theme: ThemeName }) {
       </Section>
 
       <Section title="Typography">
-        <div className="space-y-2 rounded-md border border-border bg-surface p-4">
+        <div className="space-y-2 rounded-md border border-hairline bg-surface surface-layer p-5 shadow-e1">
           <div className="font-heading text-[28px] leading-8 font-semibold">Display · Command Center</div>
-          <div className="font-heading text-[32px] leading-9 font-medium tabular">$48,215.50</div>
+          <div className="font-heading text-[40px] leading-[44px] font-medium tracking-[-0.02em] tabular text-glow">$48,215.50</div>
           <div className="font-heading text-xl font-semibold">H2 · Today&apos;s schedule</div>
           <div className="text-[15px] font-semibold">H3 · Brooklyn Crew A</div>
           <p className="text-sm">Body · Deep clean for a 2-bedroom in Park Slope, keys with the doorman.</p>
@@ -227,6 +233,18 @@ export function Showcase({ theme }: { theme: ThemeName }) {
         </div>
       </Section>
 
+      <Section title="Area chart">
+        <div className="rounded-md border border-hairline bg-surface surface-layer p-5 shadow-e1">
+          <AreaChart
+            values={[42, 18, 64, 51, 70, 38, 0, 55, 81, 66, 90, 47, 72, 104, 88, 61, 0, 77, 95, 112, 84, 69, 120, 99, 58, 0, 101, 118, 93, 131].map((v) => v * 1000)}
+            labels={Array.from({ length: 30 }, (_, i) => `Oct ${i + 1}`)}
+            formatValue={(c) => (c >= 100000 ? `$${(c / 100000).toFixed(1)}k` : `$${Math.round(c / 100)}`)}
+            ariaLabel="Sample revenue over 30 days"
+            height={180}
+          />
+        </div>
+      </Section>
+
       <Section title="Table (sticky header, density toggle)">
         <DataTable title="Invoices" description="Scroll inside the table: the header stays put." storageKey={`kc:density:design-${theme}`}>
           <Table containerClassName="max-h-[320px]" stackOnMobile>
@@ -257,7 +275,7 @@ export function Showcase({ theme }: { theme: ThemeName }) {
       <Section title="Kanban cards">
         <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 md:mx-0 md:px-0">
           {BOARD.map((col) => (
-            <div key={col.stage} className="w-64 shrink-0 snap-start space-y-2 rounded-md bg-surface-raised p-2 dark:bg-surface">
+            <div key={col.stage} className="w-64 shrink-0 snap-start space-y-2 rounded-md border border-hairline bg-canvas/50 p-2">
               <div className="flex items-center justify-between px-1">
                 <StatusPill tone={leadTone(col.stage)}>{leadLabel[col.stage]}</StatusPill>
                 <span className="text-[13px] text-ink-muted tabular">{col.cards.length}</span>
@@ -271,7 +289,7 @@ export function Showcase({ theme }: { theme: ThemeName }) {
       </Section>
 
       <Section title="Calendar events">
-        <div className="relative h-[588px] overflow-hidden rounded-md border border-border bg-surface">
+        <div className="relative h-[588px] overflow-hidden rounded-md border border-hairline bg-surface surface-layer shadow-e1">
           {Array.from({ length: 13 }, (_, i) => (
             <div key={i} className="absolute inset-x-0 flex border-t border-border" style={{ top: 12 + i * 44 }}>
               <span className="w-14 shrink-0 -translate-y-2 bg-surface pr-2 text-right text-[11px] text-ink-muted tabular">
@@ -279,6 +297,7 @@ export function Showcase({ theme }: { theme: ThemeName }) {
               </span>
             </div>
           ))}
+          <CalendarNowLine top={12 + 4.6 * 44} label="12:36 PM" />
           {EVENTS.map((e, i) => {
             const startMin = (new Date(e.start).getTime() - new Date("2026-11-04T13:00:00Z").getTime()) / 60000;
             const minutes = (new Date(e.end).getTime() - new Date(e.start).getTime()) / 60000;
@@ -300,7 +319,7 @@ export function Showcase({ theme }: { theme: ThemeName }) {
       </Section>
 
       <Section title="Empty state">
-        <div className="rounded-md border border-border bg-surface">
+        <div className="rounded-md border border-hairline bg-surface surface-layer shadow-e1">
           <EmptyState icon={Inbox} title="No leads waiting" action={<Button variant="secondary" size="sm">Add a lead</Button>}>
             New web, Google and Nextdoor leads land here the moment they come in.
           </EmptyState>

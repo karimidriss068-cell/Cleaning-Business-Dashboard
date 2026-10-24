@@ -1,5 +1,12 @@
 import { cn } from "@/lib/utils";
 
+/** Rounds up to 1, 2, 2.5 or 5 x 10^n so axis ticks land on clean values. */
+function niceCeiling(v: number): number {
+  const exp = 10 ** Math.floor(Math.log10(v));
+  const step = [1, 2, 2.5, 5, 10].find((m) => m * exp >= v) ?? 10;
+  return step * exp;
+}
+
 /**
  * Area chart for a daily series (e.g. revenue over 30 days). SVG with
  * hairline gridlines, three y-axis labels, sparse x labels, an accent
@@ -25,7 +32,7 @@ export function AreaChart({
   const w = 1000;
   const h = 300;
   const n = values.length;
-  const max = Math.max(...values, 1) * 1.12;
+  const max = niceCeiling(Math.max(...values, 1));
   const x = (i: number) => (n > 1 ? (i / (n - 1)) * w : w / 2);
   const y = (v: number) => h - (v / max) * h;
   const line = values.map((v, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(" ");

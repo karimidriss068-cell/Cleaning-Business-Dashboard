@@ -39,12 +39,16 @@ export function StatTile({
   const body = (
     <>
       <span aria-hidden className="pointer-events-none absolute inset-x-6 top-0 h-px bg-linear-to-r from-transparent via-brand/60 to-transparent" />
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-[11px] font-semibold tracking-[0.12em] text-ink-muted uppercase">{label}</span>
+      <span className="text-[11px] font-semibold tracking-[0.12em] text-ink-muted uppercase">{label}</span>
+      <div className="flex items-end justify-between gap-4">
+        <span className="font-heading text-[40px] leading-[44px] font-medium tracking-[-0.02em] text-ink tabular text-glow">{value}</span>
+        {spark && spark.length > 1 && <Sparkline values={spark} delayMs={150 + index * 55} className="mb-1.5" />}
+      </div>
+      <div className="flex min-h-6 flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-ink-muted">
         {delta && (
           <span
             className={cn(
-              "inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[12px] font-medium tabular ring-1 ring-inset",
+              "inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[12px] font-medium whitespace-nowrap tabular ring-1 ring-inset",
               delta.direction === "flat"
                 ? "text-ink-muted ring-hairline"
                 : delta.good
@@ -56,12 +60,8 @@ export function StatTile({
             {delta.label}
           </span>
         )}
+        {hint && <span>{hint}</span>}
       </div>
-      <div className="flex items-end justify-between gap-4">
-        <span className="font-heading text-[40px] leading-[44px] font-medium tracking-[-0.02em] text-ink tabular text-glow">{value}</span>
-        {spark && spark.length > 1 && <Sparkline values={spark} delayMs={150 + index * 55} className="mb-1.5" />}
-      </div>
-      <div className="min-h-5 text-[13px] text-ink-muted">{hint}</div>
     </>
   );
   const frame = cn(

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowRight, CalendarX2, CheckCircle2, MessageSquareWarning, Receipt, ShieldAlert, UserX } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { addDays, formatCents, formatNyDate, formatNyTime, nyDateString, nyDayRangeUtc, nyToday } from "@/lib/format";
+import { addDays, formatCalendarDate, formatCents, formatNyDate, formatNyTime, nyDateString, nyDayRangeUtc, nyToday } from "@/lib/format";
 import { cumulative, dailySeries, dayRange, direction, median, minutesBetween, shortDuration, signedCount, signedPercent } from "@/lib/command-center";
 import { coiTone, jobLabel, jobTone } from "@/lib/status";
 import { PageHeader } from "@/components/shell/page-header";
@@ -11,6 +11,7 @@ import { StatTile } from "@/components/system/stat-tile";
 import { StatusPill } from "@/components/system/status-pill";
 import { EmptyState } from "@/components/system/empty-state";
 import { DataTable } from "@/components/system/data-table";
+import { AreaChart } from "@/components/system/area-chart";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { Database } from "@/lib/supabase/database.types";
 
@@ -31,6 +32,9 @@ const GOAL_LABELS: Record<GoalMetric, string> = {
 };
 
 const dollars = (cents: number) => formatCents(Math.round(cents / 100) * 100, { hideZeroCents: true });
+/** Axis labels: $0, $850, $1.2k. */
+const shortDollars = (cents: number) => (cents >= 100000 ? `$${(cents / 100000).toFixed(1)}k` : `$${Math.round(cents / 100)}`);
+const stagger = (i: number) => ({ "--i": i }) as React.CSSProperties;
 
 export default async function CommandCenterPage() {
   const supabase = await createClient();
@@ -57,7 +61,8 @@ export default async function CommandCenterPage() {
   const today = nyToday(now);
   const monthStart = `${today.slice(0, 7)}-01`;
   const sparkStart = addDays(today, -13);
-  const windowStart = monthStart < sparkStart ? monthStart : sparkStart;
+  const chartStart = addDays(today, -29);
+  const windowStart = monthStart < chartStart ? monthStart : chartStart;
   const lastMonthStart = `${addDays(monthStart, -1).slice(0, 7)}-01`;
   const lastMonthSameDay = addDays(lastMonthStart, Number(today.slice(8, 10)) - 1);
   const todayRange = nyDayRangeUtc(today);
@@ -113,6 +118,9 @@ export default async function CommandCenterPage() {
   const revenue = revenueSeries.at(-1) ?? 0;
   const lastMonthRevenue = (lastMonthRes.data ?? []).reduce((s, j) => s + j.price_cents, 0);
   const revenuePct = signedPercent(lastMonthRevenue, revenue);
+  const chartDays = dayRange(chartStart, today);
+  const revenue30 = dailySeries(completed, (j) => j.scheduled_start, chartDays, (j) => j.price_cents);
+  const revenue30Total = revenue30.reduce((a, b) => a + b, 0);
 
   // Leads
   const leads = leadsRes.data ?? [];
@@ -157,7 +165,11 @@ export default async function CommandCenterPage() {
 
   return (
     <div className="mx-auto w-full max-w-[1400px] space-y-6 px-4 py-6 md:px-6">
-      <PageHeader title="Command Center" description={formatNyDate(now, "weekday")} />
+      <PageHeader
+        eyebrow={`Operations · ${formatNyDate(now, "weekday")}`}
+        title="Command Center"
+        description={`${todaysLive.length} visit${todaysLive.length === 1 ? "" : "s"} today · ${waiting.length} lead${waiting.length === 1 ? "" : "s"} waiting · ${overdue.length} overdue invoice${overdue.length === 1 ? "" : "s"}`}
+      />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatTile
@@ -167,6 +179,7 @@ export default async function CommandCenterPage() {
           spark={jobsPerDay}
           delta={{ label: `${signedCount(jobsDelta)} vs last ${formatNyDate(now, "weekday").split(",")[0]}`, direction: direction(jobsDelta), good: jobsDelta >= 0 }}
           href="/schedule"
+          index={1}
         />
         <StatTile
           label="Revenue this month"
@@ -175,6 +188,7 @@ export default async function CommandCenterPage() {
           spark={revenueSeries}
           delta={revenuePct ? { label: `${revenuePct} vs last month`, direction: direction(revenue - lastMonthRevenue), good: revenue >= lastMonthRevenue } : undefined}
           href="/money"
+          index={2}
         />
         <StatTile
           label="Open leads"
@@ -183,6 +197,7 @@ export default async function CommandCenterPage() {
           spark={newPerDay}
           delta={{ label: `${signedCount(thisWeek - lastWeek)} new vs last week`, direction: direction(thisWeek - lastWeek), good: thisWeek >= lastWeek }}
           href="/leads"
+          index={3}
         />
         <StatTile
           label="Outstanding"
@@ -190,11 +205,29 @@ export default async function CommandCenterPage() {
           hint={`${openInvoices.length} open invoice${openInvoices.length === 1 ? "" : "s"}`}
           delta={overdue.length ? { label: `${dollars(overdueCents)} overdue`, direction: "up", good: false } : undefined}
           href="/money"
+          index={4}
         />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="min-w-0 lg:col-span-2">
+        <div className="min-w-0 space-y-6 lg:col-span-2">
+          <section aria-labelledby="revenue-30" className="kc-enter rounded-md border border-hairline bg-surface surface-layer p-5 shadow-e1" style={stagger(5)}>
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h2 id="revenue-30" className="font-heading text-lg font-medium text-ink">Revenue, last 30 days</h2>
+                <p className="text-[13px] text-ink-muted">Completed jobs, by New York day</p>
+              </div>
+              <span className="font-heading text-2xl font-medium text-ink tabular">{dollars(revenue30Total)}</span>
+            </div>
+            <AreaChart
+              values={revenue30}
+              labels={chartDays.map((d) => formatCalendarDate(d).replace(/, \d{4}$/, ""))}
+              formatValue={shortDollars}
+              ariaLabel={`Revenue from completed jobs over the last 30 days, ${dollars(revenue30Total)} in total`}
+              height={200}
+            />
+          </section>
+          <div className="kc-enter" style={stagger(6)}>
           <DataTable title="Today's schedule" description={`${todays.length} visit${todays.length === 1 ? "" : "s"}`} storageKey="kc:density:command-center">
             {todays.length === 0 ? (
               <EmptyState icon={CheckCircle2} title="Nothing on the schedule today">
@@ -245,24 +278,26 @@ export default async function CommandCenterPage() {
               </Table>
             )}
           </DataTable>
+          </div>
         </div>
 
         <div className="space-y-6">
-          <section aria-labelledby="attention" className="rounded-lg bg-highlight p-4">
-            <h2 id="attention" className="font-heading text-xl font-semibold text-ink">Needs attention</h2>
+          <section aria-labelledby="attention" className="kc-enter relative overflow-hidden rounded-lg border border-hairline bg-highlight p-5 shadow-e2" style={stagger(7)}>
+            <span aria-hidden className="pointer-events-none absolute -top-16 -right-16 size-48 rounded-full bg-brand/15 blur-3xl" />
+            <h2 id="attention" className="relative font-heading text-lg font-medium text-ink">Needs attention</h2>
             {attention.length === 0 ? (
               <p className="mt-2 flex items-center gap-2 text-sm text-ink-muted">
                 <CheckCircle2 className="size-4 text-success" aria-hidden /> All clear.
               </p>
             ) : (
-              <ul className="mt-3 space-y-2">
+              <ul className="relative mt-4 space-y-2">
                 {attention.map((a) => {
                   const Icon = a.icon;
                   return (
                     <li key={a.key}>
                       <Link
                         href={a.href}
-                        className="group flex items-center gap-3 rounded-sm bg-surface px-3 py-2.5 shadow-e1 transition-colors duration-fast hover:bg-surface-raised"
+                        className="group flex items-center gap-3 rounded-sm border border-hairline bg-surface/80 px-3 py-2.5 transition-[border-color,background-color] duration-fast hover:border-brand/35 hover:bg-surface"
                       >
                         <span className={a.tone === "danger" ? "text-danger" : "text-warning"}>
                           <Icon className="size-5" aria-hidden />
@@ -280,8 +315,8 @@ export default async function CommandCenterPage() {
             )}
           </section>
 
-          <section aria-labelledby="goals" className="rounded-md border border-border bg-surface p-4">
-            <h2 id="goals" className="font-heading text-xl font-semibold text-ink">Goals this month</h2>
+          <section aria-labelledby="goals" className="kc-enter rounded-md border border-hairline bg-surface surface-layer p-5 shadow-e1" style={stagger(8)}>
+            <h2 id="goals" className="font-heading text-lg font-medium text-ink">Goals this month</h2>
             {(goalsRes.data ?? []).length === 0 ? (
               <p className="mt-2 text-sm text-ink-muted">No goals set for this month.</p>
             ) : (
@@ -304,9 +339,12 @@ export default async function CommandCenterPage() {
                         aria-valuemin={0}
                         aria-valuemax={100}
                         aria-valuenow={pct}
-                        className="mt-1.5 h-2 overflow-hidden rounded-full bg-surface-raised"
+                        className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-raised"
                       >
-                        <div className={pct >= 100 ? "h-full rounded-full bg-success-fill" : "h-full rounded-full bg-brand"} style={{ width: `${pct}%` }} />
+                        <div
+                          className={pct >= 100 ? "h-full rounded-full bg-success-fill" : "h-full rounded-full bg-linear-to-r from-brand/60 to-brand shadow-[0_0_12px_var(--kc-glow)]"}
+                          style={{ width: `${pct}%` }}
+                        />
                       </div>
                     </li>
                   );

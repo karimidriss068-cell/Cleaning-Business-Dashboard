@@ -20,7 +20,7 @@ export function BrandLockup({ collapsed = false, className }: { collapsed?: bool
   return (
     <span className={cn("flex items-center gap-2.5", className)}>
       <BrandMark className="size-7" />
-      {!collapsed && <span className="font-heading text-[17px] leading-none font-semibold tracking-[0.04em] text-ink">{brand.name}</span>}
+      {!collapsed && <span className="font-heading text-[15px] leading-none font-semibold tracking-[0.03em] whitespace-nowrap text-ink">{brand.name}</span>}
     </span>
   );
 }

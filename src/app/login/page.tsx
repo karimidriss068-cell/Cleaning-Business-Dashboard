@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BrandLockup, BrandMark } from "@/components/system/brand-mark";
+import { Ambient } from "@/components/system/ambient";
+import { DirectionSwitcher } from "@/components/system/direction-switcher";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,25 +34,30 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="grid min-h-dvh lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
-      {/* Brand panel: navy in both themes, desktop only. */}
-      <section aria-hidden className="relative hidden flex-col justify-between overflow-hidden bg-sidebar p-12 text-sidebar-foreground lg:flex">
-        <BrandLockup tone="sidebar" />
-        <div className="max-w-md space-y-4">
-          <p className="font-heading text-[40px] leading-[44px] font-semibold">Every home and office, on schedule.</p>
-          <p className="text-[15px] leading-6 text-sidebar-muted">{brand.loginTagline}</p>
+    <main className="relative grid min-h-dvh overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <Ambient />
+      <div className="absolute top-4 right-4 z-20">
+        <DirectionSwitcher compact />
+      </div>
+
+      <section className="relative z-10 hidden flex-col justify-between p-12 lg:flex xl:p-16">
+        <BrandLockup />
+        <div className="kc-enter max-w-lg space-y-5">
+          <p className="text-[11px] font-semibold tracking-[0.18em] text-brand-text uppercase">Operations cockpit</p>
+          <p className="font-heading text-[48px] leading-[52px] font-semibold tracking-[-0.02em] text-ink">Every home and office, precisely on schedule.</p>
+          <p className="text-[15px] leading-6 text-ink-muted">{brand.loginTagline}</p>
         </div>
-        <p className="text-[13px] text-sidebar-muted">Residential and commercial cleaning · New York City</p>
-        <BrandMark className="pointer-events-none absolute -right-16 -bottom-20 size-[360px] opacity-[0.07]" />
+        <p className="text-[13px] text-ink-muted">Residential and commercial cleaning · New York City</p>
+        <BrandMark className="pointer-events-none absolute -right-24 -bottom-24 size-[420px] opacity-[0.06]" />
       </section>
 
-      <section className="flex items-center justify-center bg-background px-4 py-10">
-        <div className="w-full max-w-sm">
+      <section className="relative z-10 flex items-center justify-center px-4 py-12">
+        <div className="kc-enter w-full max-w-[400px] rounded-lg border border-hairline glass p-8 shadow-e3" style={{ "--i": 1 } as React.CSSProperties}>
           <div className="mb-8 lg:hidden">
             <BrandLockup />
           </div>
           <h1 className="font-heading text-[28px] leading-8 font-semibold text-ink">Sign in</h1>
-          <p className="mt-1 text-sm text-ink-muted">For the {brand.shortName} office team and crew members.</p>
+          <p className="mt-1.5 text-sm text-ink-muted">For the {brand.shortName} office team and crew members.</p>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
             <div className="space-y-1.5">
