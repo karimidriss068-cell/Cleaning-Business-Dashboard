@@ -16,8 +16,8 @@ export default function NotFound() {
           That page doesn&apos;t exist, or it moved. Let&apos;s get you back on track.
         </p>
       </div>
-      <Link href="/dashboard">
-        <Button size="sm">Go to Dashboard</Button>
+      <Link href="/command-center">
+        <Button size="sm">Go to Command Center</Button>
       </Link>
     </div>
   );

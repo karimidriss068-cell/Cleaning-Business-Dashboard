@@ -5,8 +5,8 @@ import type { Database } from "./database.types";
  * Service-role Supabase client. BYPASSES Row Level Security.
  *
  * Use ONLY in trusted server-side code that has already authenticated the
- * caller by other means (e.g. the appointment-booked webhook, which verifies
- * the x-webhook-secret header). Never import this into client components — the
+ * caller by other means (e.g. an inbound webhook after verifying its signature,
+ * or a cron route after checking CRON_SECRET). Never import this into client components — the
  * service_role key must never reach the browser.
  */
 export function createAdminClient() {

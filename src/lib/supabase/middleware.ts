@@ -60,7 +60,7 @@ export async function updateSession(request: NextRequest) {
 
   if (user && isAuthRoute) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = "/command-center";
     return NextResponse.redirect(url);
   }
 

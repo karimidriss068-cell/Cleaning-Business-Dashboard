@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 
-// The dashboard is the home of the app; middleware bounces unauthenticated
-// users to /login.
+// The Command Center is home; the proxy sends signed-out visitors to /login.
 export default function Home() {
-  redirect("/dashboard");
+  redirect("/command-center");
 }
