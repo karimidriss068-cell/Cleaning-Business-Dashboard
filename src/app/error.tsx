@@ -17,8 +17,8 @@ export default function GlobalError({
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-6 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[var(--accent-bright)]/30 bg-[color-mix(in_srgb,var(--accent-bright)_14%,transparent)]">
-        <TriangleAlert className="h-6 w-6 text-[var(--accent-bright)]" />
+      <div className="flex h-14 w-14 items-center justify-center rounded-full border bg-danger-soft">
+        <TriangleAlert className="h-6 w-6 text-danger" />
       </div>
       <div className="space-y-1">
         <p className="font-heading text-3xl font-medium tracking-tight">

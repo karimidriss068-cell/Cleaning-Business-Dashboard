@@ -4,15 +4,32 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-function Table({ className, ...props }: React.ComponentProps<"table">) {
+// Density comes from the nearest [data-density] (see DataTable). The header
+// sticks within the container, so give it a max height (containerClassName)
+// when the table can be long.
+//
+// stackOnMobile: below 768px each row becomes a card and each cell shows its
+// column name from the `label` prop on TableCell.
+function Table({
+  className,
+  containerClassName,
+  stackOnMobile = false,
+  ...props
+}: React.ComponentProps<"table"> & { containerClassName?: string; stackOnMobile?: boolean }) {
   return (
     <div
       data-slot="table-container"
-      className="relative w-full overflow-x-auto"
+      data-stack={stackOnMobile || undefined}
+      className={cn(
+        "relative w-full overflow-auto",
+        stackOnMobile &&
+          "max-md:max-h-none max-md:[&_thead]:sr-only max-md:[&_table]:block max-md:[&_tbody]:block max-md:[&_tr]:block max-md:[&_tr]:px-4 max-md:[&_tr]:py-3 max-md:[&_td]:flex max-md:[&_td]:h-auto max-md:[&_td]:items-center max-md:[&_td]:justify-between max-md:[&_td]:gap-4 max-md:[&_td]:px-0 max-md:[&_td]:py-1 max-md:[&_td]:text-right max-md:[&_td]:whitespace-normal max-md:[&_td[data-label]]:before:text-left max-md:[&_td[data-label]]:before:text-[12px] max-md:[&_td[data-label]]:before:text-ink-muted max-md:[&_td[data-label]]:before:content-[attr(data-label)]",
+        containerClassName,
+      )}
     >
       <table
         data-slot="table"
-        className={cn("w-full caption-bottom text-sm", className)}
+        className={cn("w-full caption-bottom text-[length:var(--kc-cell-font)]", className)}
         {...props}
       />
     </div>
@@ -23,7 +40,7 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
   return (
     <thead
       data-slot="table-header"
-      className={cn("[&_tr]:border-b", className)}
+      className={cn("sticky top-0 z-10 bg-surface-raised [&_tr]:border-b [&_tr]:hover:bg-transparent", className)}
       {...props}
     />
   )
@@ -44,7 +61,7 @@ function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
     <tfoot
       data-slot="table-footer"
       className={cn(
-        "border-t bg-muted/50 font-medium [&>tr]:last:border-b-0",
+        "border-t bg-surface-raised font-medium [&>tr]:last:border-b-0",
         className
       )}
       {...props}
@@ -57,7 +74,7 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
     <tr
       data-slot="table-row"
       className={cn(
-        "border-b border-border transition-colors duration-150 ease-out hover:bg-[var(--bg-surface-raised)] has-aria-expanded:bg-[var(--bg-surface-raised)] data-[state=selected]:bg-[var(--bg-surface-raised)]",
+        "border-b border-border transition-colors duration-fast ease-standard hover:bg-surface-raised has-aria-expanded:bg-surface-raised data-[state=selected]:bg-surface-raised",
         className
       )}
       {...props}
@@ -70,7 +87,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
     <th
       data-slot="table-head"
       className={cn(
-        "h-11 px-4 text-left align-middle text-xs font-medium uppercase tracking-wider whitespace-nowrap text-muted-foreground [&:has([role=checkbox])]:pr-0",
+        "h-[var(--kc-row-height)] px-[var(--kc-cell-x)] text-left align-middle text-[11px] font-semibold uppercase tracking-[0.06em] whitespace-nowrap text-ink-muted [&:has([role=checkbox])]:pr-0",
         className
       )}
       {...props}
@@ -78,12 +95,13 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   )
 }
 
-function TableCell({ className, ...props }: React.ComponentProps<"td">) {
+function TableCell({ className, label, ...props }: React.ComponentProps<"td"> & { label?: string }) {
   return (
     <td
       data-slot="table-cell"
+      data-label={label}
       className={cn(
-        "px-4 py-4 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0",
+        "h-[var(--kc-row-height)] px-[var(--kc-cell-x)] py-[var(--kc-cell-y)] align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0",
         className
       )}
       {...props}

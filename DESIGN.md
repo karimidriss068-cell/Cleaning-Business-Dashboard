@@ -18,7 +18,7 @@ Build components from this spec, then apply them. The dev-only `/design` page re
 
 Base colors: navy `#0F2A3D`, teal `#1F9D9A`, mist `#EAF2F3`, sand `#E9E2D6`. Teal fails as text (3.31:1 on white), so it's the brand color for icons, charts, large headings and focus. Text and buttons use same-hue shades that pass.
 
-Every pair below was checked against WCAG 2.2 with at least 0.2 of headroom: 4.5:1 for text, 3:1 for icons, input borders and focus rings, and 7:1 (AAA) for crew-mode text, since crews read outdoors. `src/config/brand.test.ts` enforces all 76 pairs (38 per theme) on every test run.
+Every pair below was checked against WCAG 2.2 with at least 0.2 of headroom: 4.5:1 for text, 3:1 for icons, input borders and focus rings, and 7:1 (AAA) for crew-mode text, since crews read outdoors. `src/config/brand.test.ts` enforces all 86 pairs (43 per theme) on every test run.
 
 | Token | Role | Light | Dark |
 |---|---|---|---|
@@ -36,8 +36,8 @@ Every pair below was checked against WCAG 2.2 with at least 0.2 of headroom: 4.5
 | `border-input` | Input and control boundaries | `#768893` | `#748691` |
 | `focus` | Focus ring | `#1C8A8B` | `#1F9D9A` |
 | `info-soft` | Info pill tint (with `accent-text`) | `#E4F3F3` | `#113A4A` |
-| `success-text` / `-soft` / `-fill` | Success | `#247856` / `#E6F3EC` / `#247856` | `#6EBB93` / `#164445` / `#6EBB93` |
-| `warning-text` / `-soft` / `-fill` | Warning | `#7D692B` / `#FBF4E4` / `#E0A21B` | `#E1A82A` / `#3D4436` / `#E0A21B` |
+| `success-text` / `-soft` / `-fill` | Success | `#247856` / `#E6F3EC` / `#247856` | `#6EBB93` / `#143B43` / `#6EBB93` |
+| `warning-text` / `-soft` / `-fill` | Warning | `#7D692B` / `#FBF4E4` / `#E0A21B` | `#E1A82A` / `#283839` / `#E0A21B` |
 | `danger-text` / `-soft` / `-fill` | Danger | `#B54144` / `#FAE9E9` / `#B54144` | `#DE8A8B` / `#3B303F` / `#DE8A8B` |
 
 Labels on fills: white on success and danger fills in light mode; navy on every fill in dark mode; navy on the warning fill in both modes. Real amber can't carry white text, so light-mode warning text is olive (`#7D692B`), while bright amber `#E0A21B` stays for badges with a navy label.

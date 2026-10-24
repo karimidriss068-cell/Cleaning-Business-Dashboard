@@ -28,17 +28,28 @@ const Toaster = ({ ...props }: ToasterProps) => {
           <Loader2Icon className="size-4 animate-spin" />
         ),
       }}
+      // Sits above the mobile tab bar (64px + safe area), bottom-right on desktop.
+      mobileOffset={{ bottom: "calc(80px + env(safe-area-inset-bottom))" }}
       style={
         {
           "--normal-bg": "var(--popover)",
           "--normal-text": "var(--popover-foreground)",
           "--normal-border": "var(--border)",
-          "--border-radius": "var(--radius)",
+          "--success-bg": "var(--kc-success-soft)",
+          "--success-text": "var(--kc-success-text)",
+          "--success-border": "var(--kc-success-soft)",
+          "--error-bg": "var(--kc-danger-soft)",
+          "--error-text": "var(--kc-danger-text)",
+          "--error-border": "var(--kc-danger-soft)",
+          "--info-bg": "var(--kc-info-soft)",
+          "--info-text": "var(--kc-accent-text)",
+          "--info-border": "var(--kc-info-soft)",
+          "--border-radius": "var(--kc-radius-sm)",
         } as React.CSSProperties
       }
       toastOptions={{
         classNames: {
-          toast: "cn-toast",
+          toast: "cn-toast shadow-e2",
         },
       }}
       {...props}
