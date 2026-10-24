@@ -5,7 +5,7 @@ import { leadLabel, leadTone, type LeadStage, type Tone } from "@/lib/status";
 
 const stripe: Record<Tone, string> = {
   info: "bg-brand",
-  sand: "bg-chart-3",
+  secondary: "bg-accent2",
   success: "bg-success-fill",
   neutral: "bg-border-input",
   warning: "bg-warning-fill",

@@ -1,7 +1,8 @@
-// Status -> pill tone (DESIGN.md section 2, "Status mapping"). Pure so every
+// Status -> pill tone (DESIGN.md section 2, "Status mapping"). "secondary" is
+// the direction's second accent (accent2). Pure so every
 // screen maps statuses the same way, and tested in status.test.ts.
 
-export type Tone = "neutral" | "info" | "success" | "warning" | "danger" | "sand";
+export type Tone = "neutral" | "info" | "success" | "warning" | "danger" | "secondary";
 
 export type JobStatus = "scheduled" | "in_progress" | "completed" | "cancelled" | "no_access";
 export type LeadStage = "new" | "contacted" | "quoted" | "won" | "lost";
@@ -18,7 +19,7 @@ const jobTones: Record<JobStatus, Tone> = {
 const leadTones: Record<LeadStage, Tone> = {
   new: "info",
   contacted: "neutral",
-  quoted: "sand",
+  quoted: "secondary",
   won: "success",
   lost: "neutral",
 };

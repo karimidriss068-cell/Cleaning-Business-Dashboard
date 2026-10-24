@@ -19,7 +19,9 @@ import {
   KanbanSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { palettes, radius, type ThemeName } from "@/config/brand";
+import { defaultDirection, directionIds, directions, radius, type DirectionId, type ThemeName } from "@/config/brand";
+import { DIRECTION_STORAGE_KEY } from "@/lib/theme/direction";
+import { useStoredChoice } from "@/hooks/use-stored-choice";
 import { tokenVar } from "@/lib/theme/tokens-css";
 import { formatCalendarDate, formatCents } from "@/lib/format";
 import { invoiceLabel, invoiceTone, jobLabel, jobTone, leadLabel, leadTone, type JobStatus, type LeadStage } from "@/lib/status";
@@ -100,7 +102,7 @@ function Section({ title, children, className }: { title: string; children: Reac
 }
 
 const SWATCH_GROUPS: { label: string; tokens: (keyof Palette)[] }[] = [
-  { label: "Surfaces", tokens: ["canvas", "surface", "surfaceRaised", "sand"] },
+  { label: "Surfaces", tokens: ["canvas", "surface", "surfaceRaised", "highlight"] },
   { label: "Text and brand", tokens: ["text", "textMuted", "accent", "accentText", "primary"] },
   { label: "Status", tokens: ["successText", "successSoft", "warningText", "warningFill", "dangerText", "dangerSoft", "infoSoft"] },
   { label: "Lines and charts", tokens: ["borderSubtle", "borderInput", "focus", "chart1", "chart2", "chart3"] },
@@ -109,7 +111,8 @@ const SWATCH_GROUPS: { label: string; tokens: (keyof Palette)[] }[] = [
 export function Showcase({ theme }: { theme: ThemeName }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [moved, setMoved] = useState(false);
-  const p = palettes[theme];
+  const [direction] = useStoredChoice<DirectionId>(DIRECTION_STORAGE_KEY, directionIds, defaultDirection);
+  const p = directions[direction].palettes[theme];
 
   return (
     <div className={cn(theme, "min-w-0 space-y-10 bg-background px-4 py-8 text-foreground md:px-6")}>

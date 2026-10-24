@@ -7,7 +7,7 @@ const toneClass: Record<Tone, string> = {
   success: "bg-success-soft text-success",
   warning: "bg-warning-soft text-warning",
   danger: "bg-danger-soft text-danger",
-  sand: "bg-sand text-ink",
+  secondary: "bg-surface-raised text-ink ring-1 ring-inset ring-accent2/40",
 };
 
 const dotClass: Record<Tone, string> = {
@@ -16,7 +16,7 @@ const dotClass: Record<Tone, string> = {
   success: "bg-success",
   warning: "bg-warning",
   danger: "bg-danger",
-  sand: "bg-ink-muted",
+  secondary: "bg-accent2",
 };
 
 /** Status with a text label and a dot: never color alone (DESIGN.md section 10). */

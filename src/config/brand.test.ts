@@ -1,18 +1,40 @@
 import { describe, expect, it } from "vitest";
-import { palettes, type Palette, type ThemeName } from "./brand";
+import { directionIds, directions, type DirectionId, type Palette, type ThemeName } from "./brand";
 
 // WCAG 2.2 relative luminance and contrast ratio.
+function channels(hex: string): number[] {
+  return (hex.replace("#", "").match(/../g) ?? []).map((x) => parseInt(x, 16));
+}
 function luminance(hex: string): number {
-  const [r, g, b] = (hex.replace("#", "").match(/../g) ?? []).map((x) => {
-    const c = parseInt(x, 16) / 255;
+  const [r, g, b] = channels(hex).map((v) => {
+    const c = v / 255;
     return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
   });
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
-export function contrast(a: string, b: string): number {
+function contrast(a: string, b: string): number {
   const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
   return (hi + 0.05) / (lo + 0.05);
 }
+/** `top` at `alpha` over `bottom`, as an opaque hex (how a glass panel reads). */
+function over(top: string, bottom: string, alpha: number): string {
+  const t = channels(top);
+  const b = channels(bottom);
+  return "#" + t.map((v, i) => Math.round(v * alpha + b[i] * (1 - alpha)).toString(16).padStart(2, "0")).join("");
+}
+function hue(hex: string): number {
+  const [r, g, b] = channels(hex).map((v) => v / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  if (max === min) return 0;
+  const d = max - min;
+  const h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return (h * 60 + 360) % 360;
+}
+const hueGap = (a: string, b: string) => {
+  const d = Math.abs(hue(a) - hue(b));
+  return Math.min(d, 360 - d);
+};
 
 // Every pair must clear its WCAG minimum by this much (DESIGN.md section 2).
 const HEADROOM = 0.2;
@@ -26,14 +48,14 @@ const pairs: Pair[] = [
   ["body text on canvas", "text", "canvas", TEXT],
   ["body text on surface", "text", "surface", TEXT],
   ["body text on raised surface", "text", "surfaceRaised", TEXT],
-  ["body text on sand", "text", "sand", TEXT],
+  ["body text on highlight panel", "text", "highlight", TEXT],
   ["muted text on canvas", "textMuted", "canvas", TEXT],
   ["muted text on surface", "textMuted", "surface", TEXT],
   ["muted text on raised surface", "textMuted", "surfaceRaised", TEXT],
-  ["muted text on sand", "textMuted", "sand", TEXT],
-  ["teal text on canvas", "accentText", "canvas", TEXT],
-  ["teal text on surface", "accentText", "surface", TEXT],
-  ["teal text on sand", "accentText", "sand", TEXT],
+  ["muted text on highlight panel", "textMuted", "highlight", TEXT],
+  ["accent text on canvas", "accentText", "canvas", TEXT],
+  ["accent text on surface", "accentText", "surface", TEXT],
+  ["accent text on raised surface", "accentText", "surfaceRaised", TEXT],
   ["info pill text on info tint", "accentText", "infoSoft", TEXT],
   ["body text on info tint", "text", "infoSoft", TEXT],
   ["muted text on info tint", "textMuted", "infoSoft", TEXT],
@@ -41,7 +63,9 @@ const pairs: Pair[] = [
   ["muted text on warning tint", "textMuted", "warningSoft", TEXT],
   ["muted text on danger tint", "textMuted", "dangerSoft", TEXT],
   ["primary button label", "primaryLabel", "primary", TEXT],
-  ["brand teal icon on surface", "accent", "surface", UI],
+  ["brand accent as icon on surface", "accent", "surface", UI],
+  ["second accent on surface", "accent2", "surface", UI],
+  ["second accent on raised surface", "accent2", "surfaceRaised", UI],
   ["input border on surface", "borderInput", "surface", UI],
   ["input border on canvas", "borderInput", "canvas", UI],
   ["focus ring on canvas", "focus", "canvas", UI],
@@ -68,18 +92,49 @@ const pairs: Pair[] = [
   ["crew muted text on surface (AAA)", "crewTextMuted", "surface", AAA],
 ];
 
-describe.each(["light", "dark"] as ThemeName[])("%s palette contrast", (theme) => {
+const combos: [DirectionId, ThemeName][] = directionIds.flatMap((d) => (["dark", "light"] as ThemeName[]).map((t) => [d, t] as [DirectionId, ThemeName]));
+
+describe.each(combos)("%s / %s contrast", (direction, theme) => {
+  const p = directions[direction].palettes[theme];
+  const glassAlpha = directions[direction].effects[theme].glassAlpha;
+
   it.each(pairs)("%s", (_label, fg, bg, min) => {
-    const ratio = contrast(palettes[theme][fg], palettes[theme][bg]);
-    expect(ratio, `${palettes[theme][fg]} on ${palettes[theme][bg]} = ${ratio.toFixed(2)}`).toBeGreaterThanOrEqual(min + HEADROOM);
+    const ratio = contrast(p[fg], p[bg]);
+    expect(ratio, `${p[fg]} on ${p[bg]} = ${ratio.toFixed(2)}`).toBeGreaterThanOrEqual(min + HEADROOM);
+  });
+
+  it("keeps body and muted text readable on glass panels", () => {
+    const glass = over(p.surface, p.canvas, glassAlpha);
+    expect(contrast(p.text, glass)).toBeGreaterThanOrEqual(TEXT + HEADROOM);
+    expect(contrast(p.textMuted, glass)).toBeGreaterThanOrEqual(TEXT + HEADROOM);
+  });
+
+  it("keeps status colors clearly separate from the accents (30 degrees of hue or more)", () => {
+    for (const status of [p.successText, p.warningText, p.dangerText]) {
+      expect(hueGap(p.accent, status), `accent ${p.accent} vs ${status}`).toBeGreaterThanOrEqual(30);
+      expect(hueGap(p.accent2, status), `accent2 ${p.accent2} vs ${status}`).toBeGreaterThanOrEqual(30);
+    }
   });
 });
 
 describe("palette shape", () => {
-  it("defines every token as a 6-digit hex color in both themes", () => {
-    for (const theme of ["light", "dark"] as ThemeName[]) {
-      for (const [token, value] of Object.entries(palettes[theme])) {
-        expect(value, `${theme}.${token}`).toMatch(/^#[0-9A-F]{6}$/);
+  it("defines every token as a 6-digit hex color in every direction and theme", () => {
+    for (const [direction, theme] of combos) {
+      for (const [token, value] of Object.entries(directions[direction].palettes[theme])) {
+        expect(value, `${direction}.${theme}.${token}`).toMatch(/^#[0-9A-F]{6}$/);
+      }
+    }
+  });
+
+  it("uses no gold, brass, champagne or yellow outside the warning status", () => {
+    for (const [direction, theme] of combos) {
+      const p = directions[direction].palettes[theme];
+      for (const [token, value] of Object.entries(p)) {
+        if (token.startsWith("warning") || token === "chart5") continue;
+        const h = hue(value);
+        const [r, g, b] = channels(value);
+        const saturated = Math.max(r, g, b) - Math.min(r, g, b) > 24;
+        expect(saturated && h >= 35 && h <= 65, `${direction}.${theme}.${token} ${value} reads gold/yellow`).toBe(false);
       }
     }
   });

@@ -248,7 +248,7 @@ export default async function CommandCenterPage() {
         </div>
 
         <div className="space-y-6">
-          <section aria-labelledby="attention" className="rounded-lg bg-sand p-4">
+          <section aria-labelledby="attention" className="rounded-lg bg-highlight p-4">
             <h2 id="attention" className="font-heading text-xl font-semibold text-ink">Needs attention</h2>
             {attention.length === 0 ? (
               <p className="mt-2 flex items-center gap-2 text-sm text-ink-muted">

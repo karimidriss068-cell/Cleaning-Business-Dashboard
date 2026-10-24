@@ -6,7 +6,7 @@ describe("status tones", () => {
     expect(jobTone("completed")).toBe("success");
     expect(jobTone("no_access")).toBe("warning");
     expect(jobTone("cancelled")).toBe("neutral");
-    expect(leadTone("quoted")).toBe("sand");
+    expect(leadTone("quoted")).toBe("secondary");
     expect(leadTone("won")).toBe("success");
     expect(payoutTone("approved")).toBe("info");
   });

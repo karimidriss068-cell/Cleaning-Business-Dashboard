@@ -1,10 +1,15 @@
 /**
  * Brand and design tokens: the single source for the product name and every
- * color, radius, elevation, motion and density value in DESIGN.md.
+ * color, font pairing, effect, radius, elevation, motion and density value in
+ * DESIGN.md.
+ *
+ * Three visual directions are defined while the owner chooses one. Each has a
+ * dark palette (primary) and a light palette (secondary). The active direction
+ * is a data-direction attribute on <html> (see src/lib/theme/direction.ts).
  *
  * "Keystone Clean" is provisional. Rename it here and nowhere else.
- * Every color pair is contrast-checked by src/config/brand.test.ts; run
- * `npm test` after changing any value.
+ * Every color pair, in every direction and theme, is contrast-checked by
+ * src/config/brand.test.ts; run `npm test` after changing any value.
  */
 
 export const brand = {
@@ -12,21 +17,25 @@ export const brand = {
   shortName: "Keystone",
   description:
     "Operations platform for Keystone Clean, residential and commercial cleaning across New York City's five boroughs.",
-  loginTagline: "Schedules, crews, leads and invoices in one place.",
+  loginTagline: "Schedules, crews, leads and invoices in one cockpit.",
 } as const;
 
 export type ThemeName = "light" | "dark";
+export const defaultTheme: ThemeName = "dark";
 
 export type Palette = {
   canvas: string;
   surface: string;
   surfaceRaised: string;
-  sand: string;
+  /** Accent-tinted panel for callouts (replaces the old sand surface). */
+  highlight: string;
   text: string;
   textMuted: string;
   crewTextMuted: string;
   accent: string;
   accentText: string;
+  /** Second cool hue: the "quoted" lead stage and chart series 2. */
+  accent2: string;
   primary: string;
   primaryLabel: string;
   borderSubtle: string;
@@ -57,134 +66,351 @@ export type Palette = {
   chart5: string;
 };
 
-/** The Harbor palette, as approved (DESIGN.md section 2). */
-export const harbor = {
-  navy: "#0F2A3D",
-  teal: "#1F9D9A",
-  mist: "#EAF2F3",
-  sand: "#E9E2D6",
-} as const;
-
-export const palettes: Record<ThemeName, Palette> = {
-  light: {
-    canvas: harbor.mist,
-    surface: "#FFFFFF",
-    surfaceRaised: "#F6F9FA",
-    sand: harbor.sand,
-    text: harbor.navy,
-    textMuted: "#506573",
-    crewTextMuted: "#324A5A",
-    accent: harbor.teal,
-    accentText: "#186C72",
-    primary: "#1B8083",
-    primaryLabel: "#FFFFFF",
-    borderSubtle: "#D4DEE1",
-    borderInput: "#768893",
-    focus: "#1C8A8B",
-    infoSoft: "#E4F3F3",
-    successText: "#247856",
-    successSoft: "#E6F3EC",
-    successFill: "#247856",
-    successLabel: "#FFFFFF",
-    warningText: "#7D692B",
-    warningSoft: "#FBF4E4",
-    warningFill: "#E0A21B",
-    warningLabel: harbor.navy,
-    dangerText: "#B54144",
-    dangerSoft: "#FAE9E9",
-    dangerFill: "#B54144",
-    dangerLabel: "#FFFFFF",
-    sidebar: harbor.navy,
-    sidebarText: harbor.mist,
-    sidebarTextMuted: "#95A4AC",
-    sidebarActiveBg: "#163852",
-    sidebarActiveText: "#4CB0AE",
-    chart1: harbor.teal,
-    chart2: "#3A6F95",
-    chart3: "#8A7656",
-    chart4: "#247856",
-    chart5: "#7D692B",
-  },
-  dark: {
-    canvas: "#0A1C29",
-    surface: harbor.navy,
-    surfaceRaised: "#163852",
-    sand: "#2B2A26",
-    text: harbor.mist,
-    textMuted: "#95A4AC",
-    crewTextMuted: "#AAB8BE",
-    accent: harbor.teal,
-    accentText: "#4CB0AE",
-    primary: "#5CB7B5",
-    primaryLabel: harbor.navy,
-    borderSubtle: "#294253",
-    borderInput: "#748691",
-    focus: harbor.teal,
-    infoSoft: "#113A4A",
-    successText: "#6EBB93",
-    successSoft: "#143B43",
-    successFill: "#6EBB93",
-    successLabel: harbor.navy,
-    warningText: "#E1A82A",
-    warningSoft: "#283839",
-    warningFill: "#E0A21B",
-    warningLabel: harbor.navy,
-    dangerText: "#DE8A8B",
-    dangerSoft: "#3B303F",
-    dangerFill: "#DE8A8B",
-    dangerLabel: harbor.navy,
-    sidebar: "#0A1C29",
-    sidebarText: harbor.mist,
-    sidebarTextMuted: "#95A4AC",
-    sidebarActiveBg: "#163852",
-    sidebarActiveText: "#4CB0AE",
-    chart1: harbor.teal,
-    chart2: "#7FA6C4",
-    chart3: "#C4B394",
-    chart4: "#6EBB93",
-    chart5: "#E1A82A",
-  },
+/** Decorative values (not text), so they aren't part of the contrast test. */
+export type Effects = {
+  /** Accent glow for the primary button, KPI numerals and sparkline ends. */
+  glow: string;
+  /** Soft accent light in the ambient background. */
+  ambient: string;
+  /** Fine grid lines in the ambient background. */
+  grid: string;
+  /** Opacity of the surface color in glass panels. */
+  glassAlpha: number;
 };
+
+/** Google Fonts loaded in src/app/layout.tsx; keys map to next/font instances. */
+export type FontKey = "sora" | "manrope" | "unbounded" | "figtree" | "syne" | "plexSans";
+
+export type Direction = {
+  label: string;
+  mood: string;
+  fonts: { display: FontKey; body: FontKey };
+  palettes: Record<ThemeName, Palette>;
+  effects: Record<ThemeName, Effects>;
+};
+
+export const directions = {
+  titanium: {
+    label: "Titanium & Ice",
+    mood: "Machined steel surfaces, ice-blue signal.",
+    fonts: { display: "sora", body: "manrope" },
+    palettes: {
+      dark: {
+        canvas: "#0C0F14",
+        surface: "#131820",
+        surfaceRaised: "#1B222C",
+        highlight: "#273241",
+        text: "#E8EDF3",
+        textMuted: "#93A0B1",
+        crewTextMuted: "#9AA6B6",
+        accent: "#8EC5FF",
+        accentText: "#8EC5FF",
+        accent2: "#C4B8FF",
+        primary: "#8EC5FF",
+        primaryLabel: "#0C0F14",
+        borderSubtle: "#282D35",
+        borderInput: "#6B7078",
+        focus: "#8EC5FF",
+        infoSoft: "#273444",
+        successText: "#4CC38A",
+        successSoft: "#1C3331",
+        successFill: "#4CC38A",
+        successLabel: "#0C0F14",
+        warningText: "#F0B54A",
+        warningSoft: "#363127",
+        warningFill: "#F0B54A",
+        warningLabel: "#0C0F14",
+        dangerText: "#F2777A",
+        dangerSoft: "#37272E",
+        dangerFill: "#F2777A",
+        dangerLabel: "#0C0F14",
+        sidebar: "#10141A",
+        sidebarText: "#E8EDF3",
+        sidebarTextMuted: "#93A0B1",
+        sidebarActiveBg: "#1B222C",
+        sidebarActiveText: "#8EC5FF",
+        chart1: "#8EC5FF",
+        chart2: "#C4B8FF",
+        chart3: "#6D7786",
+        chart4: "#4CC38A",
+        chart5: "#F0B54A",
+      },
+      light: {
+        canvas: "#F1F4F8",
+        surface: "#FFFFFF",
+        surfaceRaised: "#F8FAFC",
+        highlight: "#F6FAFF",
+        text: "#0C0F14",
+        textMuted: "#65686D",
+        crewTextMuted: "#54575C",
+        accent: "#6A93BE",
+        accentText: "#516F91",
+        accent2: "#8982B4",
+        primary: "#557699",
+        primaryLabel: "#FFFFFF",
+        borderSubtle: "#DADDE1",
+        borderInput: "#85888D",
+        focus: "#648BB4",
+        infoSoft: "#EFF7FF",
+        successText: "#25784D",
+        successSoft: "#E6F3EC",
+        successFill: "#25784D",
+        successLabel: "#FFFFFF",
+        warningText: "#8D6315",
+        warningSoft: "#F9F1E3",
+        warningFill: "#8D6315",
+        warningLabel: "#FFFFFF",
+        dangerText: "#B93D3E",
+        dangerSoft: "#FAE9E9",
+        dangerFill: "#B93D3E",
+        dangerLabel: "#FFFFFF",
+        sidebar: "#FFFFFF",
+        sidebarText: "#0C0F14",
+        sidebarTextMuted: "#65686D",
+        sidebarActiveBg: "#EFF7FF",
+        sidebarActiveText: "#516F91",
+        chart1: "#6A93BE",
+        chart2: "#8982B4",
+        chart3: "#8E9093",
+        chart4: "#25784D",
+        chart5: "#8D6315",
+      },
+    },
+    effects: {
+      dark: { glow: "rgb(142 197 255 / 0.35)", ambient: "rgb(142 197 255 / 0.10)", grid: "rgb(232 237 243 / 0.035)", glassAlpha: 0.72 },
+      light: { glow: "rgb(142 197 255 / 0.25)", ambient: "rgb(142 197 255 / 0.060)", grid: "rgb(12 15 20 / 0.04)", glassAlpha: 0.78 },
+    },
+  },
+  ocean: {
+    label: "Deep Ocean & Aqua",
+    mood: "Abyssal blues with a bioluminescent aqua edge.",
+    fonts: { display: "unbounded", body: "figtree" },
+    palettes: {
+      dark: {
+        canvas: "#06121C",
+        surface: "#0B1C2A",
+        surfaceRaised: "#122A3C",
+        highlight: "#16394B",
+        text: "#E4F1F7",
+        textMuted: "#8AA5B5",
+        crewTextMuted: "#92ABBB",
+        accent: "#3CCFE0",
+        accentText: "#3CCFE0",
+        accent2: "#93B6FF",
+        primary: "#3CCFE0",
+        primaryLabel: "#06121C",
+        borderSubtle: "#21313F",
+        borderInput: "#687882",
+        focus: "#3CCFE0",
+        infoSoft: "#133947",
+        successText: "#4CC38A",
+        successSoft: "#153739",
+        successFill: "#4CC38A",
+        successLabel: "#06121C",
+        warningText: "#F0B54A",
+        warningSoft: "#30342F",
+        warningFill: "#F0B54A",
+        warningLabel: "#06121C",
+        dangerText: "#F2777A",
+        dangerSoft: "#302B37",
+        dangerFill: "#F2777A",
+        dangerLabel: "#06121C",
+        sidebar: "#091723",
+        sidebarText: "#E4F1F7",
+        sidebarTextMuted: "#8AA5B5",
+        sidebarActiveBg: "#122A3C",
+        sidebarActiveText: "#3CCFE0",
+        chart1: "#3CCFE0",
+        chart2: "#93B6FF",
+        chart3: "#647C8B",
+        chart4: "#4CC38A",
+        chart5: "#F0B54A",
+      },
+      light: {
+        canvas: "#EDF5F8",
+        surface: "#FFFFFF",
+        surfaceRaised: "#F6FAFC",
+        highlight: "#EFFBFD",
+        text: "#06121C",
+        textMuted: "#5F6971",
+        crewTextMuted: "#4E5860",
+        accent: "#2E9DAC",
+        accentText: "#237684",
+        accent2: "#6C88BF",
+        primary: "#257E8C",
+        primaryLabel: "#FFFFFF",
+        borderSubtle: "#D6DEE2",
+        borderInput: "#7F898F",
+        focus: "#2C95A4",
+        infoSoft: "#E4F8FB",
+        successText: "#23784F",
+        successSoft: "#E6F3EC",
+        successFill: "#23784F",
+        successLabel: "#FFFFFF",
+        warningText: "#8C6418",
+        warningSoft: "#F9F1E3",
+        warningFill: "#8C6418",
+        warningLabel: "#FFFFFF",
+        dangerText: "#B83E3F",
+        dangerSoft: "#FAE9E9",
+        dangerFill: "#B83E3F",
+        dangerLabel: "#FFFFFF",
+        sidebar: "#FFFFFF",
+        sidebarText: "#06121C",
+        sidebarTextMuted: "#5F6971",
+        sidebarActiveBg: "#E4F8FB",
+        sidebarActiveText: "#237684",
+        chart1: "#2E9DAC",
+        chart2: "#6C88BF",
+        chart3: "#899095",
+        chart4: "#23784F",
+        chart5: "#8C6418",
+      },
+    },
+    effects: {
+      dark: { glow: "rgb(60 207 224 / 0.32)", ambient: "rgb(60 207 224 / 0.10)", grid: "rgb(232 237 243 / 0.035)", glassAlpha: 0.72 },
+      light: { glow: "rgb(60 207 224 / 0.22)", ambient: "rgb(60 207 224 / 0.060)", grid: "rgb(12 15 20 / 0.04)", glassAlpha: 0.78 },
+    },
+  },
+  midnight: {
+    label: "Midnight & Periwinkle",
+    mood: "Ink-black night with a soft periwinkle glow.",
+    fonts: { display: "syne", body: "plexSans" },
+    palettes: {
+      dark: {
+        canvas: "#0A0B14",
+        surface: "#11131F",
+        surfaceRaised: "#1A1D2E",
+        highlight: "#252A43",
+        text: "#ECEEF8",
+        textMuted: "#9499B5",
+        crewTextMuted: "#9CA1BB",
+        accent: "#8B9CFF",
+        accentText: "#8B9CFF",
+        accent2: "#74D4F2",
+        primary: "#8B9CFF",
+        primaryLabel: "#0A0B14",
+        borderSubtle: "#272935",
+        borderInput: "#6B6D78",
+        focus: "#8B9CFF",
+        infoSoft: "#252943",
+        successText: "#4CC38A",
+        successSoft: "#1A2F30",
+        successFill: "#4CC38A",
+        successLabel: "#0A0B14",
+        warningText: "#F0B54A",
+        warningSoft: "#352D26",
+        warningFill: "#F0B54A",
+        warningLabel: "#0A0B14",
+        dangerText: "#F2777A",
+        dangerSoft: "#35232E",
+        dangerFill: "#F2777A",
+        dangerLabel: "#0A0B14",
+        sidebar: "#0E0F1A",
+        sidebarText: "#ECEEF8",
+        sidebarTextMuted: "#9499B5",
+        sidebarActiveBg: "#1A1D2E",
+        sidebarActiveText: "#8B9CFF",
+        chart1: "#8B9CFF",
+        chart2: "#74D4F2",
+        chart3: "#6D7188",
+        chart4: "#4CC38A",
+        chart5: "#F0B54A",
+      },
+      light: {
+        canvas: "#F2F2F9",
+        surface: "#FFFFFF",
+        surfaceRaised: "#F9F9FC",
+        highlight: "#F6F7FF",
+        text: "#0A0B14",
+        textMuted: "#676770",
+        crewTextMuted: "#55565E",
+        accent: "#7A89E0",
+        accentText: "#5C67A9",
+        accent2: "#5090A7",
+        primary: "#626EB5",
+        primaryLabel: "#FFFFFF",
+        borderSubtle: "#DBDBE2",
+        borderInput: "#86878F",
+        focus: "#7381D4",
+        infoSoft: "#EFF1FF",
+        successText: "#25784E",
+        successSoft: "#E6F3EC",
+        successFill: "#25784E",
+        successLabel: "#FFFFFF",
+        warningText: "#8F6315",
+        warningSoft: "#F9F1E3",
+        warningFill: "#8F6315",
+        warningLabel: "#FFFFFF",
+        dangerText: "#B93D3E",
+        dangerSoft: "#FAE9E9",
+        dangerFill: "#B93D3E",
+        dangerLabel: "#FFFFFF",
+        sidebar: "#FFFFFF",
+        sidebarText: "#0A0B14",
+        sidebarTextMuted: "#676770",
+        sidebarActiveBg: "#EFF1FF",
+        sidebarActiveText: "#5C67A9",
+        chart1: "#7A89E0",
+        chart2: "#5090A7",
+        chart3: "#8F8F95",
+        chart4: "#25784E",
+        chart5: "#8F6315",
+      },
+    },
+    effects: {
+      dark: { glow: "rgb(139 156 255 / 0.35)", ambient: "rgb(139 156 255 / 0.11)", grid: "rgb(232 237 243 / 0.035)", glassAlpha: 0.72 },
+      light: { glow: "rgb(139 156 255 / 0.25)", ambient: "rgb(139 156 255 / 0.061)", grid: "rgb(12 15 20 / 0.04)", glassAlpha: 0.78 },
+    },
+  },
+} satisfies Record<string, Direction>;
+
+export type DirectionId = keyof typeof directions;
+export const directionIds = Object.keys(directions) as DirectionId[];
+export const defaultDirection: DirectionId = "titanium";
 
 /** DESIGN.md section 5. */
 export const radius = {
   none: "0px",
   xs: "4px",
-  sm: "6px",
-  md: "10px",
-  lg: "16px",
+  sm: "8px",
+  md: "14px",
+  lg: "20px",
   full: "9999px",
 } as const;
 
-/** DESIGN.md section 6. Navy-tinted in light mode, deeper and subtler in dark. */
+/** DESIGN.md section 6. Deep, soft shadows in dark; light mode stays airy. */
 export const elevation: Record<ThemeName, Record<"e0" | "e1" | "e2" | "e3", string>> = {
-  light: {
-    e0: "none",
-    e1: "0 1px 2px rgb(15 42 61 / 0.06), 0 1px 1px rgb(15 42 61 / 0.04)",
-    e2: "0 8px 24px rgb(15 42 61 / 0.12), 0 2px 6px rgb(15 42 61 / 0.06)",
-    e3: "0 24px 48px rgb(15 42 61 / 0.18), 0 4px 12px rgb(15 42 61 / 0.08)",
-  },
   dark: {
     e0: "none",
-    e1: "0 1px 2px rgb(0 0 0 / 0.3)",
-    e2: "0 8px 24px rgb(0 0 0 / 0.45)",
-    e3: "0 24px 48px rgb(0 0 0 / 0.55)",
+    e1: "0 1px 0 rgb(255 255 255 / 0.04) inset, 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.6)",
+    e2: "0 1px 0 rgb(255 255 255 / 0.05) inset, 0 16px 40px -12px rgb(0 0 0 / 0.7), 0 4px 12px rgb(0 0 0 / 0.35)",
+    e3: "0 1px 0 rgb(255 255 255 / 0.06) inset, 0 32px 80px -16px rgb(0 0 0 / 0.8), 0 8px 24px rgb(0 0 0 / 0.4)",
+  },
+  light: {
+    e0: "none",
+    e1: "0 1px 2px rgb(12 15 20 / 0.05), 0 6px 16px -10px rgb(12 15 20 / 0.12)",
+    e2: "0 12px 32px -12px rgb(12 15 20 / 0.18), 0 2px 6px rgb(12 15 20 / 0.06)",
+    e3: "0 28px 64px -20px rgb(12 15 20 / 0.28), 0 4px 12px rgb(12 15 20 / 0.08)",
   },
 };
 
-/** DESIGN.md section 7. All durations become 0ms under prefers-reduced-motion. */
+/** DESIGN.md section 7. Durations and delays become 0ms under prefers-reduced-motion. */
 export const motion = {
-  fast: "120ms",
-  base: "180ms",
-  slow: "240ms",
+  fast: "140ms",
+  base: "220ms",
+  slow: "320ms",
+  enter: "620ms",
+  stagger: "55ms",
   easeStandard: "cubic-bezier(0.2, 0, 0, 1)",
   easeExit: "cubic-bezier(0.4, 0, 1, 1)",
+  easeEnter: "cubic-bezier(0.16, 1, 0.3, 1)",
 } as const;
 
 /** DESIGN.md section 8. */
 export const density = {
-  comfortable: { rowHeight: "44px", cellY: "12px", cellX: "16px", fontSize: "14px" },
-  compact: { rowHeight: "32px", cellY: "6px", cellX: "12px", fontSize: "13px" },
+  comfortable: { rowHeight: "48px", cellY: "12px", cellX: "16px", fontSize: "14px" },
+  compact: { rowHeight: "34px", cellY: "6px", cellX: "12px", fontSize: "13px" },
 } as const;
 
 export type Density = keyof typeof density;

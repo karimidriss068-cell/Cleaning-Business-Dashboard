@@ -10,7 +10,7 @@ export default function Loading() {
       </div>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="h-96 animate-pulse rounded-md border border-border bg-surface lg:col-span-2" />
-        <div className="h-96 animate-pulse rounded-lg bg-sand" />
+        <div className="h-96 animate-pulse rounded-lg bg-highlight" />
       </div>
     </div>
   );

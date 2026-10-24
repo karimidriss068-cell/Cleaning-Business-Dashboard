@@ -45,7 +45,7 @@
   --sidebar-primary-foreground: var(--kc-sidebar);
   --sidebar-accent: var(--kc-sidebar-active-bg);
   --sidebar-accent-foreground: var(--kc-sidebar-text);
-  --sidebar-border: var(--kc-sidebar-active-bg);
+  --sidebar-border: var(--kc-border-subtle);
   --sidebar-ring: var(--kc-focus);
 }
 
@@ -55,8 +55,9 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-dm-sans);
-  --font-heading: var(--font-mohave);
+  /* Per-direction pairing, set by the token CSS from brand.ts. */
+  --font-sans: var(--font-body);
+  --font-heading: var(--font-display);
   --font-mono: var(--font-dm-mono);
 
   /* shadcn names (used by src/components/ui) */
@@ -96,7 +97,10 @@
   --color-canvas: var(--kc-canvas);
   --color-surface: var(--kc-surface);
   --color-surface-raised: var(--kc-surface-raised);
-  --color-sand: var(--kc-sand);
+  --color-highlight: var(--kc-highlight);
+  --color-accent2: var(--kc-accent2);
+  /* Hairline: a translucent text-colored line that sits well on glass. */
+  --color-hairline: color-mix(in oklab, var(--kc-text) 10%, transparent);
   --color-ink: var(--kc-text);
   --color-ink-muted: var(--kc-text-muted);
   --color-crew-muted: var(--kc-crew-text-muted);
@@ -130,9 +134,10 @@
   --shadow-e2: var(--kc-elevation-2);
   --shadow-e3: var(--kc-elevation-3);
 
-  /* Motion (section 7): duration-fast/base/slow, ease-standard/exit */
+  /* Motion (section 7): duration-fast/base/slow, ease-standard/exit/enter */
   --ease-standard: var(--kc-ease-standard);
   --ease-exit: var(--kc-ease-exit);
+  --ease-enter: var(--kc-ease-enter);
 }
 
 @utility duration-fast {
@@ -148,6 +153,81 @@
 /* Tabular figures for numbers that line up in columns and tiles. */
 @utility tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/* Glass: the surface at the direction's glass opacity over a soft blur.
+   For floating chrome (sidebar, top bar, palette, drawer, callouts). */
+@utility glass {
+  background-color: color-mix(in oklab, var(--kc-surface) calc(var(--kc-glass-alpha) * 100%), transparent);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+
+/* Layered surface: lit slightly from the top, for tiles and cards with depth. */
+@utility surface-layer {
+  background-image: linear-gradient(180deg, color-mix(in oklab, var(--kc-surface-raised) 65%, var(--kc-surface)) 0%, var(--kc-surface) 70%);
+}
+
+/* Restrained accent glow: primary actions only. */
+@utility glow-accent {
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--kc-accent) 40%, transparent), 0 10px 30px -8px var(--kc-glow);
+}
+
+/* Glow on key numbers only (KPIs). */
+@utility text-glow {
+  text-shadow: 0 0 30px var(--kc-glow);
+}
+
+/* One-time staggered entrance: set --i on each item for its position. */
+@utility kc-enter {
+  animation: kc-rise var(--kc-duration-enter) var(--kc-ease-enter) both;
+  animation-delay: calc(var(--i, 0) * var(--kc-stagger));
+}
+
+@keyframes kc-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Sparklines and charts draw their line once (pathLength="1"). */
+@keyframes kc-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes kc-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Ambient background: a fine grid and one soft light in the accent, fading
+   out down the page. Static (no animation), behind all content. */
+.kc-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(70rem 42rem at 8% -12%, var(--kc-ambient), transparent 62%),
+    radial-gradient(48rem 30rem at 105% -8%, color-mix(in oklab, var(--kc-ambient) 55%, transparent), transparent 60%),
+    linear-gradient(var(--kc-grid) 1px, transparent 1px) 0 0 / 40px 40px,
+    linear-gradient(90deg, var(--kc-grid) 1px, transparent 1px) 0 0 / 40px 40px;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 35%, transparent 95%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 35%, transparent 95%);
 }
 
 @layer base {
@@ -177,6 +257,7 @@
   *::before,
   *::after {
     animation-duration: 0ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0ms !important;
     scroll-behavior: auto !important;

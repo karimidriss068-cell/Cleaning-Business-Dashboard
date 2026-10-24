@@ -8,7 +8,7 @@ const toneClass: Record<Tone, string> = {
   warning: "bg-warning-soft border-warning-fill",
   danger: "bg-danger-soft border-danger",
   neutral: "bg-surface-raised border-border-input",
-  sand: "bg-sand border-chart-3",
+  secondary: "bg-surface-raised border-accent2",
 };
 
 /**
