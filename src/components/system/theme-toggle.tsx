@@ -1,9 +1,9 @@
 "use client";
 
 import { Monitor, Moon, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { useIsClient } from "@/hooks/use-stored-choice";
+import { useAppearance } from "@/hooks/use-appearance";
 
 const OPTIONS = [
   { value: "light", label: "Light theme", Icon: Sun },
@@ -11,9 +11,9 @@ const OPTIONS = [
   { value: "system", label: "Match system", Icon: Monitor },
 ] as const;
 
-/** Light / dark / system switch. `tone="sidebar"` for the navy sidebar. */
-export function ThemeToggle({ tone = "page", className }: { tone?: "page" | "sidebar"; className?: string }) {
-  const { theme, setTheme } = useTheme();
+/** Light / dark / system switch; saves to the member's preferences when `persist`. */
+export function ThemeToggle({ tone = "page", className, persist = false }: { tone?: "page" | "sidebar"; className?: string; persist?: boolean }) {
+  const { theme, setTheme } = useAppearance({ persist });
   const isClient = useIsClient();
   const current = isClient ? (theme ?? "system") : null;
   return (

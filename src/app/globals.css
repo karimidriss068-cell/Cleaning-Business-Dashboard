@@ -240,7 +240,8 @@
     -webkit-text-size-adjust: 100%;
   }
   body {
-    @apply bg-background text-foreground antialiased;
+    /* Re-applied on body: the direction's font variables are defined here. */
+    @apply bg-background font-sans text-foreground antialiased;
   }
   h1,
   h2 {

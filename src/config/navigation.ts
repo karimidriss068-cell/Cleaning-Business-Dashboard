@@ -39,6 +39,7 @@ export const officeNav: NavItem[] = [
 /** Crew (subcontractor) navigation. The crew view arrives with its own step. */
 export const crewNav: NavItem[] = [
   { href: "/my-jobs", label: "My jobs", short: "Jobs", icon: ClipboardCheck, tab: true, section: "Crew", keywords: "today schedule" },
+  { href: "/settings", label: "Settings", short: "Settings", icon: Settings, section: "Crew", keywords: "appearance theme" },
 ];
 
 export type MemberRole = "owner" | "admin" | "staff" | "subcontractor";

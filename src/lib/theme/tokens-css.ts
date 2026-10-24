@@ -78,10 +78,14 @@ export function tokensCss(): string {
   for (const id of directionIds) {
     const roots = scopes(id);
     const { display, body } = directions[id].fonts;
-    lines.push(`${roots.join(",")}{--font-display:var(${fontVar[display]});--font-body:var(${fontVar[body]})}`);
+    // The font variables live on <body> (and on the Settings previews), so
+    // map the pairing there too; on <html> alone they'd be undefined.
+    lines.push(`${roots.flatMap((r) => [r, `${r} body`]).join(",")}{--font-display:var(${fontVar[display]});--font-body:var(${fontVar[body]})}`);
     // Light is the base; .light opts a subtree back into it inside dark mode.
     lines.push(`${roots.flatMap((r) => [r, `${r} .light`]).join(",")}{${themeBlock(id, "light")}}`);
-    lines.push(`${roots.flatMap((r) => [`${r}.dark`, `${r} .dark`]).join(",")}{${themeBlock(id, "dark")}}`);
+    // ".dark [data-direction]" lets a nested preview (Settings) follow the
+    // page's theme in its own direction without any script.
+    lines.push(`${[...roots.flatMap((r) => [`${r}.dark`, `${r} .dark`]), `.dark [data-direction="${id}"]`].join(",")}{${themeBlock(id, "dark")}}`);
   }
   lines.push(`[data-density="compact"]{${compact}}`);
   lines.push(

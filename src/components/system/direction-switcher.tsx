@@ -1,28 +1,23 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { defaultDirection, directionIds, directions, type DirectionId } from "@/config/brand";
-import { DIRECTION_STORAGE_KEY } from "@/lib/theme/direction";
-import { useIsClient, useStoredChoice } from "@/hooks/use-stored-choice";
+import { directionIds, directions } from "@/config/brand";
+import { useIsClient } from "@/hooks/use-stored-choice";
+import { useAppearance } from "@/hooks/use-appearance";
 
 /**
- * Temporary switch between the three visual directions while the owner picks
- * one (DESIGN.md section 1). Remove it, and the unused directions, after the
- * choice is made.
+ * Compact visual-direction switcher for the top bars and login. Saves to the
+ * member's preferences when `persist` (signed in); otherwise this browser only.
+ * The full picker with previews lives in Settings → Appearance.
  */
-export function DirectionSwitcher({ className, compact = false }: { className?: string; compact?: boolean }) {
-  const [value, setValue] = useStoredChoice<DirectionId>(DIRECTION_STORAGE_KEY, directionIds, defaultDirection);
+export function DirectionSwitcher({ className, compact = false, persist = false }: { className?: string; compact?: boolean; persist?: boolean }) {
+  const { direction, setDirection } = useAppearance({ persist });
   const isClient = useIsClient();
 
-  function choose(next: DirectionId) {
-    setValue(next);
-    document.documentElement.setAttribute("data-direction", next);
-  }
-
   return (
-    <div role="radiogroup" aria-label="Visual direction" className={cn("inline-flex items-center gap-0.5 rounded-full border border-border bg-surface-raised/70 p-0.5", className)}>
+    <div role="radiogroup" aria-label="Visual direction" className={cn("inline-flex items-center gap-0.5 rounded-full border border-hairline bg-surface-raised/70 p-0.5", className)}>
       {directionIds.map((id) => {
-        const selected = isClient && value === id;
+        const selected = isClient && direction === id;
         const swatch = directions[id].palettes.dark;
         return (
           <button
@@ -32,7 +27,7 @@ export function DirectionSwitcher({ className, compact = false }: { className?: 
             aria-checked={selected}
             aria-label={directions[id].label}
             title={directions[id].label}
-            onClick={() => choose(id)}
+            onClick={() => setDirection(id)}
             className={cn(
               "flex h-7 items-center gap-1.5 rounded-full px-2 text-[12px] font-medium transition-colors duration-fast",
               selected ? "bg-surface text-ink shadow-e1" : "text-ink-muted hover:text-ink",

@@ -5,7 +5,7 @@ import { openCommandPalette } from "@/components/system/command-palette";
 import { ThemeToggle } from "@/components/system/theme-toggle";
 import { DirectionSwitcher } from "@/components/system/direction-switcher";
 
-/** Desktop top bar: search / jump (Cmd+K), the direction switcher and theme. */
+/** Desktop top bar: search / jump (Cmd+K) and the compact appearance controls (saved per member). */
 export function TopBar() {
   return (
     <header className="sticky top-3 z-20 mx-3 mt-3 hidden h-14 items-center justify-between gap-4 rounded-lg border border-hairline glass px-3 shadow-e1 md:flex">
@@ -20,8 +20,8 @@ export function TopBar() {
         <kbd className="rounded-xs border border-hairline px-1.5 py-0.5 font-mono text-[11px]">⌘K</kbd>
       </button>
       <div className="flex items-center gap-2">
-        <DirectionSwitcher />
-        <ThemeToggle />
+        <DirectionSwitcher compact persist />
+        <ThemeToggle persist />
       </div>
     </header>
   );

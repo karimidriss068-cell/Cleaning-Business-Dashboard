@@ -39,6 +39,11 @@ describe("tokensCss", () => {
     expect(css).toContain(`[data-direction="ocean"] .light`);
   });
 
+  it("lets a nested direction preview follow the page's dark theme", () => {
+    const dark = lines.find((l) => l.includes(`.dark [data-direction="midnight"]`)) ?? "";
+    expect(dark).toContain(`--kc-canvas:${directions.midnight.palettes.dark.canvas}`);
+  });
+
   it("zeroes every duration and the stagger under prefers-reduced-motion", () => {
     const reduced = lines.find((l) => l.startsWith("@media (prefers-reduced-motion:reduce)")) ?? "";
     for (const v of ["fast", "base", "slow", "enter"]) expect(reduced).toContain(`--kc-duration-${v}:0ms`);

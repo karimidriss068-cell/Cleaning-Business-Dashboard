@@ -21,7 +21,7 @@ export function MobileTopBar() {
         <BrandLockup />
       </Link>
       <div className="flex items-center gap-1">
-      <DirectionSwitcher compact />
+      <DirectionSwitcher compact persist />
       <button
         type="button"
         onClick={openCommandPalette}
@@ -104,7 +104,7 @@ export function MobileTabBar({ role, userName, roleLabel }: { role: MemberRole |
         </ul>
         <div className="mt-4 flex items-center justify-between border-t border-hairline pt-4">
           <span className="text-sm text-ink-muted">Theme</span>
-          <ThemeToggle />
+          <ThemeToggle persist />
         </div>
         <form action={signOut} className="mt-4">
           <button type="submit" className="flex h-12 w-full items-center gap-3 rounded-sm px-1 text-[15px] font-medium text-ink hover:bg-surface-raised">

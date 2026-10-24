@@ -7,6 +7,8 @@ import { AppCommandPalette } from "@/components/shell/app-command-palette";
 import { DemoBanner } from "@/components/shell/demo-banner";
 import { TopBar } from "@/components/shell/top-bar";
 import { Ambient } from "@/components/system/ambient";
+import { AppearanceSync } from "@/components/shell/appearance-sync";
+import { loadPreferences } from "@/lib/theme/load-preferences";
 
 const ROLE_LABELS: Record<MemberRole, string> = {
   owner: "Owner",
@@ -24,9 +26,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: profile }, { data: demoData }] = await Promise.all([
+  const [{ data: profile }, { data: demoData }, appearance] = await Promise.all([
     supabase.from("profiles").select("full_name, role").eq("user_id", user.id).maybeSingle(),
     supabase.rpc("demo_data_present"),
+    loadPreferences(supabase, user.id),
   ]);
 
   const role = profile?.role ?? null;
@@ -45,6 +48,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </div>
       <MobileTabBar role={role} userName={userName} roleLabel={roleLabel} />
       <AppCommandPalette role={role} />
+      <AppearanceSync loaded={appearance} />
     </div>
   );
 }
