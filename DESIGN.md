@@ -1,182 +1,173 @@
 # Keystone Clean design system
 
-The design system for the Keystone Clean operations platform. The brand name is provisional; it lives only in `src/config/brand.ts`, along with every token in this document. Change it there and nowhere else.
+The design system for the Keystone Clean operations platform: a premium operations cockpit for a high-end cleaning company. The brand name is provisional. It lives only in `src/config/brand.ts`, along with every token in this document; change values there and nowhere else.
 
-Build components from this spec, then apply them. The dev-only `/design` page renders every component in both themes and is the visual reference.
+Build components from this spec, then apply them. The dev-only `/design` page renders every component in the active direction, dark beside light, and is the visual reference.
 
 ## 1. Principles
 
-1. **Two modes, one system.** *Office*: dense, data-rich desktop screens for owner, admin and staff. *Crew*: large-touch, simple phone screens for subcontractors. Both use the same tokens; crew mode changes size and density, not the palette.
-2. **Data first.** Numbers are tabular and right-aligned, labels are quiet, and color carries status, not decoration.
-3. **Status is never color alone.** Every status shows a text label, and pills also carry a dot.
-4. **Calm surfaces, deliberate depth.** Cards don't all share one radius and shadow. Depth signals what floats (menus, drawers, modals) and what is page (flat, bordered).
-5. **Motion explains, never decorates.** Short, subtle transitions; none at all under `prefers-reduced-motion`.
+1. **Dark-first cockpit.** Dark is the primary theme and light is the secondary one. Screens read like instruments: calm, precise and layered, with one signal color.
+2. **Two modes, one system.** *Office*: dense, data-rich desktop screens for the owner, admins and staff. *Crew*: large-touch, simple phone screens for subcontractors, at AAA contrast. Both use the same tokens; crew mode changes size and density, not the palette.
+3. **Data first.** KPIs are large tabular numerals, money is right-aligned, labels are quiet, and color carries signal or status, never decoration.
+4. **Status is never color alone.** Every status shows a text label; pills also carry a dot, and deltas an arrow and a sign.
+5. **Depth with intent.** Page content sits on layered surfaces. Glass is only for chrome that floats over the ambient background (sidebar, top bar, palette, drawer, modal, toasts). Radius and elevation differ by role.
+6. **Restraint.** Glow appears only on the accent (primary action, active nav indicator, sparkline and chart end points, the brand mark) and on KPI numerals. Motion is short and plays once.
 
-**Not allowed:** purple or rainbow gradients, glassmorphism, emoji as icons, a single radius/shadow on every card, color-only status, grain or 3D backgrounds, and leftover copy from the previous product.
+**Not allowed:** gold, brass, champagne or yellow anywhere except the warning status; neon green on black; purple gradients; emoji as icons; one radius and shadow on every card; color-only status; looping animation; leftover copy from the previous product.
 
-## 2. Color: the Harbor palette
+## 2. Visual directions
 
-Base colors: navy `#0F2A3D`, teal `#1F9D9A`, mist `#EAF2F3`, sand `#E9E2D6`. Teal fails as text (3.31:1 on white), so it's the brand color for icons, charts, large headings and focus. Text and buttons use same-hue shades that pass.
+Three complete directions are defined while the owner picks one. Each has a dark palette (primary), a light palette (secondary), a display and body font pairing, and effect values. The active direction is `data-direction` on `<html>`, set before first paint from the switcher's saved choice (default: Titanium). The switcher sits in the desktop top bar, the phone top bar, the login page and `/design`. **After the pick, delete the other two directions, their fonts and the switcher.**
 
-Every pair below was checked against WCAG 2.2 with at least 0.2 of headroom: 4.5:1 for text, 3:1 for icons, input borders and focus rings, and 7:1 (AAA) for crew-mode text, since crews read outdoors. `src/config/brand.test.ts` enforces all 86 pairs (43 per theme) on every test run.
-
-| Token | Role | Light | Dark |
+| | Titanium & Ice | Deep Ocean & Aqua | Midnight & Periwinkle |
 |---|---|---|---|
-| `canvas` | Page background | `#EAF2F3` | `#0A1C29` |
-| `surface` | Cards, tables, panels | `#FFFFFF` | `#0F2A3D` |
-| `surface-muted` / `surface-raised` | Table headers, hover rows, raised panels | `#F6F9FA` | `#163852` |
-| `sand` | Warm highlight surface (today, callouts) | `#E9E2D6` | `#2B2A26` |
-| `text` | Body text | `#0F2A3D` | `#EAF2F3` |
-| `text-muted` | Secondary text, labels | `#506573` | `#95A4AC` |
-| `crew-text-muted` | Secondary text in crew mode (AAA) | `#324A5A` | `#AAB8BE` |
-| `accent` | Brand teal: icons, charts, large headings | `#1F9D9A` | `#1F9D9A` |
-| `accent-text` | Teal text and links | `#186C72` | `#4CB0AE` |
-| `primary` / `primary-label` | Primary button fill / label | `#1B8083` / `#FFFFFF` | `#5CB7B5` / `#0F2A3D` |
-| `border-subtle` | Dividers, card outlines (decorative) | `#D4DEE1` | `#294253` |
-| `border-input` | Input and control boundaries | `#768893` | `#748691` |
-| `focus` | Focus ring | `#1C8A8B` | `#1F9D9A` |
-| `info-soft` | Info pill tint (with `accent-text`) | `#E4F3F3` | `#113A4A` |
-| `success-text` / `-soft` / `-fill` | Success | `#247856` / `#E6F3EC` / `#247856` | `#6EBB93` / `#143B43` / `#6EBB93` |
-| `warning-text` / `-soft` / `-fill` | Warning | `#7D692B` / `#FBF4E4` / `#E0A21B` | `#E1A82A` / `#283839` / `#E0A21B` |
-| `danger-text` / `-soft` / `-fill` | Danger | `#B54144` / `#FAE9E9` / `#B54144` | `#DE8A8B` / `#3B303F` / `#DE8A8B` |
+| Mood | Machined steel surfaces, ice-blue signal | Abyssal blues with a bioluminescent aqua edge | Ink-black night with a soft periwinkle glow |
+| Canvas / surface / raised | `#0C0F14` / `#131820` / `#1B222C` | `#06121C` / `#0B1C2A` / `#122A3C` | `#0A0B14` / `#11131F` / `#1A1D2E` |
+| Text / muted | `#E8EDF3` / `#93A0B1` | `#E4F1F7` / `#8AA5B5` | `#ECEEF8` / `#9499B5` |
+| Accent | ice blue `#8EC5FF` | aqua `#3CCFE0` | periwinkle `#8B9CFF` |
+| Second accent (quoted leads, chart 2) | lilac `#C4B8FF` | cornflower `#93B6FF` | sky `#74D4F2` |
+| Display face | **Sora** | **Unbounded** | **Syne** |
+| Body face | Manrope | Figtree | IBM Plex Sans |
 
-Labels on fills: white on success and danger fills in light mode; navy on every fill in dark mode; navy on the warning fill in both modes. Real amber can't carry white text, so light-mode warning text is olive (`#7D692B`), while bright amber `#E0A21B` stays for badges with a navy label.
+The base values above are the owner's, and all of them passed contrast as given. Every derived role (status tints, hairlines, focus rings, sidebar, charts, and each light palette) was fitted to pass, and lives only in `brand.ts`.
 
-**Sidebar:** navy in both modes (light `#0F2A3D`, dark `#0A1C29` with a `border-subtle` edge). Items use mist text; the active item uses `#4CB0AE` (5.73:1 on navy).
+## 3. Color roles
 
-**Charts:** every series reaches 3:1 against the surface it's drawn on.
+The same roles exist in every direction and theme:
 
-| Series | Light | Dark |
-|---|---|---|
-| 1 | teal `#1F9D9A` (3.31) | teal `#1F9D9A` (4.47) |
-| 2 | harbor blue `#3A6F95` (5.40) | `#7FA6C4` (5.75) |
-| 3 | driftwood `#8A7656` (4.37) | `#C4B394` (7.20) |
-| 4, 5 | `success-fill`, `warning-text` | `success-text`, `warning-text` |
+| Token | Role |
+|---|---|
+| `canvas`, `surface`, `surface-raised` | Page, cards and panels, raised rows and controls |
+| `highlight` | Accent-tinted callout panel (Needs attention) |
+| `text`, `text-muted`, `crew-text-muted` | Body; secondary; crew secondary text (AAA) |
+| `accent`, `accent-text`, `accent2` | Signal color (icons, glow, charts); accent as text; second cool hue |
+| `primary`, `primary-label` | Primary button fill and label (the accent with a canvas label in dark) |
+| `border-subtle`, `border-input`, `hairline` | Solid divider; control boundary (3:1); translucent hairline (10% text) for glass |
+| `focus` | Focus ring |
+| `info-soft` | Accent tint for info pills |
+| `success-*`, `warning-*`, `danger-*` | Status text, tint, fill and label. Green, amber and red, at least 30° of hue from both accents |
+| `sidebar-*` | Sidebar text and active state |
+| `chart1`–`chart5` | Accent, second accent, steel, success, warning |
 
-Charts always have direct labels or a legend; never rely on hue alone.
+**Enforced by `src/config/brand.test.ts` on every run, for every direction × theme (290+ checks):**
+- WCAG 2.2 with 0.2 of headroom: 4.5:1 for text, 3:1 for icons, input borders, focus rings and chart series, and 7:1 (AAA) for crew text.
+- Text and muted text on glass, blended at each direction's glass opacity.
+- A hue gap of at least 30° between each accent and each status color.
+- No gold or yellow hue outside the warning tokens.
 
 ### Status mapping
 
-| Domain | Status → pill tone |
+| Domain | Status → tone |
 |---|---|
-| Job | scheduled → info · in progress → info (filled dot) · completed → success · no access → warning · cancelled → neutral |
-| Lead stage | new → info · contacted → neutral · quoted → sand · won → success · lost → neutral (muted) |
-| Invoice | draft → neutral · open → info · overdue (open, past due) → danger · paid → success · void → neutral · uncollectible → danger |
+| Job | scheduled → info · in progress → info · completed → success · no access → warning · cancelled → neutral |
+| Lead stage | new → info · contacted → neutral · quoted → secondary · won → success · lost → neutral |
+| Invoice | draft → neutral · open → info · overdue (open, past its NY due date) → danger · paid → success · void → neutral · uncollectible → danger |
 | Payout | draft → neutral · approved → info · paid → success · void → neutral |
-| Insurance (COI) | valid → success · expires within 30 days → warning · expired → danger |
+| Insurance (COI) | valid → success · within 30 days → warning · expired → danger |
 
-`info` uses `accent-text` on a teal tint. `sand` uses `text` on `sand`.
+`info` is accent text on the info tint. `secondary` is text on the raised surface with an `accent2` ring and dot.
 
-## 3. Typography
+## 4. Effects
 
-| Family | Use | Source |
+| Effect | Utility | Where |
 |---|---|---|
-| **Mohave** | Page titles, section headers, KPI numerals, the wordmark | Google Fonts, `font-display: swap` |
-| **DM Sans** | Everything else: body, tables, forms, buttons | Google Fonts, `font-display: swap` |
-| **DM Mono** | Ids, invoice numbers, codes | Google Fonts, `font-display: swap` |
+| **Ambient backdrop** | `<Ambient />` (`.kc-ambient`) | Behind the app, login and `/design`: a 40px hairline grid plus one soft radial light in the accent, fading out down the page. Static. |
+| **Glass** | `glass` | Floating chrome only: sidebar rail, desktop top bar, command palette, drawer, modal, popovers, toasts, sticky table headers. The surface at the direction's glass opacity (72% dark, 78% light) over an 18px blur. Phone bars that content scrolls under are 90–95% opaque instead. |
+| **Layered surface** | `surface-layer` | Cards, tiles, kanban cards, table frames: lit slightly from the top (raised into surface). |
+| **Hairline** | `border-hairline` | The default border for surfaces and glass (10% of the text color). Controls keep `border-input` for 3:1. |
+| **Accent glow** | `glow-accent`, `shadow-[…var(--kc-glow)]` | Primary button hover, active nav indicator, sparkline and chart end points, progress bars, the brand mark. |
+| **Number glow** | `text-glow` | KPI numerals only. |
 
-Numbers in tables, stat tiles and money columns use **tabular figures** (`font-variant-numeric: tabular-nums`, the `.tabular` utility), and money is right-aligned.
+## 5. Typography
 
-| Step | Office | Crew | Font / weight |
+Each direction pairs a distinctive display face with a readable body face (section 2), plus DM Mono for ids and codes. All load via `next/font` with `font-display: swap`. Numbers that line up use the `tabular` utility (`tabular-nums lining-nums`); all three display faces have true tabular figures, checked by measurement.
+
+| Step | Office | Crew | Face |
 |---|---|---|---|
-| `display` | 28/32 | 30/34 | Mohave 600 |
-| `kpi` | 32/36 | 36/40 | Mohave 500, tabular |
-| `h2` | 20/24 | 22/28 | Mohave 600 |
-| `h3` | 15/20 | 18/24 | DM Sans 600 |
-| `body` | 14/20 | 17/24 | DM Sans 400 |
-| `small` | 13/18 | 15/20 | DM Sans 400 |
-| `label` | 11/14, uppercase, +0.06em | 13/16 | DM Sans 600 |
+| `eyebrow` | 11/14, uppercase, +0.16em, accent text | 13/16 | body 600 |
+| `display` | 36/40 (32/36 on phones), −0.01em | 34/38 | display 600 |
+| `kpi` | 40/44, −0.02em, tabular, number glow | 44/48 | display 500 |
+| `h2` | 18/24 | 22/28 | display 500 |
+| `body` | 14/20 | 17/24 | body 400 |
+| `small` | 13/18 | 15/20 | body 400 |
+| `label` | 11/14, uppercase, +0.08–0.12em | 13/16 | body 600 |
 
-## 4. Spacing
+## 6. Spacing, radius, elevation
 
-4px base. Use only these steps: `1` 4 · `2` 8 · `3` 12 · `4` 16 · `5` 20 · `6` 24 · `8` 32 · `10` 40 · `12` 48 · `16` 64. Office pages use a 24px gutter on desktop and 16px on phones. Crew screens use 16px gutters and 12px gaps between cards.
+**Spacing:** 4px base, using `1` 4 · `2` 8 · `3` 12 · `4` 16 · `5` 20 · `6` 24 · `8` 32 · `10` 40 · `12` 48 · `16` 64. Floating chrome is inset 12px from the viewport edge.
 
-## 5. Radius
-
-Different jobs, different corners. Not everything is rounded the same.
+**Radius** (different jobs, different corners):
 
 | Token | Value | Used by |
 |---|---|---|
-| `radius-none` | 0 | Table cells, the sidebar, full-bleed bars |
-| `radius-xs` | 4px | Checkboxes, kanban status stripes, calendar events |
-| `radius-sm` | 6px | Buttons, inputs, selects, menus |
-| `radius-md` | 10px | Office cards, stat tiles, kanban cards |
-| `radius-lg` | 16px | Modals, drawers, crew job cards, the command palette |
-| `radius-full` | 9999px | Pills, avatars, the density toggle |
+| `xs` | 4px | Checkboxes, keyboard hints |
+| `sm` | 8px | Buttons, inputs, menu rows, calendar events, banner |
+| `md` | 14px | Cards, stat tiles, kanban cards, table frames |
+| `lg` | 20px | Sidebar rail, top bar, Needs attention panel, modals, drawers, palette, login card |
+| `full` | 9999px | Pills, chips, avatars, toggles, progress bars |
 
-## 6. Elevation
+**Elevation:** In dark mode, shadows are deep and soft with a 1px inner top highlight. In light mode they're airy.
 
-Navy-tinted shadows (`rgb(15 42 61 / α)`), lighter than they look on paper. In dark mode depth comes mostly from surface lightness (`surface` → `surface-raised`), so the shadows are subtler.
-
-| Level | Token | Used by | Light | Dark |
-|---|---|---|---|---|
-| 0 | `elevation-0` | Page content: tables, office cards | border only | border only |
-| 1 | `elevation-1` | Stat tiles, kanban cards, crew cards | `0 1px 2px α.06, 0 1px 1px α.04` | `0 1px 2px rgb(0 0 0 / .3)` |
-| 2 | `elevation-2` | Menus, popovers, toasts, the command palette | `0 8px 24px α.12, 0 2px 6px α.06` | `0 8px 24px rgb(0 0 0 / .45)` |
-| 3 | `elevation-3` | Modals, drawers | `0 24px 48px α.18, 0 4px 12px α.08` | `0 24px 48px rgb(0 0 0 / .55)` |
+| Level | Used by |
+|---|---|
+| `e0` | Flat (rarely used now; surfaces carry a hairline) |
+| `e1` | Tiles, cards, tables, top bar |
+| `e2` | Sidebar rail, callout panel, popovers, toasts |
+| `e3` | Modal, drawer, palette, login card |
 
 ## 7. Motion
 
 | Token | Value | Used by |
 |---|---|---|
-| `duration-fast` | 120ms | Hover, press, toggles |
-| `duration-base` | 180ms | Menus, popovers, toasts, the command palette |
-| `duration-slow` | 240ms | Drawers, modals, sidebar collapse |
-| `ease-standard` | `cubic-bezier(0.2, 0, 0, 1)` | Entering and moving |
-| `ease-exit` | `cubic-bezier(0.4, 0, 1, 1)` | Leaving |
+| `duration-fast` | 140ms | Hover, press, toggles |
+| `duration-base` | 220ms | Menus, popovers, tile lift |
+| `duration-slow` | 320ms | Drawer, modal, sidebar collapse |
+| `--kc-duration-enter` | 620ms | One-time staggered load-in (`kc-enter`, `--i` = position) |
+| `--kc-stagger` | 55ms | Delay per item in the load-in |
+| `ease-enter` | `cubic-bezier(0.16, 1, 0.3, 1)` | Load-in and drawing |
+| `ease-standard` / `ease-exit` | `(0.2, 0, 0, 1)` / `(0.4, 0, 1, 1)` | Moving / leaving |
 
-Transitions animate opacity and short translations (≤ 8px), and no animation ever loops. Under `prefers-reduced-motion: reduce`, every duration becomes 0ms and translations are removed: content appears in place.
+- **Load-in:** fade plus a 10px rise; on the Command Center it runs from the header through tiles, chart, table and panels.
+- **Drawing:** sparklines draw in over 1.1s, staggered with their tile, and the area chart over 1.4s. End points fade in last.
+- **No loops.** Nothing loops.
+- **Reduced motion:** under `prefers-reduced-motion: reduce`, every duration, delay and stagger is 0ms and everything appears in place.
 
 ## 8. Density
 
-Office tables have a **density toggle** (comfortable / compact), remembered per browser:
-
-| | Comfortable | Compact |
-|---|---|---|
-| Row height | 44px | 32px |
-| Cell padding | 12px × 16px | 6px × 12px |
-| Body size | 14px | 13px |
-
-Crew mode has no compact setting: tap targets are at least 48 × 48px, primary actions 56px tall and full width, and controls sit in the bottom half of the screen.
+Office tables have a comfortable / compact toggle, remembered per browser: rows of 48px or 34px, cells of 12×16px or 6×12px, text at 14px or 13px. Crew mode has no compact setting: tap targets are at least 48×48px, primary actions 56px tall and full width.
 
 ## 9. Layout
 
-| Breakpoint | Navigation |
+| Breakpoint | Chrome |
 |---|---|
-| Phone (< 768px) | Bottom tab bar, one-handed: **Home, Schedule, Leads, Money, More**. Labels always visible, 64px tall plus the safe-area inset. "More" opens a bottom sheet with Crews, Marketing, Automations, Settings, the theme switch and sign out. |
-| Tablet (768–1279px) | Slim sidebar collapsed to icons (64px), with tooltips |
-| Desktop (≥ 1280px) | Sidebar expanded (232px), collapsible to icons; the choice is remembered |
+| Phone (< 768px) | Near-opaque top bar (brand, direction switcher, search) and a one-handed bottom tab bar (Home, Leads, Schedule, Money, More) with an accent indicator on the active tab; "More" opens a bottom sheet. |
+| Tablet (768–1279px) | Floating glass sidebar rail, icons only |
+| Desktop (≥ 1280px) | Rail expanded (244px) with **Operate** (Command Center, Leads & Pipeline, Schedule, Crews) and **Business** (Invoices & Payouts, Marketing, Automations, Settings) groups, collapsible and remembered; glass top bar with search (Cmd+K), the direction switcher and the theme toggle. |
 
-Sidebar order: **Command Center, Leads & Pipeline, Schedule, Crews, Invoices & Payouts, Marketing, Automations, Settings**. The brand mark sits at the top and the collapse control at the bottom. **Cmd+K / Ctrl+K** opens the command palette from anywhere.
-
-The demo-data banner ("Demo data loaded, purge before launch") spans the top of the content area whenever rows with the `5eed0000-` id prefix exist. It uses the warning soft background and can't be dismissed.
-
-Icons: Lucide only, 16px in office (20px in navigation), 24px in crew mode. Never emoji.
+The demo-data banner ("Demo data loaded, purge before launch") shows under the top bar whenever `5eed0000-` rows exist. Icons are Lucide only, at 18px in navigation and 24px in crew mode, never emoji.
 
 ## 10. Components
 
 | Component | Spec |
 |---|---|
-| **Button** | Variants: primary (filled), secondary (`surface` + `border-input`), ghost, danger. Sizes sm 28px, md 36px, crew 56px. Visible focus ring: 2px `focus` with a 2px offset. While loading, the label stays and a spinner is added. |
-| **Input / Textarea** | 36px tall, `radius-sm`, `border-input`, `surface` fill. Errors show `danger-text` below the field plus `aria-invalid`. Labels always sit above the field, never as placeholder-only. |
-| **Select** | Same frame as Input; the menu uses `elevation-2`. |
-| **Table** | Flat (`elevation-0`) with a sticky header on `surface-muted`, `label`-style headings, a density toggle, tabular right-aligned numbers, and row hover on `surface-muted`. On phones, tables become stacked cards. |
-| **Status pill** | `radius-full`, a soft tone background, tone text and a 6px dot. Always a text label. |
-| **Kanban card** | `radius-md`, `elevation-1`, with a 3px stage stripe on the left (`radius-xs`). Shows name, service, value (tabular), age and source. Draggable cards show a grab handle on hover. |
-| **Calendar event** | `radius-xs`, a tone tint with a left border in the tone color. Shows time (tabular), client and crew. Height scales with duration and is never shorter than 32px. |
-| **Stat tile** | `radius-md`, `elevation-1`. Shows a `label`, a `kpi` value, a delta with an arrow and a text sign (never color-only), and a sparkline. |
-| **Sparkline** | Inline SVG, 1.5px `accent` stroke, a 10% fill under the line, and a dot on the last point. `aria-hidden`; the tile's text carries the meaning. |
-| **Empty state** | A 40px Lucide icon in a mist circle, an `h3` title, a one-sentence body and at most one action. |
-| **Toast** | `elevation-2`, `radius-sm`, bottom-right on desktop and above the tab bar on phones. Success, error and info tones; it auto-dismisses after 5s unless it has an action. |
-| **Command palette** | `radius-lg`, `elevation-2`, centered at 20vh, 560px wide (full width on phones). Groups: Go to, Create, Recent. Keyboard: ↑ ↓ to move, Enter to open, Esc to close. |
-| **Drawer** | Right side sheet, 440px wide on desktop and a bottom sheet on phones. `radius-lg` on the inner edge, `elevation-3`, slide plus fade over `duration-slow`. |
-| **Modal** | Centered, max 480px, `radius-lg`, `elevation-3`. For confirmations and short forms only; long forms go in drawers. |
+| **Button** | Primary: accent fill, canvas label, inner top highlight, accent glow on hover. Secondary: raised fill with a hairline. Ghost. Danger. Sizes 28 / 36 / 56px (crew). |
+| **Input / Select / Textarea** | 36px tall, `border-input`, canvas fill at 40%, an accent focus halo (4px glow) plus the focus ring. Labels sit above; errors show below with `aria-invalid`. |
+| **Table** | Layered frame with a hairline; glass sticky header; hairline rows; density toggle; stacked cards on phones. |
+| **Status pill** | Tone tint, tone text, a hairline ring in the tone, and a dot (info dots glow). |
+| **Stat tile** | Layered surface, a lit accent hairline on the top edge, a 40px tabular KPI with number glow, a sparkline, and a footer with the delta chip and hint. Lifts 2px on hover when it's a link. |
+| **Sparkline / area chart** | Accent line over a gradient fill, drawing in once, ending in a glowing point. The chart adds hairline gridlines, clean ticks (1, 2, 2.5, 5 × 10ⁿ), HTML axis labels and an accessible summary. |
+| **Kanban card** | Layered surface, hairline, a stage stripe, lifts on hover. |
+| **Calendar event** | Tone tint with a 2px tone edge, sized to its duration, showing 1, 2 or 3 lines by height. The now-line is an accent hairline with a glowing dot. |
+| **Empty state** | Icon in a raised ring with a soft glow, display-face title, one sentence, one action. |
+| **Command palette** | Glass, `lg` radius, 56px input with an accent caret; the active row shows an accent edge; grouped results; full keyboard support. |
+| **Drawer / modal** | Glass over a blurred scrim. Drawer is a right sheet (440px) or a bottom sheet on phones; modal is 480px max, for confirmations. |
+| **Toast** | Glass with status tones, above the tab bar on phones. |
 
 ## 11. Accessibility
 
-- Contrast as in section 2; every new token pair is checked before use.
-- Visible focus on every interactive element; nothing is reachable only on hover.
-- Hit targets at least 24px in office mode and 48px in crew mode.
-- Every icon-only button has an `aria-label` and a tooltip. Status is never color alone.
-- Respect `prefers-reduced-motion` and `prefers-color-scheme`, with a manual theme switch in the shell.
-- Dates and times are shown in America/New_York via `src/lib/format.ts`, and money via `formatCents`.
+- Contrast as in section 3, enforced by tests; check every new token pair before use.
+- A visible focus ring on everything; nothing is reachable only on hover.
+- Hit targets at least 24px in office mode and 48px in crew mode, where text is AAA.
+- Icon-only buttons have an `aria-label` and a tooltip; status is never color alone; charts have text summaries.
+- Respects `prefers-reduced-motion` (no motion at all). The theme defaults to dark, with a manual light/dark/system switch.
+- Dates and times show in America/New_York via `src/lib/format.ts`, and money via `formatCents`.
