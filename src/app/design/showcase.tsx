@@ -116,7 +116,7 @@ export function Showcase({ theme }: { theme: ThemeName }) {
   const p = directions[direction].palettes[theme];
 
   return (
-    <div className={cn(theme, "min-w-0 space-y-10 bg-background/70 px-4 py-8 text-foreground md:px-6")}>
+    <div className={cn(theme, "min-w-0 space-y-10 px-4 py-8 text-foreground md:px-6", theme === "dark" ? "bg-background/70" : "bg-background")}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
           <p className="text-[11px] font-semibold tracking-[0.16em] text-brand-text uppercase">{directions[direction].label}</p>
