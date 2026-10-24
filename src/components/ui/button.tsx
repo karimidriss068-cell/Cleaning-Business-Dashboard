@@ -7,13 +7,13 @@ import { cn } from "@/lib/utils"
 // DESIGN.md section 10: primary, secondary, ghost, danger; sm 28px, md 36px,
 // crew 56px. Focus uses the global :focus-visible ring.
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center gap-2 rounded-sm border border-transparent text-sm font-medium whitespace-nowrap transition-[background-color,border-color,color,transform] duration-fast ease-standard select-none active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button inline-flex shrink-0 items-center justify-center gap-2 rounded-sm border border-transparent text-sm font-medium tracking-[0.01em] whitespace-nowrap transition-[background-color,border-color,color,box-shadow,transform] duration-fast ease-standard select-none active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-[color-mix(in_oklab,var(--kc-primary),var(--kc-text)_12%)]",
-        secondary: "border-border-input bg-surface text-ink hover:bg-surface-raised aria-expanded:bg-surface-raised",
-        ghost: "text-ink hover:bg-surface-raised aria-expanded:bg-surface-raised",
+        default: "bg-primary text-primary-foreground shadow-[0_1px_0_rgb(255_255_255/0.25)_inset] hover:glow-accent hover:bg-[color-mix(in_oklab,var(--kc-primary),var(--kc-text)_10%)]",
+        secondary: "border-hairline bg-surface-raised/60 text-ink hover:border-border-input hover:bg-surface-raised aria-expanded:bg-surface-raised",
+        ghost: "text-ink hover:bg-surface-raised/70 aria-expanded:bg-surface-raised",
         danger: "bg-danger-fill text-danger-label hover:bg-[color-mix(in_oklab,var(--kc-danger-fill),var(--kc-text)_12%)]",
         link: "h-auto px-0 text-brand-text underline-offset-4 hover:underline",
       },

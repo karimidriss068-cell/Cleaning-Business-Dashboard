@@ -3,7 +3,7 @@ import { formatNyTime } from "@/lib/format";
 import { jobLabel, jobTone, type JobStatus, type Tone } from "@/lib/status";
 
 const toneClass: Record<Tone, string> = {
-  info: "bg-info-soft border-brand",
+  info: "bg-info-soft/90 border-brand",
   success: "bg-success-soft border-success",
   warning: "bg-warning-soft border-warning-fill",
   danger: "bg-danger-soft border-danger",
@@ -43,7 +43,7 @@ export function CalendarEvent({
         style={style}
         title={`${time} ${client}, ${jobLabel[status]}`}
         className={cn(
-          "flex min-h-8 items-center gap-1.5 overflow-hidden rounded-xs border-l-[3px] px-2 text-xs",
+          "flex min-h-8 items-center gap-1.5 overflow-hidden rounded-sm border-l-2 px-2.5 text-xs shadow-e1 backdrop-blur-sm",
           toneClass[jobTone(status)],
           status === "cancelled" && "line-through decoration-ink-muted",
           className,
@@ -60,7 +60,7 @@ export function CalendarEvent({
       style={style}
       title={`${client}, ${jobLabel[status]}`}
       className={cn(
-        "flex min-h-8 flex-col overflow-hidden rounded-xs border-l-[3px] px-2 py-1 text-xs leading-4",
+        "flex min-h-8 flex-col overflow-hidden rounded-sm border-l-2 px-2.5 py-1.5 text-xs leading-4 shadow-e1 backdrop-blur-sm",
         toneClass[jobTone(status)],
         status === "cancelled" && "line-through decoration-ink-muted",
         className,
@@ -70,6 +70,16 @@ export function CalendarEvent({
       <span className="truncate font-medium text-ink">{client}</span>
       {crew && lines === 3 && <span className="truncate text-ink-muted">{crew}</span>}
       <span className="sr-only">{jobLabel[status]}</span>
+    </div>
+  );
+}
+
+/** The current time across a day column: accent hairline with a glowing dot. */
+export function CalendarNowLine({ top, label }: { top: number; label: string }) {
+  return (
+    <div aria-label={`Now, ${label}`} role="img" className="pointer-events-none absolute inset-x-0 z-10 flex items-center" style={{ top }}>
+      <span className="size-2 -translate-x-1 rounded-full bg-brand shadow-[0_0_0_3px_var(--kc-glow),0_0_12px_var(--kc-glow)]" />
+      <span className="h-px flex-1 bg-brand/80 shadow-[0_0_8px_var(--kc-glow)]" />
     </div>
   );
 }

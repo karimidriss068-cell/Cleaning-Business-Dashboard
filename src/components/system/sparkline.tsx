@@ -1,21 +1,32 @@
 import { cn } from "@/lib/utils";
 
+// Stable id for the SVG gradient, derived from the data (no hooks needed, so
+// this stays a server component).
+function gradientId(values: number[]): string {
+  let h = 0;
+  for (const ch of values.join(",")) h = (h * 31 + ch.charCodeAt(0)) | 0;
+  return `kc-spark-${(h >>> 0).toString(36)}`;
+}
+
 /**
- * Inline SVG trend line (DESIGN.md section 10). Decorative: aria-hidden, so
- * the surrounding text must carry the meaning.
+ * Inline SVG trend line (DESIGN.md section 10). Draws itself once on load
+ * (instant under reduced motion), fills to a soft accent gradient and ends in
+ * a glowing dot. Decorative: aria-hidden, the tile's text carries the meaning.
  */
 export function Sparkline({
   values,
-  width = 112,
-  height = 32,
+  width = 120,
+  height = 36,
+  delayMs = 0,
   className,
 }: {
   values: number[];
   width?: number;
   height?: number;
+  delayMs?: number;
   className?: string;
 }) {
-  const pad = 2.5;
+  const pad = 3;
   const n = values.length;
   const max = Math.max(...values, 0);
   const min = Math.min(...values, 0);
@@ -27,28 +38,43 @@ export function Sparkline({
   const line = points.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
   const area = n > 1 ? `${line} L${points[n - 1][0].toFixed(1)} ${height} L${points[0][0].toFixed(1)} ${height} Z` : "";
   const last = points[n - 1];
+  const id = gradientId(values);
+  const delay = { animationDelay: `${delayMs}ms` };
 
   return (
-    <svg
-      aria-hidden
-      viewBox={`0 0 ${width} ${height}`}
-      width={width}
-      height={height}
-      className={cn("shrink-0 overflow-visible text-brand", className)}
-    >
-      {n > 1 && <path d={area} fill="currentColor" fillOpacity={0.1} />}
+    <svg aria-hidden viewBox={`0 0 ${width} ${height}`} width={width} height={height} className={cn("shrink-0 overflow-visible text-brand", className)}>
+      <defs>
+        <linearGradient id={id} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="currentColor" stopOpacity={0.28} />
+          <stop offset="100%" stopColor="currentColor" stopOpacity={0} />
+        </linearGradient>
+      </defs>
+      {n > 1 && <path d={area} fill={`url(#${id})`} className="animate-[kc-fade_var(--kc-duration-enter)_var(--kc-ease-enter)_both]" style={delay} />}
       {n > 1 && (
         <path
           d={line}
+          pathLength={1}
           fill="none"
           stroke="currentColor"
-          strokeWidth={1.5}
+          strokeWidth={1.75}
           strokeLinecap="round"
           strokeLinejoin="round"
           vectorEffect="non-scaling-stroke"
+          strokeDasharray="1"
+          className="animate-[kc-draw_1100ms_var(--kc-ease-enter)_both]"
+          style={delay}
         />
       )}
-      {last && <circle cx={last[0]} cy={last[1]} r={2.5} fill="currentColor" />}
+      {last && (
+        <circle
+          cx={last[0]}
+          cy={last[1]}
+          r={3}
+          fill="currentColor"
+          className="animate-[kc-fade_var(--kc-duration-enter)_var(--kc-ease-enter)_both] drop-shadow-[0_0_6px_var(--kc-glow)]"
+          style={{ animationDelay: `${delayMs + 700}ms` }}
+        />
+      )}
     </svg>
   );
 }

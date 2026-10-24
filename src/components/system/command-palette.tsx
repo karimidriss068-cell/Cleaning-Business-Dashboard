@@ -103,10 +103,10 @@ export function CommandPalette({ commands }: { commands: Command[] }) {
   return (
     <DialogPrimitive.Root open={open} onOpenChange={changeOpen}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-[rgb(10_28_41/0.5)] duration-base data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
-        <DialogPrimitive.Popup className="fixed top-[12vh] left-1/2 z-50 w-[min(560px,calc(100%-2rem))] -translate-x-1/2 overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-e2 outline-none duration-base ease-standard data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-top-2 data-closed:animate-out data-closed:fade-out-0 md:top-[20vh]">
+        <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/55 backdrop-blur-[2px] duration-base data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
+        <DialogPrimitive.Popup className="fixed top-[12vh] left-1/2 z-50 w-[min(560px,calc(100%-2rem))] -translate-x-1/2 overflow-hidden rounded-lg border border-hairline glass text-popover-foreground shadow-e3 outline-none duration-base ease-standard data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-top-2 data-closed:animate-out data-closed:fade-out-0 md:top-[20vh]">
           <DialogPrimitive.Title className="sr-only">Command palette</DialogPrimitive.Title>
-          <div className="flex items-center gap-3 border-b border-border px-4">
+          <div className="flex items-center gap-3 border-b border-hairline px-4">
             <Search className="size-4 shrink-0 text-ink-muted" aria-hidden />
             <input
               autoFocus
@@ -122,7 +122,7 @@ export function CommandPalette({ commands }: { commands: Command[] }) {
               aria-controls={listId}
               aria-activedescendant={results[active] ? `${listId}-${results[active].id}` : undefined}
               aria-label="Search pages and actions"
-              className="h-12 w-full bg-transparent text-[15px] text-ink outline-none placeholder:text-ink-muted"
+              className="h-14 w-full bg-transparent text-base text-ink caret-brand outline-none placeholder:text-ink-muted"
             />
             <kbd className="hidden rounded-xs border border-border px-1.5 py-0.5 font-mono text-[11px] text-ink-muted sm:block">Esc</kbd>
           </div>
@@ -143,7 +143,7 @@ export function CommandPalette({ commands }: { commands: Command[] }) {
                     onClick={() => run(cmd)}
                     className={cn(
                       "flex cursor-pointer items-center gap-3 rounded-sm px-3 py-2 text-sm text-ink",
-                      i === active && "bg-surface-raised",
+                      i === active && "bg-surface-raised/80 text-ink shadow-[inset_2px_0_0_var(--kc-accent)]",
                     )}
                   >
                     {Icon && <Icon className="size-4 shrink-0 text-ink-muted" aria-hidden />}
@@ -155,7 +155,7 @@ export function CommandPalette({ commands }: { commands: Command[] }) {
               );
             })}
           </ul>
-          <div className="hidden items-center gap-4 border-t border-border px-4 py-2 text-[12px] text-ink-muted sm:flex">
+          <div className="hidden items-center gap-4 border-t border-hairline px-4 py-2 text-[12px] text-ink-muted sm:flex">
             <span><kbd className="font-mono">↑↓</kbd> move</span>
             <span><kbd className="font-mono">Enter</kbd> open</span>
             <span><kbd className="font-mono">Esc</kbd> close</span>

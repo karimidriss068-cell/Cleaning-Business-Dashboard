@@ -11,7 +11,11 @@ export type Delta = {
   good: boolean;
 };
 
-/** KPI tile: label, tabular value, delta (icon + signed text) and a sparkline. */
+/**
+ * KPI tile: layered surface with a hairline and a lit top edge, a large
+ * tabular numeral with a restrained glow, a signed delta (icon + text, never
+ * color alone) and a sparkline that draws in. `index` staggers its entrance.
+ */
 export function StatTile({
   label,
   value,
@@ -19,6 +23,7 @@ export function StatTile({
   hint,
   spark,
   href,
+  index = 0,
   className,
 }: {
   label: string;
@@ -27,42 +32,51 @@ export function StatTile({
   hint?: string;
   spark?: number[];
   href?: string;
+  index?: number;
   className?: string;
 }) {
   const DeltaIcon = delta?.direction === "up" ? ArrowUpRight : delta?.direction === "down" ? ArrowDownRight : ArrowRight;
   const body = (
     <>
-      <span className="text-[11px] font-semibold tracking-[0.06em] text-ink-muted uppercase">{label}</span>
-      <div className="flex items-end justify-between gap-3">
-        <span className="font-heading text-[32px] leading-9 font-medium text-ink tabular">{value}</span>
-        {spark && spark.length > 1 && <Sparkline values={spark} />}
-      </div>
-      <div className="flex min-h-5 flex-wrap items-center gap-x-2 text-[13px]">
+      <span aria-hidden className="pointer-events-none absolute inset-x-6 top-0 h-px bg-linear-to-r from-transparent via-brand/60 to-transparent" />
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-[11px] font-semibold tracking-[0.12em] text-ink-muted uppercase">{label}</span>
         {delta && (
           <span
             className={cn(
-              "inline-flex items-center gap-0.5 font-medium tabular",
-              delta.direction === "flat" ? "text-ink-muted" : delta.good ? "text-success" : "text-danger",
+              "inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[12px] font-medium tabular ring-1 ring-inset",
+              delta.direction === "flat"
+                ? "text-ink-muted ring-hairline"
+                : delta.good
+                  ? "bg-success-soft text-success ring-success/25"
+                  : "bg-danger-soft text-danger ring-danger/25",
             )}
           >
             <DeltaIcon className="size-3.5" aria-hidden />
             {delta.label}
           </span>
         )}
-        {hint && <span className="text-ink-muted">{hint}</span>}
       </div>
+      <div className="flex items-end justify-between gap-4">
+        <span className="font-heading text-[40px] leading-[44px] font-medium tracking-[-0.02em] text-ink tabular text-glow">{value}</span>
+        {spark && spark.length > 1 && <Sparkline values={spark} delayMs={150 + index * 55} className="mb-1.5" />}
+      </div>
+      <div className="min-h-5 text-[13px] text-ink-muted">{hint}</div>
     </>
   );
   const frame = cn(
-    "flex flex-col gap-2 rounded-md border border-border bg-surface p-4 shadow-e1",
-    href && "transition-colors duration-fast hover:border-border-input",
+    "kc-enter relative flex flex-col gap-3 overflow-hidden rounded-md border border-hairline bg-surface surface-layer p-5 shadow-e1",
+    href && "transition-[border-color,transform] duration-base ease-standard hover:-translate-y-0.5 hover:border-brand/40",
     className,
   );
+  const style = { "--i": index } as React.CSSProperties;
   return href ? (
-    <Link href={href} className={frame}>
+    <Link href={href} className={frame} style={style}>
       {body}
     </Link>
   ) : (
-    <div className={frame}>{body}</div>
+    <div className={frame} style={style}>
+      {body}
+    </div>
   );
 }

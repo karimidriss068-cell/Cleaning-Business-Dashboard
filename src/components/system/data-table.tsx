@@ -10,7 +10,7 @@ const DENSITIES = ["comfortable", "compact"] as const satisfies readonly Density
 /** Segmented comfortable/compact switch (DESIGN.md section 8). */
 export function DensityToggle({ value, onChange }: { value: Density; onChange: (d: Density) => void }) {
   return (
-    <div role="radiogroup" aria-label="Row density" className="inline-flex rounded-full border border-border bg-surface-raised p-0.5">
+    <div role="radiogroup" aria-label="Row density" className="inline-flex rounded-full border border-hairline bg-canvas/40 p-0.5">
       {DENSITIES.map((d) => {
         const Icon = d === "comfortable" ? Rows3 : Rows4;
         const selected = value === d;
@@ -58,10 +58,10 @@ export function DataTable({
 }) {
   const [density, setDensity] = useStoredChoice<Density>(storageKey, DENSITIES, "comfortable");
   return (
-    <section className={cn("overflow-hidden rounded-md border border-border bg-surface", className)} aria-label={title}>
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
+    <section className={cn("overflow-hidden rounded-md border border-hairline bg-surface surface-layer shadow-e1", className)} aria-label={title}>
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline px-5 py-4">
         <div className="min-w-0">
-          <h3 className="text-[15px] font-semibold text-ink">{title}</h3>
+          <h3 className="font-heading text-lg font-medium text-ink">{title}</h3>
           {description && <p className="text-[13px] text-ink-muted">{description}</p>}
         </div>
         <div className="flex items-center gap-2">

@@ -34,11 +34,11 @@ export function KanbanCard({
     <article
       aria-label={`${name}, ${leadLabel[stage]}`}
       className={cn(
-        "group relative rounded-md border border-border bg-surface py-3 pr-3 pl-4 shadow-e1 dark:bg-surface-raised transition-colors duration-fast hover:border-border-input",
+        "group relative rounded-md border border-hairline bg-surface surface-layer py-3 pr-3 pl-4 shadow-e1 transition-[border-color,transform] duration-base ease-standard hover:-translate-y-0.5 hover:border-brand/35",
         className,
       )}
     >
-      <span aria-hidden className={cn("absolute inset-y-2 left-1.5 w-[3px] rounded-xs", stripe[leadTone(stage)])} />
+      <span aria-hidden className={cn("absolute inset-y-3 left-1.5 w-[3px] rounded-full", stripe[leadTone(stage)])} />
       <div className="flex items-start justify-between gap-2">
         <h4 className="truncate text-sm font-medium text-ink">{name}</h4>
         <GripVertical aria-hidden className="size-4 shrink-0 text-ink-muted opacity-0 transition-opacity duration-fast group-hover:opacity-100" />

@@ -17,10 +17,10 @@ export function EmptyState({
 }) {
   return (
     <div className={cn("flex flex-col items-center justify-center gap-3 px-6 py-12 text-center", className)}>
-      <span className="flex size-16 items-center justify-center rounded-full bg-canvas">
-        <Icon aria-hidden className="size-8 text-brand-text" strokeWidth={1.75} />
+      <span className="relative flex size-16 items-center justify-center rounded-full border border-hairline bg-surface-raised shadow-[0_0_32px_-8px_var(--kc-glow)]">
+        <Icon aria-hidden className="size-7 text-brand-text" strokeWidth={1.5} />
       </span>
-      <h3 className="text-[15px] font-semibold text-ink">{title}</h3>
+      <h3 className="font-heading text-lg font-medium text-ink">{title}</h3>
       {children && <p className="max-w-sm text-sm text-ink-muted">{children}</p>}
       {action && <div className="mt-1">{action}</div>}
     </div>
