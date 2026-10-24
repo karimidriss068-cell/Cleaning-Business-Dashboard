@@ -2060,6 +2060,7 @@ export type Database = {
         }
       }
       complete_job: { Args: { p_job_id: string }; Returns: undefined }
+      demo_data_present: { Args: never; Returns: boolean }
       get_integration_secret: { Args: { p_provider: string }; Returns: string }
       my_jobs: {
         Args: { p_from?: string; p_to?: string }
