@@ -18,7 +18,9 @@
  * (default)  refuses if seed rows exist; creates the two test logins (random
  *            passwords printed once), then runs the SQL as one atomic block.
  * --purge    refuses if any real row references a seed row; otherwise removes
- *            every seed row and the test logins in one atomic block.
+ *            every seed row (and visits generated from seed series) and the
+ *            test logins in one atomic block. With --dry-run it runs inside a
+ *            transaction that rolls back and reports whether it would succeed.
  *
  * Refuses unless --project-ref names the cleaning project and matches .env.local.
  * All SQL runs through scripts/supabase-cleaning.sh, which re-verifies the
@@ -58,7 +60,6 @@ const { values } = parseArgs({
   },
 });
 if (values["project-ref"] !== CLEANING_PROJECT_REF) fail(`pass --project-ref ${CLEANING_PROJECT_REF} explicitly`);
-if (values["dry-run"] && values.purge) fail("--dry-run and --purge can't be combined");
 
 try {
   process.loadEnvFile(".env.local");
@@ -753,7 +754,7 @@ function insertSqlRaw(table: string, data: Row[]): string {
 
 function buildPurgeSql(): string {
   const deleteOrder = ["payout_items", "payouts", "payments", "invoice_line_items", "invoices", "expenses", "vendors",
-    "job_photos", "activities", "job_assignments", "jobs", "job_series", "quote_items", "quotes", "leads",
+    "job_photos", "activities", "job_assignments", "jobs", "job_series", "quotes", "quote_items", "leads",
     "subcontractor_documents", "crew_members", "crews"];
   const afterProfiles = ["subcontractors", "properties", "contacts", "accounts", "marketing_daily_stats",
     "marketing_campaigns", "services", "automation_runs", "automations", "opt_outs", "goals"];
@@ -764,6 +765,10 @@ declare
   n bigint;
   offenders text := '';
 begin
+  -- Visits the recurring generator created from seed series (and their
+  -- assignments, photos and activities, which cascade) are demo data too.
+  delete from public.jobs where series_id::text like '${SEED_PREFIX}%' and id::text not like '${SEED_PREFIX}%';
+
   -- Refuse if any real row points at a seed row (including optional links
   -- that would otherwise be silently cleared by ON DELETE SET NULL).
   for fk in
@@ -772,6 +777,10 @@ begin
     join pg_attribute a on a.attrelid = c.conrelid and a.attnum = c.conkey[1]
     where c.contype = 'f' and c.connamespace = 'public'::regnamespace and array_length(c.conkey, 1) = 1
   loop
+    if not exists (select 1 from pg_attribute where attrelid = fk.child and attname = 'id' and not attisdropped)
+       and fk.child <> 'public.profiles'::regclass then
+      continue; -- keyed by user (e.g. user_preferences): removed with its auth user
+    end if;
     if fk.child = 'public.profiles'::regclass then
       execute format('select count(*) from public.profiles x where x.%I::text like ''${SEED_PREFIX}%%'' and x.user_id not in (select id from auth.users where email like ''seed+%%@example.com'')', fk.col) into n;
     else
@@ -825,7 +834,8 @@ function runSql(sql: string): { ok: boolean; output: string } {
   }
 }
 function errorLine(output: string): string {
-  return /ERROR:[^"\\]*/.exec(output)?.[0] ?? output.slice(-800);
+  const i = output.indexOf("ERROR:");
+  return i >= 0 ? output.slice(i, i + 500).replace(/\\"/g, '"').split("\\n")[0] : output.slice(-800);
 }
 
 const admin = createClient(supabaseUrl, env.data.SUPABASE_SERVICE_ROLE_KEY, {
@@ -865,7 +875,11 @@ function summary() {
   if (sampleJob) console.log(`Sample visit: ${sampleJob.date} ${svc[sampleJob.serviceKey].name}, starts ${iso(sampleJob.start)} UTC, $${(sampleJob.price / 100).toFixed(2)}`);
 }
 
-if (values.purge) {
+if (values.purge && values["dry-run"]) {
+  const res = runSql(`begin;\n${buildPurgeSql()}\nrollback;`);
+  if (!res.ok) fail(`purge would fail: ${errorLine(res.output)}`);
+  console.log("Purge dry run OK: every seed row (and generated demo visit) would be removed; nothing was changed.");
+} else if (values.purge) {
   const res = runSql(buildPurgeSql());
   if (!res.ok) fail(`purge failed, nothing removed: ${errorLine(res.output)}`);
   const seedUsers = await findSeedUsers();

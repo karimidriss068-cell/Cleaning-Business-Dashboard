@@ -47,8 +47,9 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
   const isAuthRoute = pathname.startsWith("/login");
-  // Public routes with their own auth: inbound webhooks verify signatures.
-  const isPublicApi = pathname.startsWith("/api/webhooks");
+  // Public routes with their own auth: inbound webhooks verify signatures,
+  // cron routes check CRON_SECRET.
+  const isPublicApi = pathname.startsWith("/api/webhooks") || pathname.startsWith("/api/cron");
   // The dev-only design reference renders static samples, no data.
   const isDevDesign = process.env.NODE_ENV !== "production" && pathname.startsWith("/design");
 
