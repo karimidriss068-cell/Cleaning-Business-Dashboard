@@ -1,5 +1,7 @@
 export type BoardVisit = {
   id: string;
+  /** Concurrency token for reassign_job (the visit's updated_at). */
+  updatedAt: string;
   start: string;
   end: string;
   status: "scheduled" | "in_progress" | "completed" | "cancelled" | "no_access";

@@ -4,12 +4,11 @@ import { CalendarX2, UserX } from "lucide-react";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { nyToday } from "@/lib/format";
-import { loadDay } from "@/lib/schedule-data";
-import { buildLanes } from "@/lib/schedule-lanes";
+import { loadRange } from "@/lib/schedule-data";
 import { PageHeader } from "@/components/shell/page-header";
 import { EmptyState } from "@/components/system/empty-state";
 import { BoardToolbar } from "@/components/schedule/board-toolbar";
-import { DayBoard, VisitList } from "@/components/schedule/day-board";
+import { ScheduleClient } from "@/components/schedule/schedule-client";
 
 export const metadata: Metadata = { title: "Schedule" };
 export const dynamic = "force-dynamic";
@@ -43,8 +42,9 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
   const date = raw.date && !Number.isNaN(Date.parse(`${raw.date}T00:00:00Z`)) ? raw.date : today;
   const mode = raw.view ?? "crew";
 
-  const { visits, crews, people } = await loadDay(supabase, date);
-  const lanes = buildLanes(mode, visits, crews, people);
+  const { visits, crews, roster, crewMembers } = await loadRange(supabase, date, date);
+  // Remount the interactive board only when the server data really changed.
+  const dataKey = visits.reduce((h, v) => (h * 31 + [...`${v.id}${v.updatedAt}`].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7)) | 0, 7).toString(36);
   const live = visits.filter((v) => v.status !== "cancelled");
   const unassigned = live.filter((v) => v.people.length === 0 && v.status === "scheduled").length;
 
@@ -61,14 +61,17 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
           <EmptyState icon={CalendarX2} title="No visits this day">Visits booked for this day, including recurring ones, appear here.</EmptyState>
         </div>
       ) : (
-        <>
-          <div className="hidden md:block">
-            <DayBoard date={date} lanes={lanes} mode={mode} now={date === today ? now : null} />
-          </div>
-          <div className="md:hidden">
-            <VisitList lanes={lanes} mode={mode} />
-          </div>
-        </>
+        <ScheduleClient
+          key={`${date}:${mode}:${dataKey}`}
+          date={date}
+          mode={mode}
+          now={date === today ? now.toISOString() : null}
+          initialVisits={visits}
+          crews={crews}
+          roster={roster}
+          crewMembers={crewMembers}
+          isAdmin={profile.role === "owner" || profile.role === "admin"}
+        />
       )}
     </div>
   );

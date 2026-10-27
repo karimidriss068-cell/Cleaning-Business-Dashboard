@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildLanes, shortName, type BoardVisit } from "./schedule-lanes";
 
 const visit = (id: string, over: Partial<BoardVisit> = {}): BoardVisit => ({
-  id, start: `2026-10-26T1${id}:00:00Z`, end: `2026-10-26T1${id}:30:00Z`, status: "scheduled", clientName: "Client", serviceName: "Standard",
+  id, updatedAt: "2026-10-25T00:00:00Z", start: `2026-10-26T1${id}:00:00Z`, end: `2026-10-26T1${id}:30:00Z`, status: "scheduled", clientName: "Client", serviceName: "Standard",
   borough: "brooklyn", priceCents: 10000, crewId: null, crewName: null, people: [], ...over,
 });
 const crews = [{ id: "c1", name: "Crew A" }, { id: "c2", name: "Crew B" }];
