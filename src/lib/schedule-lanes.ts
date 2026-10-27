@@ -1,3 +1,5 @@
+import { addDays, nyDateString, nyWeekStart } from "@/lib/format";
+
 export type BoardVisit = {
   id: string;
   /** Concurrency token for reassign_job (the visit's updated_at). */
@@ -56,4 +58,22 @@ export function buildLanes(
 export function shortName(name: string): string {
   const [first, ...rest] = name.trim().split(/\s+/);
   return rest.length ? `${first} ${rest[rest.length - 1][0]}.` : first;
+}
+
+/** Monday through Sunday (NY calendar dates) of the week containing a date. */
+export function weekOf(date: string): string[] {
+  const monday = nyWeekStart(date);
+  return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+}
+
+/** Visits whose New York start date is `date`, in time order. */
+export function visitsOnDate(visits: BoardVisit[], date: string): BoardVisit[] {
+  return visits.filter((v) => nyDateString(v.start) === date).sort((a, b) => a.start.localeCompare(b.start));
+}
+
+/** Week-view drop ids look like "<laneId>::<date>". */
+export const cellId = (laneId: string, date: string) => `${laneId}::${date}`;
+export function parseCellId(id: string): { laneId: string; date: string } | null {
+  const m = /^(.+)::(\d{4}-\d{2}-\d{2})$/.exec(id);
+  return m ? { laneId: m[1], date: m[2] } : null;
 }

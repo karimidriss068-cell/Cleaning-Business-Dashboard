@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildLanes, shortName, type BoardVisit } from "./schedule-lanes";
+import { buildLanes, cellId, parseCellId, shortName, visitsOnDate, weekOf, type BoardVisit } from "./schedule-lanes";
 
 const visit = (id: string, over: Partial<BoardVisit> = {}): BoardVisit => ({
   id, updatedAt: "2026-10-25T00:00:00Z", start: `2026-10-26T1${id}:00:00Z`, end: `2026-10-26T1${id}:30:00Z`, status: "scheduled", clientName: "Client", serviceName: "Standard",
@@ -36,5 +36,26 @@ describe("buildLanes", () => {
     expect(shortName("Ana Ruiz")).toBe("Ana R.");
     expect(shortName("Luis")).toBe("Luis");
     expect(shortName("Maria de la Cruz")).toBe("Maria C.");
+  });
+});
+
+describe("week helpers", () => {
+  it("returns Monday to Sunday around any date, across a DST change", () => {
+    expect(weekOf("2026-10-28")).toEqual(["2026-10-26", "2026-10-27", "2026-10-28", "2026-10-29", "2026-10-30", "2026-10-31", "2026-11-01"]);
+    expect(weekOf("2026-10-26")[0]).toBe("2026-10-26");
+    expect(weekOf("2026-11-01")[0]).toBe("2026-10-26"); // Sunday belongs to the week before
+  });
+
+  it("groups visits by New York date, not UTC", () => {
+    const late = visit("1", { start: "2026-10-28T02:30:00Z" }); // 10:30 PM Oct 27 in NY
+    const morning = visit("2", { start: "2026-10-28T13:00:00Z" });
+    expect(visitsOnDate([morning, late], "2026-10-27").map((v) => v.id)).toEqual(["1"]);
+    expect(visitsOnDate([morning, late], "2026-10-28").map((v) => v.id)).toEqual(["2"]);
+  });
+
+  it("round-trips week-cell ids and rejects lane ids", () => {
+    expect(parseCellId(cellId("5eed0000-0012-4000-8000-000000000001", "2026-10-27"))).toEqual({ laneId: "5eed0000-0012-4000-8000-000000000001", date: "2026-10-27" });
+    expect(parseCellId("unassigned::2026-10-27")).toEqual({ laneId: "unassigned", date: "2026-10-27" });
+    expect(parseCellId("5eed0000-0012-4000-8000-000000000001")).toBeNull();
   });
 });

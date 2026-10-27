@@ -3,8 +3,9 @@ import { redirect } from "next/navigation";
 import { CalendarX2, UserX } from "lucide-react";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { nyToday } from "@/lib/format";
-import { loadRange } from "@/lib/schedule-data";
+import { addDays, nyDateString, nyToday } from "@/lib/format";
+import { loadRange, loadUnassigned } from "@/lib/schedule-data";
+import { weekOf } from "@/lib/schedule-lanes";
 import { PageHeader } from "@/components/shell/page-header";
 import { EmptyState } from "@/components/system/empty-state";
 import { BoardToolbar } from "@/components/schedule/board-toolbar";
@@ -16,6 +17,7 @@ export const dynamic = "force-dynamic";
 const paramsSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().catch(undefined),
   view: z.enum(["crew", "person"]).optional().catch(undefined),
+  range: z.enum(["day", "week"]).optional().catch(undefined),
 });
 
 export default async function SchedulePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
@@ -41,10 +43,21 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
   const today = nyToday(now);
   const date = raw.date && !Number.isNaN(Date.parse(`${raw.date}T00:00:00Z`)) ? raw.date : today;
   const mode = raw.view ?? "crew";
+  const range = raw.range ?? "day";
+  const days = range === "week" ? weekOf(date) : [date];
 
-  const { visits, crews, roster, crewMembers } = await loadRange(supabase, date, date);
+  // Load the board's range plus the tray's window (today + 6 days), so conflict
+  // checks see every day a visit could land on; lanes only show the board's range.
+  const loadFrom = days[0] < today ? days[0] : today;
+  const trayEnd = addDays(today, 6);
+  const loadTo = days[days.length - 1] > trayEnd ? days[days.length - 1] : trayEnd;
+  const [{ visits: pool, crews, roster, crewMembers }, tray] = await Promise.all([loadRange(supabase, loadFrom, loadTo), loadUnassigned(supabase, today)]);
+  const visits = pool.filter((v) => {
+    const d = nyDateString(v.start);
+    return d >= days[0] && d <= days[days.length - 1];
+  });
   // Remount the interactive board only when the server data really changed.
-  const dataKey = visits.reduce((h, v) => (h * 31 + [...`${v.id}${v.updatedAt}`].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7)) | 0, 7).toString(36);
+  const dataKey = [...pool, ...tray].reduce((h, v) => (h * 31 + [...`${v.id}${v.updatedAt}`].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7)) | 0, 7).toString(36);
   const live = visits.filter((v) => v.status !== "cancelled");
   const unassigned = live.filter((v) => v.people.length === 0 && v.status === "scheduled").length;
 
@@ -53,20 +66,24 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
       <PageHeader
         eyebrow="Dispatch"
         title="Schedule"
-        description={`${live.length} visit${live.length === 1 ? "" : "s"} · ${live.filter((v) => v.status === "completed").length} done · ${unassigned} without a cleaner`}
+        description={`${live.length} visit${live.length === 1 ? "" : "s"} ${range === "week" ? "this week" : "today"} · ${live.filter((v) => v.status === "completed").length} done · ${unassigned} without a cleaner`}
       />
-      <BoardToolbar date={date} today={today} mode={mode} />
-      {visits.length === 0 ? (
+      <BoardToolbar date={date} today={today} mode={mode} range={range} />
+      {visits.length === 0 && tray.length === 0 ? (
         <div className="rounded-md border border-hairline bg-surface surface-layer shadow-e1">
-          <EmptyState icon={CalendarX2} title="No visits this day">Visits booked for this day, including recurring ones, appear here.</EmptyState>
+          <EmptyState icon={CalendarX2} title={range === "week" ? "No visits this week" : "No visits this day"}>Visits booked for this period, including recurring ones, appear here.</EmptyState>
         </div>
       ) : (
         <ScheduleClient
-          key={`${date}:${mode}:${dataKey}`}
+          key={`${date}:${mode}:${range}:${dataKey}`}
           date={date}
           mode={mode}
-          now={date === today ? now.toISOString() : null}
-          initialVisits={visits}
+          range={range}
+          days={days}
+          today={today}
+          now={range === "day" && date === today ? now.toISOString() : null}
+          initialVisits={pool}
+          initialTray={tray}
           crews={crews}
           roster={roster}
           crewMembers={crewMembers}
