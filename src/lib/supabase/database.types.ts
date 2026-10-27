@@ -2104,6 +2104,18 @@ export type Database = {
           zip: string
         }[]
       }
+      reassign_job: {
+        Args: {
+          p_crew_id: string
+          p_end: string
+          p_expected_updated_at: string
+          p_job_id: string
+          p_override_reason?: string
+          p_start: string
+          p_subcontractor_ids: string[]
+        }
+        Returns: string
+      }
       set_integration_secret: {
         Args: { p_provider: string; p_secret: string }
         Returns: undefined
