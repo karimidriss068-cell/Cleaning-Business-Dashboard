@@ -756,6 +756,93 @@ export type Database = {
           },
         ]
       }
+      job_checklist_items: {
+        Row: {
+          created_at: string
+          done_at: string | null
+          done_by: string | null
+          id: string
+          job_id: string
+          label: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          done_at?: string | null
+          done_by?: string | null
+          id?: string
+          job_id: string
+          label: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          done_at?: string | null
+          done_by?: string | null
+          id?: string
+          job_id?: string
+          label?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_checklist_items_done_by_fkey"
+            columns: ["done_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "job_checklist_items_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_cleaner_notes: {
+        Row: {
+          created_at: string
+          job_id: string
+          note: string
+          subcontractor_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          job_id: string
+          note: string
+          subcontractor_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          job_id?: string
+          note?: string
+          subcontractor_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_cleaner_notes_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_cleaner_notes_subcontractor_id_fkey"
+            columns: ["subcontractor_id"]
+            isOneToOne: false
+            referencedRelation: "subcontractors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_photos: {
         Row: {
           created_at: string
@@ -1732,6 +1819,41 @@ export type Database = {
           },
         ]
       }
+      service_checklist_items: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          service_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          service_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          service_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_checklist_items_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       services: {
         Row: {
           base_price_cents: number
@@ -2084,6 +2206,37 @@ export type Database = {
         }
       }
       complete_job: { Args: { p_job_id: string }; Returns: undefined }
+      crew_me: {
+        Args: never
+        Returns: {
+          coi_expires_on: string
+          display_name: string
+        }[]
+      }
+      crew_visit_detail: { Args: { p_job_id: string }; Returns: Json }
+      crew_visits: {
+        Args: { p_from?: string; p_to?: string }
+        Returns: {
+          access_instructions: string
+          address_line1: string
+          address_line2: string
+          borough: Database["public"]["Enums"]["borough"]
+          checklist_done: number
+          checklist_total: number
+          client_name: string
+          crew_notes: string
+          job_id: string
+          my_pay_cents: number
+          pay_pending: boolean
+          photo_count: number
+          scheduled_end: string
+          scheduled_start: string
+          service_name: string
+          status: Database["public"]["Enums"]["job_status"]
+          teammates: string[]
+          zip: string
+        }[]
+      }
       demo_data_present: { Args: never; Returns: boolean }
       get_integration_secret: { Args: { p_provider: string }; Returns: string }
       my_jobs: {
@@ -2115,6 +2268,10 @@ export type Database = {
           p_subcontractor_ids: string[]
         }
         Returns: string
+      }
+      set_checklist_item: {
+        Args: { p_done: boolean; p_item_id: string }
+        Returns: undefined
       }
       set_integration_secret: {
         Args: { p_provider: string; p_secret: string }
