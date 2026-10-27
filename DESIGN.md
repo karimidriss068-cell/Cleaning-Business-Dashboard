@@ -182,6 +182,15 @@ The demo-data banner ("Demo data loaded, purge before launch") shows under the t
 | **Drawer / modal** | Glass over a blurred scrim. Drawer is a right sheet (440px) or a bottom sheet on phones; modal is 480px max, for confirmations. |
 | **Toast** | Glass with status tones, above the tab bar on phones. |
 
+## 10b. Crew screens (built)
+
+The crew view (`/my-jobs`, `/my-jobs/[id]`) uses crew mode everywhere:
+- 17px body text, 19–20px for service and client, 28–34px display times; secondary text uses `text-crew-muted` (AAA, 7:1+).
+- Every tap target is at least 48px; primary actions (Open visit, Mark visit complete, Add photo) are 56px and full width; checklist rows are 56px with a 28px check.
+- Visit cards use the large radius (`lg`) with a layered surface; the Complete panel pins above the tab bar only while there's something to act on. When it's too early it shows a compact warning in the flow ("Too early to complete. You can complete this visit from …") and a button that explains on tap.
+- The access note sits in the `highlight` panel; the insurance reminder is a full-width banner (warning within 30 days or none on file, danger once expired); status uses the same pills as the office.
+- Phones are the primary target (bottom tab bar: Jobs, Settings, More); on desktop the same single column is centered at 576px.
+
 ## 11. Accessibility
 
 - Contrast as in section 3, enforced by tests; check every new token pair before use.

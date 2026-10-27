@@ -59,6 +59,12 @@ On the server, check the user with `auth.getUser()`, not `getSession()`. The pro
 - Comments explain *why*. Match the existing comment density.
 - User-facing copy speaks cleaning-business language. Remove med-spa and ad-agency wording when you touch a screen.
 
+## Crew (subcontractor) rules
+
+- A cleaner never reads office tables. They get only the `crew_*` functions and `my_jobs`/`complete_job` (definer bodies in the `private` schema behind invoker wrappers), their own `job_cleaner_notes`, and photos on visits they're assigned to. **They must never see billing, CRM data (contacts, phones, emails, last names), other cleaners' pay, or payouts.**
+- New crew features follow the same pattern: add the data to a `crew_*` function that returns only the caller's own rows and columns, extend `supabase/tests/12_crew_view.sql` and `e2e/crew.mjs` to prove what stays hidden, and never add a crew-readable policy on an office table.
+- Office pages live in `src/app/(app)/(office)/`, crew pages in `(crew)/`; the group layouts redirect the wrong role. Crew screens use the crew sizes in DESIGN.md (17px body, 48px+ targets, 56px primary actions, `text-crew-muted` for AAA contrast).
+
 ## UI rules (Keystone Clean design system)
 
 - **Read `DESIGN.md` before building UI.** All values come from `src/config/brand.ts`, the only place colors, fonts, effects and scales are defined.
@@ -91,7 +97,8 @@ npm run build
 ```
 
 - Unit tests live next to the code (`src/lib/format.test.ts`). Anything touching dates must pass under any machine time zone; CI also runs the suite with `TZ=Pacific/Kiritimati`.
-- Database behavior (RLS, triggers, functions) is tested by the rolled-back SQL files in `supabase/tests/`.
+- Database behavior (RLS, triggers, functions) is tested by the rolled-back SQL files in `supabase/tests/`. Trial-run a new migration together with its test inside `begin; … rollback;` before applying it.
+- Browser end-to-end for the crew view: `npm run e2e:crew` (see `e2e/crew.mjs`) signs in as a real cleaner on a phone viewport against a running build and the demo data. Run it after any change to crew screens, `crew_*` functions or crew RLS. It restores everything it changes.
 - Every new table ships with RLS tests, and every webhook ships with tests covering a bad signature, a duplicate event, and invalid input.
 
 ## Adding a migration (new cleaning project only)
