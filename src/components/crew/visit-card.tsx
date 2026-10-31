@@ -28,7 +28,7 @@ export function VisitCard({ visit: v, index = 0, compact = false }: { visit: Cre
       <p className="mt-3 text-[19px] font-medium text-ink">{v.service_name}</p>
       <p className="text-[17px] text-crew-muted">{v.client_name}</p>
 
-      <a href={mapsUrl(v)} target="_blank" rel="noopener noreferrer" className="mt-3 flex min-h-12 items-center gap-3 rounded-md border border-hairline bg-surface-raised/60 px-4 py-2 text-[17px] text-brand-text">
+      <a href={mapsUrl(v)} target="_blank" rel="noopener noreferrer" className="mt-3 flex min-h-12 items-center gap-3 rounded-md border border-hairline bg-surface-raised/60 px-4 py-2 text-[17px] text-ink underline underline-offset-4">
         <MapPin className="size-5 shrink-0" aria-hidden />
         <span className="min-w-0 flex-1">
           <span className="block text-ink">{addressLine(v)}</span>

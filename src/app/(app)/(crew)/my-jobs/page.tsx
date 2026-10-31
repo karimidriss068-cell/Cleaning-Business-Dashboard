@@ -40,7 +40,7 @@ export default async function MyJobsPage() {
   return (
     <div className="mx-auto w-full max-w-xl space-y-6 px-4 py-6">
       <header className="kc-enter">
-        <p className="text-[13px] font-semibold tracking-[0.14em] text-brand-text uppercase">{formatNyDate(now, "weekday")}</p>
+        <p className="text-[13px] font-semibold tracking-[0.14em] text-crew-muted uppercase">{formatNyDate(now, "weekday")}</p>
         <h1 className="mt-1 font-heading text-[34px] leading-10 font-semibold tracking-[-0.01em] text-ink">
           {greeting(now)}, {firstName}
         </h1>
@@ -54,7 +54,7 @@ export default async function MyJobsPage() {
       <section aria-label="Today" className="space-y-4">
         <h2 className="sr-only">Today</h2>
         {todays.length === 0 ? (
-          <div className="rounded-lg border glass-solid shadow-e1">
+          <div className="rounded-lg border glass-solid shadow-e1 [&_p]:text-crew-muted">
             <EmptyState icon={CalendarCheck} title="No visits today">Enjoy the day off. Your next visits are below.</EmptyState>
           </div>
         ) : (

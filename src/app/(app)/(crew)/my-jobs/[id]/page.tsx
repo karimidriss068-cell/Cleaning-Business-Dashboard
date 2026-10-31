@@ -38,7 +38,7 @@ export default async function VisitPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="mx-auto w-full max-w-xl space-y-5 px-4 pt-4 pb-6">
-      <Link href="/my-jobs" className="flex min-h-12 w-fit items-center gap-2 text-[17px] text-brand-text">
+      <Link href="/my-jobs" className="flex min-h-12 w-fit items-center gap-2 text-[17px] text-ink underline underline-offset-4">
         <ArrowLeft className="size-5" aria-hidden /> My jobs
       </Link>
 

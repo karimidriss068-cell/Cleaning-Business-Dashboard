@@ -39,7 +39,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="relative flex min-h-dvh">
-      <Ambient />
+      <Ambient quiet={role === "subcontractor"} />
       <Sidebar role={role} userName={userName} roleLabel={roleLabel} />
       <div className="relative z-10 flex min-w-0 flex-1 flex-col">
         <MobileTopBar />

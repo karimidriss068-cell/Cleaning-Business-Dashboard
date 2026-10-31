@@ -127,6 +127,18 @@ describe.each(combos)("%s / %s contrast", (direction, theme) => {
     }
   });
 
+  it("keeps text outside panels readable on the aurora at each blob's peak", () => {
+    // Headings, eyebrows and descriptions sit on the page itself, so they sit
+    // directly on the aurora. The blobs are far apart, so one at a time.
+    const aurora = glassSpec.aurora[theme];
+    const peaks = [p.canvas, over(p.accent, p.canvas, aurora.a1), over(p.accent2, p.canvas, aurora.a2), over(p.accent, p.canvas, aurora.a3)];
+    for (const backdrop of peaks) {
+      for (const [name, fg] of [["text", p.text], ["textMuted", p.textMuted], ["accentText", p.accentText]] as const) {
+        expect(contrast(fg, backdrop), `${name} ${fg} on ${backdrop}`).toBeGreaterThanOrEqual(TEXT + HEADROOM);
+      }
+    }
+  });
+
   it("keeps text readable on flat tiles (no backdrop filter) over the raw backdrops", () => {
     const aurora = glassSpec.aurora[theme];
     const o12 = over(p.accent, over(p.accent2, p.canvas, aurora.a2), aurora.a1);
