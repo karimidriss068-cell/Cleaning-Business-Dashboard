@@ -262,6 +262,7 @@ export type Database = {
           borough: Database["public"]["Enums"]["borough"] | null
           city: string | null
           created_at: string
+          customer_since: string | null
           email: string | null
           first_name: string
           ghl_contact_id: string | null
@@ -288,6 +289,7 @@ export type Database = {
           borough?: Database["public"]["Enums"]["borough"] | null
           city?: string | null
           created_at?: string
+          customer_since?: string | null
           email?: string | null
           first_name: string
           ghl_contact_id?: string | null
@@ -314,6 +316,7 @@ export type Database = {
           borough?: Database["public"]["Enums"]["borough"] | null
           city?: string | null
           created_at?: string
+          customer_since?: string | null
           email?: string | null
           first_name?: string
           ghl_contact_id?: string | null
@@ -1121,54 +1124,72 @@ export type Database = {
           bathrooms: number | null
           bedrooms: number | null
           campaign_id: string | null
+          closed_at: string | null
           contact_id: string
           created_at: string
+          external_id: string | null
           first_response_at: string | null
           ghl_opportunity_id: string | null
           id: string
           lost_reason: string | null
+          next_follow_up_on: string | null
           notes: string | null
+          owner_id: string | null
           requested_date: string | null
           service_id: string | null
+          service_type: Database["public"]["Enums"]["lead_service_type"] | null
           source: string | null
           sqft: number | null
           stage: Database["public"]["Enums"]["lead_stage"]
+          stage_changed_at: string
           updated_at: string
         }
         Insert: {
           bathrooms?: number | null
           bedrooms?: number | null
           campaign_id?: string | null
+          closed_at?: string | null
           contact_id: string
           created_at?: string
+          external_id?: string | null
           first_response_at?: string | null
           ghl_opportunity_id?: string | null
           id?: string
           lost_reason?: string | null
+          next_follow_up_on?: string | null
           notes?: string | null
+          owner_id?: string | null
           requested_date?: string | null
           service_id?: string | null
+          service_type?: Database["public"]["Enums"]["lead_service_type"] | null
           source?: string | null
           sqft?: number | null
           stage?: Database["public"]["Enums"]["lead_stage"]
+          stage_changed_at?: string
           updated_at?: string
         }
         Update: {
           bathrooms?: number | null
           bedrooms?: number | null
           campaign_id?: string | null
+          closed_at?: string | null
           contact_id?: string
           created_at?: string
+          external_id?: string | null
           first_response_at?: string | null
           ghl_opportunity_id?: string | null
           id?: string
           lost_reason?: string | null
+          next_follow_up_on?: string | null
           notes?: string | null
+          owner_id?: string | null
           requested_date?: string | null
           service_id?: string | null
+          service_type?: Database["public"]["Enums"]["lead_service_type"] | null
           source?: string | null
           sqft?: number | null
           stage?: Database["public"]["Enums"]["lead_stage"]
+          stage_changed_at?: string
           updated_at?: string
         }
         Relationships: [
@@ -1185,6 +1206,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "contacts"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "leads_service_id_fkey"
@@ -2206,6 +2234,33 @@ export type Database = {
         }
       }
       complete_job: { Args: { p_job_id: string }; Returns: undefined }
+      convert_lead: {
+        Args: {
+          p_company_name?: string
+          p_expected_updated_at: string
+          p_lead_id: string
+        }
+        Returns: Json
+      }
+      create_lead: {
+        Args: {
+          p_address_line1?: string
+          p_allow_duplicate?: boolean
+          p_borough?: Database["public"]["Enums"]["borough"]
+          p_contact_id?: string
+          p_email: string
+          p_first_name: string
+          p_last_name: string
+          p_next_follow_up_on?: string
+          p_notes?: string
+          p_owner_id?: string
+          p_phone: string
+          p_service_type: Database["public"]["Enums"]["lead_service_type"]
+          p_source: string
+          p_zip?: string
+        }
+        Returns: Json
+      }
       crew_me: {
         Args: never
         Returns: {
@@ -2238,7 +2293,39 @@ export type Database = {
         }[]
       }
       demo_data_present: { Args: never; Returns: boolean }
+      find_lead_duplicates: {
+        Args: { p_email: string; p_exclude_contact?: string; p_phone: string }
+        Returns: {
+          contact_id: string
+          email: string
+          matched: string[]
+          name: string
+          open_lead_id: string
+          open_lead_stage: Database["public"]["Enums"]["lead_stage"]
+          phone: string
+        }[]
+      }
       get_integration_secret: { Args: { p_provider: string }; Returns: string }
+      lead_conversion_by_source: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          booked: number
+          conversion_bps: number
+          leads: number
+          lost: number
+          open: number
+          source: string
+        }[]
+      }
+      move_lead_stage: {
+        Args: {
+          p_expected_updated_at: string
+          p_lead_id: string
+          p_lost_reason?: string
+          p_stage: Database["public"]["Enums"]["lead_stage"]
+        }
+        Returns: string
+      }
       my_jobs: {
         Args: { p_from?: string; p_to?: string }
         Returns: {
@@ -2276,6 +2363,14 @@ export type Database = {
       set_integration_secret: {
         Args: { p_provider: string; p_secret: string }
         Returns: undefined
+      }
+      update_lead: {
+        Args: {
+          p_expected_updated_at: string
+          p_lead_id: string
+          p_patch: Json
+        }
+        Returns: string
       }
     }
     Enums: {
@@ -2326,6 +2421,7 @@ export type Database = {
         | "completed"
         | "cancelled"
         | "no_access"
+      lead_service_type: "residential" | "recurring" | "move_out" | "commercial"
       lead_stage: "new" | "contacted" | "quoted" | "won" | "lost"
       marketing_platform:
         | "meta"
@@ -2528,6 +2624,7 @@ export const Constants = {
         "cancelled",
         "no_access",
       ],
+      lead_service_type: ["residential", "recurring", "move_out", "commercial"],
       lead_stage: ["new", "contacted", "quoted", "won", "lost"],
       marketing_platform: [
         "meta",
