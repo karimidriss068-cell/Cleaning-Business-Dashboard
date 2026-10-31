@@ -65,6 +65,15 @@ On the server, check the user with `auth.getUser()`, not `getSession()`. The pro
 - New crew features follow the same pattern: add the data to a `crew_*` function that returns only the caller's own rows and columns, extend `supabase/tests/12_crew_view.sql` and `e2e/crew.mjs` to prove what stays hidden, and never add a crew-readable policy on an office table.
 - Office pages live in `src/app/(app)/(office)/`, crew pages in `(crew)/`; the group layouts redirect the wrong role. Crew screens use the crew sizes in DESIGN.md (17px body, 48px+ targets, 56px primary actions, `text-crew-muted` for AAA contrast).
 
+## Leads & Pipeline rules
+
+- Stored stages stay `new, contacted, quoted, won, lost`; the app says New, Contacted, Quote sent, Booked, Lost (`stageLabel` in `src/lib/leads.ts`). Sources and service types are fixed lists (`leads_source_check`, `lead_service_type`).
+- Every change goes through a function in one transaction that writes the lead's timeline: `create_lead`, `move_lead_stage`, `update_lead`, `convert_lead` (customer + draft quote, idempotent), plus `find_lead_duplicates` and `lead_conversion_by_source`. Do not update `leads` stages or insert leads from app code directly. Error codes: KC001 stale, KC004 not allowed, KC005 bad input, KC010 duplicate contact.
+- Phones are stored E.164 (`+1XXXXXXXXXX`, `normalizeUsPhone` mirrors `private.normalize_us_phone`); emails lowercase. Duplicates are matched on those.
+- Office roles only (RLS + `(office)` route group); cleaners get nothing, proven in `supabase/tests/13_leads_pipeline.sql` and `e2e/leads.mjs`.
+- `leads.external_id` is reserved for a later CRM sync; nothing writes it yet. Do not add GHL sync without being asked.
+- The board holds its own state after load, so lead actions do not `revalidatePath("/leads")` (it would remount the board and close an open lead); only `createLead` does.
+
 ## UI rules (Keystone Clean design system)
 
 - **Read `DESIGN.md` before building UI.** All values come from `src/config/brand.ts`, the only place colors, fonts, effects and scales are defined.
@@ -98,6 +107,7 @@ npm run build
 
 - Unit tests live next to the code (`src/lib/format.test.ts`). Anything touching dates must pass under any machine time zone; CI also runs the suite with `TZ=Pacific/Kiritimati`.
 - Database behavior (RLS, triggers, functions) is tested by the rolled-back SQL files in `supabase/tests/`. Trial-run a new migration together with its test inside `begin; … rollback;` before applying it.
+- Browser end-to-end for leads: `npm run e2e:leads` (see `e2e/leads.mjs`; needs `STAFF_EMAIL`/`STAFF_PASSWORD` for an office login and optionally `CREW_EMAIL`/`CREW_PASSWORD`). Covers drag, Lost reason, Move sheet, quick add, duplicate warning, convert and the cleaner lockout, then restores everything.
 - Browser end-to-end for the crew view: `npm run e2e:crew` (see `e2e/crew.mjs`) signs in as a real cleaner on a phone viewport against a running build and the demo data. Run it after any change to crew screens, `crew_*` functions or crew RLS. It restores everything it changes.
 - Every new table ships with RLS tests, and every webhook ships with tests covering a bad signature, a duplicate event, and invalid input.
 

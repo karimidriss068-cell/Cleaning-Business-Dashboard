@@ -191,6 +191,13 @@ The crew view (`/my-jobs`, `/my-jobs/[id]`) uses crew mode everywhere:
 - The access note sits in the `highlight` panel; the insurance reminder is a full-width banner (warning within 30 days or none on file, danger once expired); status uses the same pills as the office.
 - Phones are the primary target (bottom tab bar: Jobs, Settings, More); on desktop the same single column is centered at 576px.
 
+## 10c. Leads & Pipeline (built)
+
+- `/leads`: five stage columns on desktop (New, Contacted, Quote sent, Booked, Lost) in the stage tones from `status.ts`; cards drag between columns, with the same optimistic update and rollback as the dispatch board. Every card has a **Move…** button (44px tall on phones) that opens the stage sheet; dropping on Lost asks why first. Phones get the same stages as a grouped list, no dragging.
+- The lead record is a Drawer (right sheet on desktop, bottom sheet on phones): stage and follow-up pills, a Convert to customer panel, editable details, and the activity timeline with a call-note / message / note entry. Overdue follow-ups use the danger pill, due-today uses warning; nothing relies on color alone.
+- Quick add is a Drawer opened by the + button or Cmd+K "New lead"; duplicate phone/email shows a warning panel and requires an explicit "Add as a new lead anyway".
+- All of it uses tokens only and is checked in every direction and theme at 390px and desktop.
+
 ## 11. Accessibility
 
 - Contrast as in section 3, enforced by tests; check every new token pair before use.
