@@ -37,9 +37,15 @@ function glassTokens(direction: DirectionId, theme: ThemeName): string[] {
   const out = [
     `--glass-border:color-mix(in oklab,var(--kc-text) ${glassSpec.borderMix[theme] * 100}%,transparent)`,
     `--glass-highlight:${glassSpec.highlight[theme]}`,
+    `--kc-glass-a-flat:${glassSpec.flatAlpha[theme]}`,
+    `--kc-glass-brightness:${glassSpec.brightness[theme]}`,
     `--glass-sheen:rgb(255 255 255 / ${glassSpec.sheen[theme]})`,
     `--kc-aurora-1:rgb(${rgb(p.accent)} / ${aurora.a1})`,
     `--kc-aurora-2:rgb(${rgb(p.accent2)} / ${aurora.a2})`,
+    `--kc-aurora-3:rgb(${rgb(p.accent)} / ${aurora.a3})`,
+    `--glass-highlight-side:${glassSpec.highlightSide[theme]}`,
+    `--glass-border-hover:color-mix(in oklab,var(--kc-text) ${glassSpec.borderHoverMix[theme] * 100}%,transparent)`,
+    `--glass-glow:rgb(${rgb(p.accent)} / ${glassSpec.innerGlow[theme]})`,
   ];
   for (const level of glassLevels) {
     out.push(`--kc-glass-a-${level}:${glassSpec.alpha[theme][level]}`, `--shadow-glass-${level}:${glassSpec.shadow[theme][level]}`);

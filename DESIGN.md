@@ -103,18 +103,20 @@ The same roles exist in every direction and theme:
 
 | Level | Used for | Opacity (dark / light) | Blur |
 |---|---|---|---|
-| card | sections, tiles, tables, cards | 0.62 / 0.70 | 14px |
-| popover | menus, selects, toasts, chart tooltips | 0.88 / 0.90 | 22px |
-| modal | dialogs, drawers, the Cmd+K palette, login | 0.92 / 0.94 | 26px |
-| sidebar | sidebar, top bar, tab bar | 0.70 / 0.78 | 20px |
-| flat | repeated tiles (lead cards, calendar cards): same look, no blur | card | none |
+| card | sections, tiles, tables, cards | 0.46 / 0.46 | 14px |
+| popover | menus, selects, toasts, chart tooltips | 0.80 / 0.84 | 22px |
+| modal | dialogs, drawers, the Cmd+K palette, login | 0.85 / 0.90 | 26px |
+| sidebar | sidebar, top bar, tab bar | 0.50 / 0.52 | 20px |
+| flat | repeated tiles (lead cards, calendar cards): same look, no blur | 0.90 / 0.88 | none |
 | solid | crew screens and dense boards: opaque | 1 | none |
 
 Tokens: `--kc-glass-a-<level>`, `--kc-glass-blur-<level>`, `--glass-border`, `--glass-highlight`, `--glass-sheen`, `--shadow-glass-<level>`, `--kc-aurora-1/2`. Components use `<GlassPanel level>` (`Card` is one); chrome with its own element uses the `glass-<level>` utilities.
 
-**Aurora.** Two soft lights in the direction's `accent` and `accent2` plus the fine grid, behind everything. They drift very slowly on wide screens only.
+**Smoked and frosted glass.** The backdrop behind glass is dimmed in dark (`brightness(0.35)`) and lifted in light (`1.2`), so the aurora shows through as colour while text keeps its contrast. A diagonal sheen crosses the top of each panel and slides on hover while the edge brightens; edges carry a bright top and left highlight and a soft inner glow.
 
-**Contrast is law.** `brand.test.ts` blends every glass level over the worst-case backdrops (canvas, either aurora light at its peak, a raised surface, the highlight surface), puts the white sheen on top, and requires text, muted text and accent text to pass 4.5:1 plus headroom in all 6 combinations. Crew text is AAA on the solid surface.
+**Aurora.** Three large soft blobs (accent, accent2, accent) over the fine grid, behind everything, each drifting on its own slow CSS path on wide screens; static on phones and under reduced motion.
+
+**Contrast is law.** `brand.test.ts` blends every glass level over the worst-case backdrops (canvas, each blob at its peak, all three overlapping, a raised surface, the highlight surface), applies the backdrop brightness, tests with and without the sheen, and requires text, muted text and accent text to pass 4.5:1 plus headroom in all 6 combinations. Crew text is AAA on the solid surface.
 
 **Performance.** Only large panels blur (cards, sidebar, popovers, modals); list tiles use `flat`. Phones (under 768px) raise the surface opacity floor to 0.92 and halve the blur; `prefers-reduced-transparency` makes surfaces solid with no blur; browsers without `backdrop-filter` get the solid surface.
 

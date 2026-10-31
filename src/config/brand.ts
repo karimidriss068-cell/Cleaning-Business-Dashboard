@@ -391,18 +391,27 @@ export type GlassLevel = "card" | "popover" | "modal" | "sidebar";
 export const glassLevels: GlassLevel[] = ["card", "popover", "modal", "sidebar"];
 export const glassSpec = {
   alpha: {
-    dark: { card: 0.62, popover: 0.88, modal: 0.92, sidebar: 0.7 },
-    light: { card: 0.7, popover: 0.9, modal: 0.94, sidebar: 0.78 },
+    dark: { card: 0.46, popover: 0.8, modal: 0.85, sidebar: 0.5 },
+    light: { card: 0.46, popover: 0.84, modal: 0.9, sidebar: 0.52 },
   } satisfies Record<ThemeName, Record<GlassLevel, number>>,
   blur: { card: 14, popover: 22, modal: 26, sidebar: 20 } satisfies Record<GlassLevel, number>,
   /** Share of the text color mixed into the 1px glass border. */
-  borderMix: { dark: 0.14, light: 0.1 } satisfies Record<ThemeName, number>,
+  borderMix: { dark: 0.2, light: 0.13 } satisfies Record<ThemeName, number>,
   /** Soft light on a panel's top edge (inset). */
-  highlight: { dark: "rgb(255 255 255 / 0.12)", light: "rgb(255 255 255 / 0.9)" } satisfies Record<ThemeName, string>,
+  highlight: { dark: "rgb(255 255 255 / 0.26)", light: "rgb(255 255 255 / 0.95)" } satisfies Record<ThemeName, string>,
+  /** Left-edge light and the brighter border shown on hover. */
+  highlightSide: { dark: "rgb(255 255 255 / 0.12)", light: "rgb(255 255 255 / 0.7)" } satisfies Record<ThemeName, string>,
+  borderHoverMix: { dark: 0.3, light: 0.2 } satisfies Record<ThemeName, number>,
+  /** Soft accent glow inside the panel edge, as opacity of the accent. */
+  innerGlow: { dark: 0.12, light: 0.07 } satisfies Record<ThemeName, number>,
   /** White glossy sheen laid over the panel's top-left corner, as opacity. */
-  sheen: { dark: 0.05, light: 0.5 } satisfies Record<ThemeName, number>,
-  /** Peak opacity of the two aurora lights (accent, accent2) behind the glass. */
-  aurora: { dark: { a1: 0.16, a2: 0.1 }, light: { a1: 0.11, a2: 0.07 } } satisfies Record<ThemeName, { a1: number; a2: number }>,
+  sheen: { dark: 0.07, light: 0.5 } satisfies Record<ThemeName, number>,
+  /** Flat tiles have no backdrop filter (they repeat in lists), so they are more opaque instead. */
+  flatAlpha: { dark: 0.9, light: 0.88 } satisfies Record<ThemeName, number>,
+  /** Backdrop brightness behind glass: dark glass is smoked (the aurora shows through dimmed), light glass is frosted (washed lighter). */
+  brightness: { dark: 0.35, light: 1.2 } satisfies Record<ThemeName, number>,
+  /** Peak opacity of the three aurora blobs (accent, accent2, accent) behind the glass. */
+  aurora: { dark: { a1: 0.34, a2: 0.26, a3: 0.2 }, light: { a1: 0.22, a2: 0.17, a3: 0.12 } } satisfies Record<ThemeName, { a1: number; a2: number; a3: number }>,
   /** Minimum surface opacity on phones / reduced effects (cheaper, more solid). */
   phoneFloor: 0.92,
   /** Blur multiplier on phones; reduced transparency uses solid surfaces and no blur. */

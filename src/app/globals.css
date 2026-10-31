@@ -165,34 +165,34 @@
   @apply kc-glass;
   --glass-level-a: var(--kc-glass-a-card);
   --glass-level-blur: var(--kc-glass-blur-card);
-  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--shadow-glass-card);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), inset 1px 0 0 var(--glass-highlight-side), inset 0 0 28px -10px var(--glass-glow), var(--shadow-glass-card);
 }
 @utility glass-popover {
   @apply kc-glass;
   --glass-level-a: var(--kc-glass-a-popover);
   --glass-level-blur: var(--kc-glass-blur-popover);
-  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--shadow-glass-popover);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), inset 1px 0 0 var(--glass-highlight-side), inset 0 0 28px -10px var(--glass-glow), var(--shadow-glass-popover);
 }
 @utility glass-modal {
   @apply kc-glass;
   --glass-level-a: var(--kc-glass-a-modal);
   --glass-level-blur: var(--kc-glass-blur-modal);
-  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--shadow-glass-modal);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), inset 1px 0 0 var(--glass-highlight-side), inset 0 0 28px -10px var(--glass-glow), var(--shadow-glass-modal);
 }
 @utility glass-sidebar {
   @apply kc-glass;
   --glass-level-a: var(--kc-glass-a-sidebar);
   --glass-level-blur: var(--kc-glass-blur-sidebar);
-  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--shadow-glass-sidebar);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), inset 1px 0 0 var(--glass-highlight-side), inset 0 0 28px -10px var(--glass-glow), var(--shadow-glass-sidebar);
 }
 /* Flat variant for repeated tiles (cards in a list): the same translucent
    surface, sheen and lit edge with no blur, so a long list stays cheap. */
 @utility glass-flat {
-  --glass-level-a: var(--kc-glass-a-card);
+  --glass-level-a: var(--kc-glass-a-flat);
   background-color: color-mix(in oklab, var(--kc-surface) calc(max(var(--glass-level-a), var(--kc-glass-floor)) * 100%), transparent);
   background-image: linear-gradient(135deg, var(--glass-sheen) 0%, transparent 38%);
   border-color: var(--glass-border);
-  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--shadow-glass-card);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), inset 1px 0 0 var(--glass-highlight-side), inset 0 0 28px -10px var(--glass-glow), var(--shadow-glass-card);
 }
 /* Fields: a faint inset pane that reads on any glass. */
 @utility glass-field {
@@ -210,10 +210,18 @@
 }
 @utility kc-glass {
   background-color: color-mix(in oklab, var(--kc-surface) calc(max(var(--glass-level-a), var(--kc-glass-floor)) * 100%), transparent);
-  background-image: linear-gradient(135deg, var(--glass-sheen) 0%, transparent 38%);
-  backdrop-filter: blur(calc(var(--glass-level-blur) * var(--kc-blur-scale))) saturate(140%);
-  -webkit-backdrop-filter: blur(calc(var(--glass-level-blur) * var(--kc-blur-scale))) saturate(140%);
+  /* A diagonal gloss across the top; it slides a little on hover. */
+  background-image: linear-gradient(158deg, var(--glass-sheen) 0%, transparent 46%);
+  background-size: 170% 170%;
+  background-position: 0 0;
+  backdrop-filter: blur(calc(var(--glass-level-blur) * var(--kc-blur-scale))) saturate(150%) brightness(var(--kc-glass-brightness));
+  -webkit-backdrop-filter: blur(calc(var(--glass-level-blur) * var(--kc-blur-scale))) saturate(150%) brightness(var(--kc-glass-brightness));
   border-color: var(--glass-border);
+  transition: background-position 500ms var(--kc-ease-standard), border-color var(--kc-duration-base) var(--kc-ease-standard);
+  &:hover {
+    background-position: 22% 12%;
+    border-color: var(--glass-border-hover);
+  }
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     background-color: var(--kc-surface);
   }
@@ -352,9 +360,10 @@
   }
 }
 
-/* Ambient background: a quiet aurora (two soft lights in the direction's
-   accents) over a fine grid fading down the page. The lights drift very
-   slowly on wide screens only; phones and reduced motion get it static. */
+/* Ambient background: an aurora of three large soft blobs in the direction's
+   accents over a fine grid. Each blob drifts very slowly on its own path (CSS
+   only); phones and reduced motion get it static. Contrast is tested against
+   the blobs at their peak and where they overlap (brand.test.ts). */
 .kc-ambient {
   position: fixed;
   inset: 0;
@@ -362,18 +371,41 @@
   pointer-events: none;
   overflow: hidden;
 }
-.kc-ambient::before {
-  content: "";
+.kc-blob {
   position: absolute;
-  inset: -20%;
-  background:
-    radial-gradient(46rem 30rem at 12% 0%, var(--kc-aurora-1), transparent 65%),
-    radial-gradient(40rem 28rem at 92% 6%, var(--kc-aurora-2), transparent 62%),
-    radial-gradient(52rem 30rem at 55% 108%, color-mix(in oklab, var(--kc-aurora-1) 60%, transparent), transparent 66%);
+  border-radius: 9999px;
+  will-change: transform;
+}
+.kc-blob-1 {
+  top: -14vmax;
+  left: 6vmax;
+  width: 62vmax;
+  height: 46vmax;
+  background: radial-gradient(closest-side, var(--kc-aurora-1), transparent);
+}
+.kc-blob-2 {
+  top: 4vmax;
+  right: -6vmax;
+  width: 58vmax;
+  height: 46vmax;
+  background: radial-gradient(closest-side, var(--kc-aurora-2), transparent);
+}
+.kc-blob-3 {
+  bottom: -14vmax;
+  left: 18vw;
+  width: 64vmax;
+  height: 44vmax;
+  background: radial-gradient(closest-side, var(--kc-aurora-3), transparent);
 }
 @media (min-width: 768px) {
-  .kc-ambient::before {
-    animation: kc-aurora 48s ease-in-out infinite alternate;
+  .kc-blob-1 {
+    animation: kc-drift-1 52s ease-in-out infinite alternate;
+  }
+  .kc-blob-2 {
+    animation: kc-drift-2 64s ease-in-out infinite alternate;
+  }
+  .kc-blob-3 {
+    animation: kc-drift-3 58s ease-in-out infinite alternate;
   }
 }
 .kc-ambient::after {
@@ -386,12 +418,19 @@
   -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 35%, transparent 95%);
   mask-image: linear-gradient(to bottom, #000 0%, #000 35%, transparent 95%);
 }
-@keyframes kc-aurora {
-  from {
-    transform: translate3d(-2%, -1%, 0) scale(1);
-  }
+@keyframes kc-drift-1 {
   to {
-    transform: translate3d(2%, 2%, 0) scale(1.06);
+    transform: translate3d(9vmax, 7vmax, 0) scale(1.08);
+  }
+}
+@keyframes kc-drift-2 {
+  to {
+    transform: translate3d(-8vmax, 9vmax, 0) scale(0.94);
+  }
+}
+@keyframes kc-drift-3 {
+  to {
+    transform: translate3d(-10vmax, -6vmax, 0) scale(1.1);
   }
 }
 

@@ -1,0 +1,13 @@
+import { chromium } from "playwright-core";
+import { readFileSync } from "node:fs";
+const logins = JSON.parse(readFileSync(process.argv[2], "utf8"));
+const b = await chromium.launch({ channel: "chrome", headless: false, args: ["--window-size=1440,900"] });
+const ctx = await b.newContext({ viewport: null });
+const page = await ctx.newPage();
+await page.goto("http://localhost:3132/login", { waitUntil: "networkidle" });
+await page.fill("#email", "seed+staff@example.com");
+await page.fill("#password", logins["seed+staff@example.com"]);
+await page.click('button[type="submit"]');
+await page.waitForURL(/command-center/, { timeout: 20000 });
+console.log("signed in");
+await new Promise((r) => b.on("disconnected", r));

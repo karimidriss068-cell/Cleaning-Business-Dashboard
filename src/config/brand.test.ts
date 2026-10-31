@@ -103,19 +103,37 @@ describe.each(combos)("%s / %s contrast", (direction, theme) => {
   });
 
   it("keeps text readable on every glass level over the worst-case backdrop", () => {
-    // Behind glass can sit the canvas, either aurora light at its peak, or
+    // Behind glass can sit the canvas, the aurora blobs at their peak and where they overlap, or
     // another raised surface. Phones and reduced effects only make it more
     // solid (alpha floor), so the normal alpha is the worst case.
     const aurora = glassSpec.aurora[theme];
-    const backdrops = [p.canvas, over(p.accent, p.canvas, aurora.a1), over(p.accent2, p.canvas, aurora.a2), p.surfaceRaised, p.highlight];
+    const overlap12 = over(p.accent, over(p.accent2, p.canvas, aurora.a2), aurora.a1);
+    const overlap123 = over(p.accent, overlap12, aurora.a3);
+    const backdrops = [p.canvas, over(p.accent, p.canvas, aurora.a1), over(p.accent2, p.canvas, aurora.a2), over(p.accent, p.canvas, aurora.a3), overlap12, overlap123, p.surfaceRaised, p.highlight];
+    const k = glassSpec.brightness[theme];
+    const scale = (hex: string) => "#" + channels(hex).map((v) => Math.min(255, Math.round(v * k)).toString(16).padStart(2, "0")).join("");
     for (const level of glassLevels) {
-      for (const backdrop of backdrops) {
-        // The white sheen is the lightest thing on the panel, so test under it.
-        const panel = over("#FFFFFF", over(p.surface, backdrop, glassSpec.alpha[theme][level]), glassSpec.sheen[theme]);
-        for (const [name, fg] of [["text", p.text], ["textMuted", p.textMuted], ["accentText", p.accentText]] as const) {
-          expect(contrast(fg, panel), `${level} glass, ${name} ${fg} on ${panel} (behind: ${backdrop})`).toBeGreaterThanOrEqual(TEXT + HEADROOM);
+      for (const behind of backdrops) {
+        const backdrop = scale(behind); // the glass dims or lifts what is behind it
+        // The sheen lightens the panel: it is the worst case in dark (light text)
+        // and absent is the worst case in light (dark text), so test both.
+        for (const sheen of [0, glassSpec.sheen[theme]]) {
+          const panel = over("#FFFFFF", over(p.surface, backdrop, glassSpec.alpha[theme][level]), sheen);
+          for (const [name, fg] of [["text", p.text], ["textMuted", p.textMuted], ["accentText", p.accentText]] as const) {
+            expect(contrast(fg, panel), `${level} glass, ${name} ${fg} on ${panel} (behind: ${behind}, sheen ${sheen})`).toBeGreaterThanOrEqual(TEXT + HEADROOM);
+          }
         }
       }
+    }
+  });
+
+  it("keeps text readable on flat tiles (no backdrop filter) over the raw backdrops", () => {
+    const aurora = glassSpec.aurora[theme];
+    const o12 = over(p.accent, over(p.accent2, p.canvas, aurora.a2), aurora.a1);
+    const raw = [p.canvas, o12, over(p.accent, o12, aurora.a3), p.surfaceRaised, p.highlight];
+    for (const behind of raw) for (const sheen of [0, glassSpec.sheen[theme]]) {
+      const panel = over("#FFFFFF", over(p.surface, behind, glassSpec.flatAlpha[theme]), sheen);
+      for (const fg of [p.text, p.textMuted, p.accentText]) expect(contrast(fg, panel), `flat ${fg} on ${panel}`).toBeGreaterThanOrEqual(TEXT + HEADROOM);
     }
   });
 
