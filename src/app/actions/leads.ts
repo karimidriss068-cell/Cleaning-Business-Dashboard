@@ -57,6 +57,9 @@ export async function createLead(input: unknown): Promise<LeadActionResult<{ lea
   return { ok: true, leadId: out.lead_id, contactId: out.contact_id };
 }
 
+// The board holds its own state after the first load, so the actions below leave
+// /leads alone: revalidating it would remount the board and close an open lead.
+
 /** Live duplicate check for the quick-add form (phone/email as typed). */
 export async function findDuplicates(input: unknown): Promise<DuplicateMatch[]> {
   const parsed = duplicateQuerySchema.safeParse(input);
@@ -84,7 +87,6 @@ export async function moveLead(input: unknown): Promise<LeadActionResult<{ updat
     p_lost_reason: v.lostReason as string,
   });
   if (error) return mapLeadError(error);
-  revalidatePath("/leads");
   revalidatePath("/command-center");
   return { ok: true, updatedAt: String(data) };
 }
@@ -97,7 +99,6 @@ export async function updateLead(input: unknown): Promise<LeadActionResult<{ upd
   if (!user) return notSignedIn;
   const { data, error } = await supabase.rpc("update_lead", { p_lead_id: v.leadId, p_expected_updated_at: v.expectedUpdatedAt, p_patch: v.patch });
   if (error) return mapLeadError(error);
-  revalidatePath("/leads");
   revalidatePath("/command-center");
   return { ok: true, updatedAt: String(data) };
 }
@@ -112,7 +113,6 @@ export async function convertLead(input: unknown): Promise<LeadActionResult<{ qu
   if (error) return mapLeadError(error);
   const out = data as { quote_id: string; quote_number: number; already: boolean };
   const { data: lead } = await supabase.from("leads").select("updated_at, stage").eq("id", v.leadId).single();
-  revalidatePath("/leads");
   return { ok: true, quoteId: out.quote_id, quoteNumber: Number(out.quote_number), already: out.already, updatedAt: lead?.updated_at ?? v.expectedUpdatedAt, stage: lead?.stage ?? "contacted" };
 }
 
@@ -135,7 +135,6 @@ export async function addLeadNote(input: unknown): Promise<LeadActionResult> {
     actor_user_id: user.id,
   });
   if (error) return mapLeadError(error);
-  revalidatePath("/leads");
   return { ok: true };
 }
 
