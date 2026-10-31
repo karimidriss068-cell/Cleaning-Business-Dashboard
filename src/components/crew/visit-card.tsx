@@ -16,7 +16,7 @@ import { buttonVariants } from "@/components/ui/button";
 export function VisitCard({ visit: v, index = 0, compact = false }: { visit: CrewVisit; index?: number; compact?: boolean }) {
   const open = buttonVariants({ variant: v.status === "scheduled" || v.status === "in_progress" ? "default" : "secondary", size: "crew" });
   return (
-    <article aria-label={`${v.client_name}, ${formatNyTime(v.scheduled_start)}`} className="kc-enter rounded-lg border border-hairline bg-surface surface-layer p-5 shadow-e1" style={{ "--i": index } as React.CSSProperties}>
+    <article aria-label={`${v.client_name}, ${formatNyTime(v.scheduled_start)}`} className="kc-enter rounded-lg border glass-solid shadow-e1 p-5 shadow-e1" style={{ "--i": index } as React.CSSProperties}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-heading text-[28px] leading-8 font-semibold tracking-[-0.01em] text-ink tabular">{formatNyTime(v.scheduled_start)}</p>

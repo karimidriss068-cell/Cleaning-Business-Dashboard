@@ -149,7 +149,7 @@ export function Showcase({ theme }: { theme: ThemeName }) {
       </Section>
 
       <Section title="Typography">
-        <div className="space-y-2 rounded-md border border-hairline bg-surface surface-layer p-5 shadow-e1">
+        <div className="space-y-2 rounded-md border glass-card p-5 shadow-e1">
           <div className="font-heading text-[28px] leading-8 font-semibold">Display · Command Center</div>
           <div className="font-heading text-[40px] leading-[44px] font-medium tracking-[-0.02em] tabular text-glow">$48,215.50</div>
           <div className="font-heading text-xl font-semibold">H2 · Today&apos;s schedule</div>
@@ -234,7 +234,7 @@ export function Showcase({ theme }: { theme: ThemeName }) {
       </Section>
 
       <Section title="Area chart">
-        <div className="rounded-md border border-hairline bg-surface surface-layer p-5 shadow-e1">
+        <div className="rounded-md border glass-card p-5 shadow-e1">
           <AreaChart
             values={[42, 18, 64, 51, 70, 38, 0, 55, 81, 66, 90, 47, 72, 104, 88, 61, 0, 77, 95, 112, 84, 69, 120, 99, 58, 0, 101, 118, 93, 131].map((v) => v * 1000)}
             labels={Array.from({ length: 30 }, (_, i) => `Oct ${i + 1}`)}
@@ -289,7 +289,7 @@ export function Showcase({ theme }: { theme: ThemeName }) {
       </Section>
 
       <Section title="Calendar events">
-        <div className="relative h-[588px] overflow-hidden rounded-md border border-hairline bg-surface surface-layer shadow-e1">
+        <div className="relative h-[588px] overflow-hidden rounded-md border glass-card">
           {Array.from({ length: 13 }, (_, i) => (
             <div key={i} className="absolute inset-x-0 flex border-t border-border" style={{ top: 12 + i * 44 }}>
               <span className="w-14 shrink-0 -translate-y-2 bg-surface pr-2 text-right text-[11px] text-ink-muted tabular">
@@ -319,7 +319,7 @@ export function Showcase({ theme }: { theme: ThemeName }) {
       </Section>
 
       <Section title="Empty state">
-        <div className="rounded-md border border-hairline bg-surface surface-layer shadow-e1">
+        <div className="rounded-md border glass-card">
           <EmptyState icon={Inbox} title="No leads waiting" action={<Button variant="secondary" size="sm">Add a lead</Button>}>
             New web, Google and Nextdoor leads land here the moment they come in.
           </EmptyState>

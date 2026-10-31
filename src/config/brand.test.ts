@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { directionIds, directions, type DirectionId, type Palette, type ThemeName } from "./brand";
+import { directionIds, directions, glassLevels, glassSpec, type DirectionId, type Palette, type ThemeName } from "./brand";
 
 // WCAG 2.2 relative luminance and contrast ratio.
 function channels(hex: string): number[] {
@@ -96,17 +96,32 @@ const combos: [DirectionId, ThemeName][] = directionIds.flatMap((d) => (["dark",
 
 describe.each(combos)("%s / %s contrast", (direction, theme) => {
   const p = directions[direction].palettes[theme];
-  const glassAlpha = directions[direction].effects[theme].glassAlpha;
-
+  
   it.each(pairs)("%s", (_label, fg, bg, min) => {
     const ratio = contrast(p[fg], p[bg]);
     expect(ratio, `${p[fg]} on ${p[bg]} = ${ratio.toFixed(2)}`).toBeGreaterThanOrEqual(min + HEADROOM);
   });
 
-  it("keeps body and muted text readable on glass panels", () => {
-    const glass = over(p.surface, p.canvas, glassAlpha);
-    expect(contrast(p.text, glass)).toBeGreaterThanOrEqual(TEXT + HEADROOM);
-    expect(contrast(p.textMuted, glass)).toBeGreaterThanOrEqual(TEXT + HEADROOM);
+  it("keeps text readable on every glass level over the worst-case backdrop", () => {
+    // Behind glass can sit the canvas, either aurora light at its peak, or
+    // another raised surface. Phones and reduced effects only make it more
+    // solid (alpha floor), so the normal alpha is the worst case.
+    const aurora = glassSpec.aurora[theme];
+    const backdrops = [p.canvas, over(p.accent, p.canvas, aurora.a1), over(p.accent2, p.canvas, aurora.a2), p.surfaceRaised, p.highlight];
+    for (const level of glassLevels) {
+      for (const backdrop of backdrops) {
+        // The white sheen is the lightest thing on the panel, so test under it.
+        const panel = over("#FFFFFF", over(p.surface, backdrop, glassSpec.alpha[theme][level]), glassSpec.sheen[theme]);
+        for (const [name, fg] of [["text", p.text], ["textMuted", p.textMuted], ["accentText", p.accentText]] as const) {
+          expect(contrast(fg, panel), `${level} glass, ${name} ${fg} on ${panel} (behind: ${backdrop})`).toBeGreaterThanOrEqual(TEXT + HEADROOM);
+        }
+      }
+    }
+  });
+
+  it("keeps crew text at AAA on the solid panel crew screens use", () => {
+    expect(contrast(p.text, p.surface)).toBeGreaterThanOrEqual(AAA);
+    expect(contrast(p.crewTextMuted, p.surface)).toBeGreaterThanOrEqual(AAA);
   });
 
   it("keeps status colors clearly separate from the accents (30 degrees of hue or more)", () => {

@@ -49,7 +49,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }
       toastOptions={{
         classNames: {
-          toast: "cn-toast shadow-e2 glass !border-hairline",
+          toast: "cn-toast glass-popover !border-hairline",
         },
       }}
       {...props}

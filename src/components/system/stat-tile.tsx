@@ -65,7 +65,7 @@ export function StatTile({
     </>
   );
   const frame = cn(
-    "kc-enter relative flex flex-col gap-3 overflow-hidden rounded-md border border-hairline bg-surface surface-layer p-5 shadow-e1",
+    "kc-enter relative flex flex-col gap-3 overflow-hidden rounded-md border glass-card p-5 shadow-e1",
     href && "transition-[border-color,transform] duration-base ease-standard hover:-translate-y-0.5 hover:border-brand/40",
     className,
   );

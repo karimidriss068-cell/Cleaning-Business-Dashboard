@@ -104,7 +104,7 @@ export function CommandPalette({ commands }: { commands: Command[] }) {
     <DialogPrimitive.Root open={open} onOpenChange={changeOpen}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/55 backdrop-blur-[2px] duration-base data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
-        <DialogPrimitive.Popup className="fixed top-[12vh] left-1/2 z-50 w-[min(560px,calc(100%-2rem))] -translate-x-1/2 overflow-hidden rounded-lg border border-hairline glass text-popover-foreground shadow-e3 outline-none duration-base ease-standard data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-top-2 data-closed:animate-out data-closed:fade-out-0 md:top-[20vh]">
+        <DialogPrimitive.Popup className="fixed top-[12vh] left-1/2 z-50 w-[min(560px,calc(100%-2rem))] -translate-x-1/2 overflow-hidden rounded-lg border border-hairline glass-modal text-popover-foreground outline-none duration-base ease-standard data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-top-2 data-closed:animate-out data-closed:fade-out-0 md:top-[20vh]">
           <DialogPrimitive.Title className="sr-only">Command palette</DialogPrimitive.Title>
           <div className="flex items-center gap-3 border-b border-hairline px-4">
             <Search className="size-4 shrink-0 text-ink-muted" aria-hidden />

@@ -64,7 +64,7 @@ export function LeadCard({
       data-lead-card={lead.id}
       aria-label={`${lead.name}, ${stageLabel[lead.stage]}`}
       className={cn(
-        "relative rounded-md border border-hairline bg-surface surface-layer py-3 pr-3 pl-4 shadow-e1 transition-[border-color,opacity] duration-base ease-standard hover:border-brand/35",
+        "relative rounded-md border glass-flat py-3 pr-3 pl-4 shadow-e1 transition-[border-color,opacity] duration-base ease-standard hover:border-brand/35",
         draggable && "cursor-grab touch-none active:cursor-grabbing",
         dragging && "opacity-35",
       )}

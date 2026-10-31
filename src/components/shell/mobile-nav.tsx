@@ -16,7 +16,7 @@ import { signOut } from "@/app/(app)/actions";
 /** Phone top bar: brand and search. */
 export function MobileTopBar() {
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-hairline bg-surface/90 px-4 backdrop-blur-xl md:hidden">
+    <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-hairline glass-sidebar px-4 md:hidden">
       <Link href="/command-center" aria-label="Command Center">
         <BrandLockup />
       </Link>
@@ -56,7 +56,7 @@ export function MobileTabBar({ role, userName, roleLabel }: { role: MemberRole |
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-hairline bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-hairline glass-sidebar pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       <ul className="flex h-16 items-stretch gap-1 px-2 py-1.5">
         {tabs.map((item) => {

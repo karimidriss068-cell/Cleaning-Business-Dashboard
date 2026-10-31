@@ -21,7 +21,7 @@ export default async function MyJobsPage() {
   if (!profile) {
     return (
       <div className="mx-auto w-full max-w-xl px-4 py-6">
-        <div className="rounded-lg border border-hairline bg-surface surface-layer shadow-e1">
+        <div className="rounded-lg border glass-solid shadow-e1">
           <EmptyState icon={UserX} title="Your login isn't on the team yet">Ask the office to set you up.</EmptyState>
         </div>
       </div>
@@ -54,7 +54,7 @@ export default async function MyJobsPage() {
       <section aria-label="Today" className="space-y-4">
         <h2 className="sr-only">Today</h2>
         {todays.length === 0 ? (
-          <div className="rounded-lg border border-hairline bg-surface surface-layer shadow-e1">
+          <div className="rounded-lg border glass-solid shadow-e1">
             <EmptyState icon={CalendarCheck} title="No visits today">Enjoy the day off. Your next visits are below.</EmptyState>
           </div>
         ) : (

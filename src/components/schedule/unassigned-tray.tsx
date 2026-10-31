@@ -50,7 +50,7 @@ function TrayItem({ visit, dragging, onOpen }: { visit: BoardVisit; dragging: bo
  */
 export function UnassignedTray({ visits, draggingId, onOpen }: { visits: BoardVisit[]; draggingId: string | null; onOpen: (v: BoardVisit) => void }) {
   return (
-    <aside aria-label="Unassigned visits" className="hidden w-72 shrink-0 self-start rounded-md border border-hairline bg-surface surface-layer shadow-e1 md:block">
+    <aside aria-label="Unassigned visits" className="hidden w-72 shrink-0 self-start rounded-md border glass-card md:block">
       <header className="flex items-center justify-between border-b border-hairline px-4 py-3">
         <h2 className="font-heading text-lg font-medium text-ink">Unassigned</h2>
         <span className={cn("rounded-full px-2 py-0.5 text-[12px] font-medium tabular ring-1 ring-inset", visits.length ? "bg-warning-soft text-warning ring-warning/30" : "text-ink-muted ring-hairline")}>{visits.length}</span>

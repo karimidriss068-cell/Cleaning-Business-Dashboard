@@ -28,7 +28,7 @@ export default async function SettingsPage() {
         <AppearancePicker />
       </section>
       {isOffice && (
-        <section aria-label="Business settings" className="kc-enter rounded-md border border-hairline bg-surface surface-layer shadow-e1" style={{ "--i": 2 } as React.CSSProperties}>
+        <section aria-label="Business settings" className="kc-enter rounded-md border glass-card" style={{ "--i": 2 } as React.CSSProperties}>
           <EmptyState icon={Building2} title="Team, services and integrations come next">
             Team members and roles, services and prices, and the GHL and Stripe connections will live here.
           </EmptyState>

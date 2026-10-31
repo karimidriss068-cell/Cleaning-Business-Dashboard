@@ -54,7 +54,7 @@ export function Sidebar({ role, userName, roleLabel }: { role: MemberRole | null
     <aside
       data-state={state}
       className={cn(
-        "sticky top-3 z-20 m-3 mr-0 hidden h-[calc(100dvh-1.5rem)] shrink-0 flex-col rounded-lg border border-hairline glass shadow-e2 transition-[width] duration-slow ease-standard md:flex",
+        "sticky top-3 z-20 m-3 mr-0 hidden h-[calc(100dvh-1.5rem)] shrink-0 flex-col rounded-lg border border-hairline glass-sidebar transition-[width] duration-slow ease-standard md:flex",
         expanded ? "w-16 xl:w-[244px]" : "w-16",
       )}
     >

@@ -71,7 +71,7 @@ function CellVisit({ visit, laneId, mode, dragging, onOpen }: { visit: BoardVisi
  */
 export function WeekBoard({ days, today, lanes, mode, draggingId, onOpen }: { days: string[]; today: string; lanes: Lane[]; mode: "crew" | "person"; draggingId: string | null; onOpen: (v: BoardVisit) => void }) {
   return (
-    <div className="max-h-[calc(100dvh-19rem)] min-h-[420px] overflow-auto rounded-md border border-hairline bg-surface surface-layer shadow-e1">
+    <div className="max-h-[calc(100dvh-19rem)] min-h-[420px] overflow-auto rounded-md border glass-solid shadow-e1">
       <div className="grid min-w-full" style={{ gridTemplateColumns: `168px repeat(7, minmax(158px, 1fr))` }}>
         <div className="sticky top-0 left-0 z-30 h-14 border-r border-b border-hairline glass" />
         {days.map((d) => {

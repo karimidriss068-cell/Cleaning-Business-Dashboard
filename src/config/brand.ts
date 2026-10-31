@@ -380,6 +380,50 @@ export const radius = {
 } as const;
 
 /** DESIGN.md section 6. Deep, soft shadows in dark; light mode stays airy. */
+/**
+ * Glass system (DESIGN.md section 4b). One spec drives the CSS tokens and the
+ * contrast test, so what is tested is what is painted. Levels are how far a
+ * panel floats: card (in the page), popover (menus, selects, toasts), modal
+ * (dialogs, drawers) and sidebar (shell chrome). Alpha is the surface color's
+ * opacity; blur is in px before the phone/reduced-effects scale.
+ */
+export type GlassLevel = "card" | "popover" | "modal" | "sidebar";
+export const glassLevels: GlassLevel[] = ["card", "popover", "modal", "sidebar"];
+export const glassSpec = {
+  alpha: {
+    dark: { card: 0.62, popover: 0.88, modal: 0.92, sidebar: 0.7 },
+    light: { card: 0.7, popover: 0.9, modal: 0.94, sidebar: 0.78 },
+  } satisfies Record<ThemeName, Record<GlassLevel, number>>,
+  blur: { card: 14, popover: 22, modal: 26, sidebar: 20 } satisfies Record<GlassLevel, number>,
+  /** Share of the text color mixed into the 1px glass border. */
+  borderMix: { dark: 0.14, light: 0.1 } satisfies Record<ThemeName, number>,
+  /** Soft light on a panel's top edge (inset). */
+  highlight: { dark: "rgb(255 255 255 / 0.12)", light: "rgb(255 255 255 / 0.9)" } satisfies Record<ThemeName, string>,
+  /** White glossy sheen laid over the panel's top-left corner, as opacity. */
+  sheen: { dark: 0.05, light: 0.5 } satisfies Record<ThemeName, number>,
+  /** Peak opacity of the two aurora lights (accent, accent2) behind the glass. */
+  aurora: { dark: { a1: 0.16, a2: 0.1 }, light: { a1: 0.11, a2: 0.07 } } satisfies Record<ThemeName, { a1: number; a2: number }>,
+  /** Minimum surface opacity on phones / reduced effects (cheaper, more solid). */
+  phoneFloor: 0.92,
+  /** Blur multiplier on phones; reduced transparency uses solid surfaces and no blur. */
+  phoneBlurScale: 0.5,
+  /** Outer shadows per level (the inset highlight is added in CSS). */
+  shadow: {
+    dark: {
+      card: "0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.6)",
+      popover: "0 16px 40px -12px rgb(0 0 0 / 0.7), 0 4px 12px rgb(0 0 0 / 0.35)",
+      modal: "0 32px 80px -16px rgb(0 0 0 / 0.8), 0 8px 24px rgb(0 0 0 / 0.4)",
+      sidebar: "0 16px 40px -12px rgb(0 0 0 / 0.7), 0 4px 12px rgb(0 0 0 / 0.35)",
+    },
+    light: {
+      card: "0 1px 2px rgb(12 15 20 / 0.05), 0 6px 16px -10px rgb(12 15 20 / 0.12)",
+      popover: "0 12px 32px -12px rgb(12 15 20 / 0.18), 0 2px 6px rgb(12 15 20 / 0.06)",
+      modal: "0 28px 64px -20px rgb(12 15 20 / 0.28), 0 4px 12px rgb(12 15 20 / 0.08)",
+      sidebar: "0 12px 32px -12px rgb(12 15 20 / 0.18), 0 2px 6px rgb(12 15 20 / 0.06)",
+    },
+  } satisfies Record<ThemeName, Record<GlassLevel, string>>,
+} as const;
+
 export const elevation: Record<ThemeName, Record<"e0" | "e1" | "e2" | "e3", string>> = {
   dark: {
     e0: "none",

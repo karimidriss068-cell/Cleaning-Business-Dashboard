@@ -4,6 +4,8 @@ import {
   directionIds,
   directions,
   elevation,
+  glassLevels,
+  glassSpec,
   motion,
   radius,
   type DirectionId,
@@ -27,13 +29,31 @@ export const fontVar: Record<FontKey, string> = {
   plexSans: "--font-plex-sans",
 };
 
+const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(" ");
+
+function glassTokens(direction: DirectionId, theme: ThemeName): string[] {
+  const p = directions[direction].palettes[theme];
+  const aurora = glassSpec.aurora[theme];
+  const out = [
+    `--glass-border:color-mix(in oklab,var(--kc-text) ${glassSpec.borderMix[theme] * 100}%,transparent)`,
+    `--glass-highlight:${glassSpec.highlight[theme]}`,
+    `--glass-sheen:rgb(255 255 255 / ${glassSpec.sheen[theme]})`,
+    `--kc-aurora-1:rgb(${rgb(p.accent)} / ${aurora.a1})`,
+    `--kc-aurora-2:rgb(${rgb(p.accent2)} / ${aurora.a2})`,
+  ];
+  for (const level of glassLevels) {
+    out.push(`--kc-glass-a-${level}:${glassSpec.alpha[theme][level]}`, `--shadow-glass-${level}:${glassSpec.shadow[theme][level]}`);
+  }
+  return out;
+}
+
 function themeBlock(direction: DirectionId, theme: ThemeName): string {
   const d = directions[direction];
   const colors = Object.entries(d.palettes[theme]).map(([k, v]) => `${tokenVar(k as keyof Palette)}:${v}`);
   const shadows = Object.entries(elevation[theme]).map(([k, v]) => `--kc-elevation-${k.slice(1)}:${v}`);
   const fx = d.effects[theme];
   const effects = [`--kc-glow:${fx.glow}`, `--kc-ambient:${fx.ambient}`, `--kc-grid:${fx.grid}`, `--kc-glass-alpha:${fx.glassAlpha}`];
-  return [`color-scheme:${theme}`, ...colors, ...shadows, ...effects].join(";");
+  return [`color-scheme:${theme}`, ...colors, ...shadows, ...effects, ...glassTokens(direction, theme)].join(";");
 }
 
 /** Selectors for one direction; the default direction also covers "no attribute yet". */
@@ -62,6 +82,9 @@ export function tokensCss(): string {
     `--kc-ease-standard:${motion.easeStandard}`,
     `--kc-ease-exit:${motion.easeExit}`,
     `--kc-ease-enter:${motion.easeEnter}`,
+    ...glassLevels.map((l) => `--kc-glass-blur-${l}:${glassSpec.blur[l]}px`),
+    `--kc-glass-floor:0`,
+    `--kc-blur-scale:1`,
     `--kc-row-height:${density.comfortable.rowHeight}`,
     `--kc-cell-y:${density.comfortable.cellY}`,
     `--kc-cell-x:${density.comfortable.cellX}`,
@@ -88,6 +111,10 @@ export function tokensCss(): string {
     lines.push(`${[...roots.flatMap((r) => [`${r}.dark`, `${r} .dark`]), `.dark [data-direction="${id}"]`].join(",")}{${themeBlock(id, "dark")}}`);
   }
   lines.push(`[data-density="compact"]{${compact}}`);
+  // Reduced-effects mode: phones get more solid, lightly blurred glass;
+  // people who ask for reduced transparency get solid surfaces and no blur.
+  lines.push(`@media (max-width:767px){:root{--kc-glass-floor:${glassSpec.phoneFloor};--kc-blur-scale:${glassSpec.phoneBlurScale}}}`);
+  lines.push(`@media (prefers-reduced-transparency:reduce){:root{--kc-glass-floor:1;--kc-blur-scale:0}}`);
   lines.push(
     `@media (prefers-reduced-motion:reduce){:root{--kc-duration-fast:0ms;--kc-duration-base:0ms;--kc-duration-slow:0ms;--kc-duration-enter:0ms;--kc-stagger:0ms}}`,
   );

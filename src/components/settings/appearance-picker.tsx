@@ -27,7 +27,7 @@ function Preview({ id }: { id: DirectionId }) {
         <span className="font-heading text-[13px] font-semibold tracking-[0.02em]">Command Center</span>
         <span className="h-5 w-12 rounded-full bg-primary" />
       </div>
-      <div className="relative mt-3 rounded-sm border border-hairline bg-surface surface-layer p-2.5">
+      <div className="relative mt-3 rounded-sm border glass-card p-2.5">
         <div className="text-[9px] font-semibold tracking-[0.12em] text-ink-muted uppercase">Revenue</div>
         <div className="mt-1 flex items-end justify-between">
           <span className="font-heading text-[22px] leading-6 font-medium tabular text-glow">$48,215</span>
@@ -70,7 +70,7 @@ export function AppearancePicker() {
                 aria-describedby={`direction-${id}-mood`}
                 onClick={() => setDirection(id)}
                 className={cn(
-                  "kc-enter group rounded-lg border bg-surface surface-layer p-3 text-left shadow-e1 transition-[border-color,box-shadow,transform] duration-base ease-standard hover:-translate-y-0.5",
+                  "kc-enter group rounded-lg border glass-card p-3 text-left shadow-e1 transition-[border-color,box-shadow,transform] duration-base ease-standard hover:-translate-y-0.5",
                   selected ? "border-brand/70 shadow-[0_0_0_1px_var(--kc-accent),0_12px_32px_-12px_var(--kc-glow)]" : "border-hairline hover:border-border-input",
                 )}
                 style={{ "--i": i } as React.CSSProperties}

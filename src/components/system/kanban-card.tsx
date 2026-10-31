@@ -34,7 +34,7 @@ export function KanbanCard({
     <article
       aria-label={`${name}, ${leadLabel[stage]}`}
       className={cn(
-        "group relative rounded-md border border-hairline bg-surface surface-layer py-3 pr-3 pl-4 shadow-e1 transition-[border-color,transform] duration-base ease-standard hover:-translate-y-0.5 hover:border-brand/35",
+        "group relative rounded-md border glass-flat py-3 pr-3 pl-4 shadow-e1 transition-[border-color,transform] duration-base ease-standard hover:-translate-y-0.5 hover:border-brand/35",
         className,
       )}
     >

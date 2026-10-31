@@ -27,7 +27,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
   if (!profile) {
     return (
       <div className="mx-auto w-full max-w-[1400px] px-4 py-6 md:px-6">
-        <div className="rounded-md border border-hairline bg-surface surface-layer shadow-e1">
+        <div className="rounded-md border glass-card">
           <EmptyState icon={UserX} title="Your login isn't on the team yet">Ask the owner to add you.</EmptyState>
         </div>
       </div>
@@ -56,14 +56,14 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
         actions={<NewLeadButton />}
       />
       {leads.length === 0 ? (
-        <div className="rounded-md border border-hairline bg-surface surface-layer shadow-e1">
+        <div className="rounded-md border glass-card">
           <EmptyState icon={KanbanSquare} title="No leads yet">Add one with New lead, or press Cmd+K and choose New lead.</EmptyState>
         </div>
       ) : (
         <LeadsClient key={dataKey} initialLeads={leads} team={team} today={today} now={now.toISOString()} openId={openId ?? null} />
       )}
 
-      <section aria-label="Conversion by source" className="rounded-md border border-hairline bg-surface surface-layer shadow-e1">
+      <section aria-label="Conversion by source" className="rounded-md border glass-card">
         <header className="border-b border-hairline px-4 py-3">
           <h2 className="font-heading text-lg font-medium text-ink">Conversion by source</h2>
           <p className="text-[13px] text-ink-muted">Leads created in the last 90 days. Win rate is booked out of booked plus lost.</p>

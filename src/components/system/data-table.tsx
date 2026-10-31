@@ -58,7 +58,7 @@ export function DataTable({
 }) {
   const [density, setDensity] = useStoredChoice<Density>(storageKey, DENSITIES, "comfortable");
   return (
-    <section className={cn("overflow-hidden rounded-md border border-hairline bg-surface surface-layer shadow-e1", className)} aria-label={title}>
+    <section className={cn("overflow-hidden rounded-md border glass-card", className)} aria-label={title}>
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline px-5 py-4">
         <div className="min-w-0">
           <h3 className="font-heading text-lg font-medium text-ink">{title}</h3>

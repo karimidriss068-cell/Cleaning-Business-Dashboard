@@ -126,7 +126,7 @@ export function DayBoard({
     <BoardScroller
       targetPx={scrollTarget}
       headerPx={HEADER_PX}
-      className="max-h-[calc(100dvh-19rem)] min-h-[480px] overflow-auto rounded-md border border-hairline bg-surface surface-layer shadow-e1"
+      className="max-h-[calc(100dvh-19rem)] min-h-[480px] overflow-auto rounded-md border glass-solid shadow-e1"
     >
       <div className="relative grid min-w-full" style={{ gridTemplateColumns: `${TIME_COL}px repeat(${lanes.length}, minmax(210px, 1fr))` }}>
         {nowPlace && (

@@ -20,7 +20,7 @@ export const metadata: Metadata = { title: "Visit" };
 export const dynamic = "force-dynamic";
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <section className="space-y-3 rounded-lg border border-hairline bg-surface surface-layer p-5 shadow-e1">
+  <section className="space-y-3 rounded-lg border glass-solid shadow-e1 p-5 shadow-e1">
     <h2 className="font-heading text-xl font-medium text-ink">{title}</h2>
     {children}
   </section>

@@ -215,7 +215,7 @@ export default async function CommandCenterPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="min-w-0 space-y-6 lg:col-span-2">
-          <section aria-labelledby="revenue-30" className="kc-enter rounded-md border border-hairline bg-surface surface-layer p-5 shadow-e1" style={stagger(5)}>
+          <section aria-labelledby="revenue-30" className="kc-enter rounded-md border glass-card p-5 shadow-e1" style={stagger(5)}>
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
               <div>
                 <h2 id="revenue-30" className="font-heading text-lg font-medium text-ink">Revenue, last 30 days</h2>
@@ -319,7 +319,7 @@ export default async function CommandCenterPage() {
             )}
           </section>
 
-          <section aria-labelledby="goals" className="kc-enter rounded-md border border-hairline bg-surface surface-layer p-5 shadow-e1" style={stagger(8)}>
+          <section aria-labelledby="goals" className="kc-enter rounded-md border glass-card p-5 shadow-e1" style={stagger(8)}>
             <h2 id="goals" className="font-heading text-lg font-medium text-ink">Goals this month</h2>
             {(goalsRes.data ?? []).length === 0 ? (
               <p className="mt-2 text-sm text-ink-muted">No goals set for this month.</p>

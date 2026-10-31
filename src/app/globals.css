@@ -156,12 +156,71 @@
   font-variant-numeric: tabular-nums lining-nums;
 }
 
-/* Glass: the surface at the direction's glass opacity over a soft blur.
-   For floating chrome (sidebar, top bar, palette, drawer, callouts). */
+/* Glass (DESIGN.md section 4b): translucent surface + backdrop blur, a hairline
+   border, a lit top edge and a glossy sheen. Four levels, all token-driven.
+   Use <GlassPanel> in components; these utilities are for chrome that already
+   has its own element. The surface opacity never drops below the phone /
+   reduced-effects floor, and without backdrop-filter support it goes solid. */
+@utility glass-card {
+  @apply kc-glass;
+  --glass-level-a: var(--kc-glass-a-card);
+  --glass-level-blur: var(--kc-glass-blur-card);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--shadow-glass-card);
+}
+@utility glass-popover {
+  @apply kc-glass;
+  --glass-level-a: var(--kc-glass-a-popover);
+  --glass-level-blur: var(--kc-glass-blur-popover);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--shadow-glass-popover);
+}
+@utility glass-modal {
+  @apply kc-glass;
+  --glass-level-a: var(--kc-glass-a-modal);
+  --glass-level-blur: var(--kc-glass-blur-modal);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--shadow-glass-modal);
+}
+@utility glass-sidebar {
+  @apply kc-glass;
+  --glass-level-a: var(--kc-glass-a-sidebar);
+  --glass-level-blur: var(--kc-glass-blur-sidebar);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--shadow-glass-sidebar);
+}
+/* Flat variant for repeated tiles (cards in a list): the same translucent
+   surface, sheen and lit edge with no blur, so a long list stays cheap. */
+@utility glass-flat {
+  --glass-level-a: var(--kc-glass-a-card);
+  background-color: color-mix(in oklab, var(--kc-surface) calc(max(var(--glass-level-a), var(--kc-glass-floor)) * 100%), transparent);
+  background-image: linear-gradient(135deg, var(--glass-sheen) 0%, transparent 38%);
+  border-color: var(--glass-border);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--shadow-glass-card);
+}
+/* Fields: a faint inset pane that reads on any glass. */
+@utility glass-field {
+  background-color: color-mix(in oklab, var(--kc-canvas) 38%, transparent);
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.12);
+}
+
+/* Solid variant: crew screens and anywhere text must not depend on what is behind. */
+@utility glass-solid {
+  background-color: var(--kc-surface);
+  background-image: linear-gradient(180deg, color-mix(in oklab, var(--kc-surface-raised) 65%, var(--kc-surface)) 0%, var(--kc-surface) 70%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-color: var(--glass-border);
+}
+@utility kc-glass {
+  background-color: color-mix(in oklab, var(--kc-surface) calc(max(var(--glass-level-a), var(--kc-glass-floor)) * 100%), transparent);
+  background-image: linear-gradient(135deg, var(--glass-sheen) 0%, transparent 38%);
+  backdrop-filter: blur(calc(var(--glass-level-blur) * var(--kc-blur-scale))) saturate(140%);
+  -webkit-backdrop-filter: blur(calc(var(--glass-level-blur) * var(--kc-blur-scale))) saturate(140%);
+  border-color: var(--glass-border);
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    background-color: var(--kc-surface);
+  }
+}
+/* Existing chrome (top bar, table headers, toasts) reads as the sidebar level. */
 @utility glass {
-  background-color: color-mix(in oklab, var(--kc-surface) calc(var(--kc-glass-alpha) * 100%), transparent);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  @apply glass-sidebar;
 }
 
 /* Layered surface: lit slightly from the top, for tiles and cards with depth. */
@@ -215,20 +274,47 @@
   }
 }
 
-/* Ambient background: a fine grid and one soft light in the accent, fading
-   out down the page. Static (no animation), behind all content. */
+/* Ambient background: a quiet aurora (two soft lights in the direction's
+   accents) over a fine grid fading down the page. The lights drift very
+   slowly on wide screens only; phones and reduced motion get it static. */
 .kc-ambient {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
+  overflow: hidden;
+}
+.kc-ambient::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
   background:
-    radial-gradient(70rem 42rem at 8% -12%, var(--kc-ambient), transparent 62%),
-    radial-gradient(48rem 30rem at 105% -8%, color-mix(in oklab, var(--kc-ambient) 55%, transparent), transparent 60%),
+    radial-gradient(46rem 30rem at 12% 0%, var(--kc-aurora-1), transparent 65%),
+    radial-gradient(40rem 28rem at 92% 6%, var(--kc-aurora-2), transparent 62%),
+    radial-gradient(52rem 30rem at 55% 108%, color-mix(in oklab, var(--kc-aurora-1) 60%, transparent), transparent 66%);
+}
+@media (min-width: 768px) {
+  .kc-ambient::before {
+    animation: kc-aurora 48s ease-in-out infinite alternate;
+  }
+}
+.kc-ambient::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
     linear-gradient(var(--kc-grid) 1px, transparent 1px) 0 0 / 40px 40px,
     linear-gradient(90deg, var(--kc-grid) 1px, transparent 1px) 0 0 / 40px 40px;
   -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 35%, transparent 95%);
   mask-image: linear-gradient(to bottom, #000 0%, #000 35%, transparent 95%);
+}
+@keyframes kc-aurora {
+  from {
+    transform: translate3d(-2%, -1%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(2%, 2%, 0) scale(1.06);
+  }
 }
 
 @layer base {

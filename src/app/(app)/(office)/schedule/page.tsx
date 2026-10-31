@@ -31,7 +31,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
   if (!profile) {
     return (
       <div className="mx-auto w-full max-w-[1400px] px-4 py-6 md:px-6">
-        <div className="rounded-md border border-hairline bg-surface surface-layer shadow-e1">
+        <div className="rounded-md border glass-card">
           <EmptyState icon={UserX} title="Your login isn't on the team yet">Ask the owner to add you.</EmptyState>
         </div>
       </div>
@@ -70,7 +70,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
       />
       <BoardToolbar date={date} today={today} mode={mode} range={range} />
       {visits.length === 0 && tray.length === 0 ? (
-        <div className="rounded-md border border-hairline bg-surface surface-layer shadow-e1">
+        <div className="rounded-md border glass-card">
           <EmptyState icon={CalendarX2} title={range === "week" ? "No visits this week" : "No visits this day"}>Visits booked for this period, including recurring ones, appear here.</EmptyState>
         </div>
       ) : (
