@@ -62,7 +62,7 @@ export const jobLabel: Record<JobStatus, string> = {
 export const leadLabel: Record<LeadStage, string> = {
   new: "New",
   contacted: "Contacted",
-  quoted: "Quoted",
-  won: "Won",
+  quoted: "Quote sent",
+  won: "Booked",
   lost: "Lost",
 };

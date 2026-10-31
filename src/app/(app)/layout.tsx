@@ -4,6 +4,7 @@ import type { MemberRole } from "@/config/navigation";
 import { Sidebar } from "@/components/shell/sidebar";
 import { MobileTabBar, MobileTopBar } from "@/components/shell/mobile-nav";
 import { AppCommandPalette } from "@/components/shell/app-command-palette";
+import { QuickAddLead } from "@/components/leads/quick-add-lead";
 import { DemoBanner } from "@/components/shell/demo-banner";
 import { TopBar } from "@/components/shell/top-bar";
 import { Ambient } from "@/components/system/ambient";
@@ -48,6 +49,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </div>
       <MobileTabBar role={role} userName={userName} roleLabel={roleLabel} />
       <AppCommandPalette role={role} />
+      {role !== null && role !== "subcontractor" && <QuickAddLead />}
       <AppearanceSync loaded={appearance} />
     </div>
   );

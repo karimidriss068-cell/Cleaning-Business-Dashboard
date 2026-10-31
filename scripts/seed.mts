@@ -398,7 +398,10 @@ for (const [i, stage] of stagePlan.entries()) {
     id: leadId, contact_id: contactId, service_id: svc[service].id, campaign_id: campaign?.id ?? null, bedrooms, bathrooms: String(bathrooms),
     sqft: 450 + bedrooms * 350 + int(0, 200), requested_date: addDays(nyDate(created), int(2, 10)), stage,
     first_response_at: firstResponse ? iso(firstResponse) : null, lost_reason: stage === "lost" ? pick(lostReasons) : null,
-    source, ghl_opportunity_id: null, notes: null, created_at: iso(created),
+    source: ({ meta: "instagram", google: "google", referral: "referral" } as Record<string, string>)[source] ?? "other", ghl_opportunity_id: null, notes: null, created_at: iso(created),
+    service_type: service === "move" ? "move_out" : "residential", stage_changed_at: iso(firstResponse ?? created),
+    closed_at: stage === "won" || stage === "lost" ? iso(plusMinutes(created, int(1500, 8000))) : null,
+    next_follow_up_on: stage === "new" || stage === "contacted" || stage === "quoted" ? addDays(today, int(-3, 4)) : null,
   });
   add("activities", { id: seedId(T.activities), type: "note", direction: "inbound", subject: "Web form",
     body: `${svc[service].name} request, ${bedrooms}BR/${bathrooms}BA`, occurred_at: iso(created), actor_user_id: null,
@@ -792,6 +795,15 @@ begin
   delete from public.job_cleaner_notes where job_id in (select id from public.jobs where id::text like '${SEED_PREFIX}%' or series_id::text like '${SEED_PREFIX}%');
   delete from public.job_photos where job_id in (select id from public.jobs where id::text like '${SEED_PREFIX}%' or series_id::text like '${SEED_PREFIX}%');
   delete from public.activities where job_id in (select id from public.jobs where id::text like '${SEED_PREFIX}%' or series_id::text like '${SEED_PREFIX}%') and id::text not like '${SEED_PREFIX}%';
+
+  -- Leads worked while testing: timeline entries, and what converting a demo
+  -- lead made (its quote, a company account, a property) are demo data too.
+  delete from public.activities where (lead_id::text like '${SEED_PREFIX}%' or contact_id::text like '${SEED_PREFIX}%') and id::text not like '${SEED_PREFIX}%';
+  delete from public.quote_items where quote_id in (select id from public.quotes where id::text not like '${SEED_PREFIX}%' and (lead_id::text like '${SEED_PREFIX}%' or contact_id::text like '${SEED_PREFIX}%'));
+  delete from public.quotes where id::text not like '${SEED_PREFIX}%' and (lead_id::text like '${SEED_PREFIX}%' or contact_id::text like '${SEED_PREFIX}%');
+  update public.contacts set account_id = null where account_id in (select id from public.accounts where id::text not like '${SEED_PREFIX}%' and primary_contact_id::text like '${SEED_PREFIX}%');
+  delete from public.accounts where id::text not like '${SEED_PREFIX}%' and primary_contact_id::text like '${SEED_PREFIX}%';
+  delete from public.properties where id::text not like '${SEED_PREFIX}%' and contact_id::text like '${SEED_PREFIX}%' and not exists (select 1 from public.jobs j where j.property_id = properties.id);
 
   -- Visits the recurring generator created from seed series (and their
   -- assignments, photos and activities, which cascade) are demo data too.

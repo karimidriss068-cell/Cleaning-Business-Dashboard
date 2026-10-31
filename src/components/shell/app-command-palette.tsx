@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useTheme } from "next-themes";
 import { ClipboardList, FilePlus2, Moon, Sun, UserPlus } from "lucide-react";
 import { toast } from "sonner";
+import { openQuickAddLead } from "@/components/leads/quick-add-lead";
 import { navFor, type MemberRole } from "@/config/navigation";
 import { CommandPalette, type Command } from "@/components/system/command-palette";
 
@@ -16,7 +17,7 @@ export function AppCommandPalette({ role }: { role: MemberRole | null }) {
     const soon = (what: string) => () => toast.info(`${what} arrives with its screen.`);
     const create: Command[] = canCreate
       ? [
-          { id: "new-lead", label: "New lead", group: "Create", icon: UserPlus, onSelect: soon("Creating leads") },
+          { id: "new-lead", label: "New lead", group: "Create", icon: UserPlus, onSelect: openQuickAddLead, keywords: "add lead new customer inquiry" },
           { id: "new-job", label: "New job", group: "Create", icon: ClipboardList, onSelect: soon("Creating jobs") },
           { id: "new-invoice", label: "New invoice", group: "Create", icon: FilePlus2, onSelect: soon("Creating invoices") },
         ]

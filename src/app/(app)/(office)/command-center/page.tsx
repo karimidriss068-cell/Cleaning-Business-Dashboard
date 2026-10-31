@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight, CalendarX2, CheckCircle2, MessageSquareWarning, Receipt, ShieldAlert, UserX } from "lucide-react";
+import { ArrowRight, CalendarX2, CheckCircle2, MessageSquareWarning, PhoneCall, Receipt, ShieldAlert, UserX } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { addDays, formatCalendarDate, formatCents, formatNyDate, formatNyTime, nyDateString, nyDayRangeUtc, nyToday } from "@/lib/format";
 import { cumulative, dailySeries, dayRange, direction, median, minutesBetween, shortDuration, signedCount, signedPercent } from "@/lib/command-center";
@@ -68,7 +68,7 @@ export default async function CommandCenterPage() {
   const todayRange = nyDayRangeUtc(today);
   const in30 = addDays(today, 30);
 
-  const [jobsRes, lastMonthRes, leadsRes, openLeadsRes, waitingRes, invoicesRes, goalsRes, contractsRes, coiRes] = await Promise.all([
+  const [jobsRes, lastMonthRes, leadsRes, openLeadsRes, waitingRes, invoicesRes, goalsRes, contractsRes, coiRes, followUpsRes] = await Promise.all([
     supabase
       .from("jobs")
       .select(
@@ -94,9 +94,10 @@ export default async function CommandCenterPage() {
       .not("account_id", "is", null)
       .gte("accepted_at", nyDayRangeUtc(monthStart).start.toISOString()),
     supabase.from("subcontractors").select("id, display_name, coi_expires_on").eq("status", "active").lte("coi_expires_on", in30).order("coi_expires_on"),
+    supabase.from("leads").select("next_follow_up_on").in("stage", ["new", "contacted", "quoted"]).lt("next_follow_up_on", today).order("next_follow_up_on"),
   ]);
 
-  const failed = [jobsRes, lastMonthRes, leadsRes, openLeadsRes, waitingRes, invoicesRes, goalsRes, contractsRes, coiRes].find((r) => r.error);
+  const failed = [jobsRes, lastMonthRes, leadsRes, openLeadsRes, waitingRes, invoicesRes, goalsRes, contractsRes, coiRes, followUpsRes].find((r) => r.error);
   if (failed?.error) throw new Error(`Command Center query failed: ${failed.error.message}`);
 
   const jobs = jobsRes.data ?? [];
@@ -138,6 +139,7 @@ export default async function CommandCenterPage() {
 
   // Attention
   const unassigned = live.filter((j) => j.status === "scheduled" && j.scheduled_start >= now.toISOString() && j.job_assignments.length === 0);
+  const followUps = followUpsRes.data ?? [];
   const coi = coiRes.data ?? [];
   const coiExpired = coi.filter((s) => coiTone(s.coi_expires_on, today, in30) === "danger");
 
@@ -154,6 +156,8 @@ export default async function CommandCenterPage() {
   const attention = [
     { key: "leads", show: waiting.length > 0, icon: MessageSquareWarning, href: "/leads", tone: "warning" as const,
       text: `${waiting.length} lead${waiting.length === 1 ? "" : "s"} waiting for a first reply`, meta: waiting[0] ? `oldest ${shortDuration(minutesBetween(waiting[0].created_at, now.toISOString()))}` : "" },
+    { key: "followups", show: followUps.length > 0, icon: PhoneCall, href: "/leads", tone: "warning" as const,
+      text: `${followUps.length} overdue follow-up${followUps.length === 1 ? "" : "s"}`, meta: followUps[0]?.next_follow_up_on ? `oldest due ${formatCalendarDate(followUps[0].next_follow_up_on)}` : "" },
     { key: "unassigned", show: unassigned.length > 0, icon: CalendarX2, href: "/schedule", tone: "warning" as const,
       text: `${unassigned.length} upcoming visit${unassigned.length === 1 ? "" : "s"} without a crew`, meta: "next 7 days" },
     { key: "overdue", show: overdue.length > 0, icon: Receipt, href: "/money", tone: "danger" as const,
