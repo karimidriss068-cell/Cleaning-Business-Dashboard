@@ -77,18 +77,18 @@ export function LeadCard({
           {lead.borough ? ` · ${lead.borough.replace("_", " ")}` : ""}
         </span>
       </button>
-      <div className="mt-2 flex items-center justify-between gap-2 text-[13px] text-ink-muted">
-        <span className="truncate">
+      <div className="mt-2 space-y-1 text-[13px] text-ink-muted">
+        <span className="block truncate">
           {src} · {ageLabel(lead.stageChangedAt, nowMs)} in stage
         </span>
         {lead.phone && (
-          <a href={`tel:${lead.phone}`} className="inline-flex shrink-0 items-center gap-1 text-brand-text" aria-label={`Call ${lead.name} at ${formatPhone(lead.phone)}`} onPointerDown={(e) => e.stopPropagation()}>
+          <a href={`tel:${lead.phone}`} className="inline-flex items-center gap-1 text-brand-text" aria-label={`Call ${lead.name} at ${formatPhone(lead.phone)}`} onPointerDown={(e) => e.stopPropagation()}>
             <Phone className="size-3.5" aria-hidden />
             <span className="tabular">{formatPhone(lead.phone)}</span>
           </a>
         )}
       </div>
-      <div className="mt-2 flex items-center justify-between gap-2">
+      <div className="mt-1 flex flex-wrap items-center justify-between gap-x-2">
         <FollowUpPill lead={lead} today={today} />
         <button
           type="button"

@@ -97,6 +97,33 @@ The same roles exist in every direction and theme:
 | **Accent glow** | `glow-accent`, `shadow-[…var(--kc-glow)]` | Primary button hover, active nav indicator, sparkline and chart end points, progress bars, the brand mark. |
 | **Number glow** | `text-glow` | KPI numerals only. |
 
+## 4b. Glass and motion system
+
+**Glass.** Every panel is a translucent surface over the aurora background: the surface color at a level's opacity, backdrop blur, a 1px border (text color at 10-14%), a lit top edge (`--glass-highlight`), a glossy sheen on the top-left corner and a level shadow. One spec in `brand.ts` (`glassSpec`) drives the tokens and the tests.
+
+| Level | Used for | Opacity (dark / light) | Blur |
+|---|---|---|---|
+| card | sections, tiles, tables, cards | 0.62 / 0.70 | 14px |
+| popover | menus, selects, toasts, chart tooltips | 0.88 / 0.90 | 22px |
+| modal | dialogs, drawers, the Cmd+K palette, login | 0.92 / 0.94 | 26px |
+| sidebar | sidebar, top bar, tab bar | 0.70 / 0.78 | 20px |
+| flat | repeated tiles (lead cards, calendar cards): same look, no blur | card | none |
+| solid | crew screens and dense boards: opaque | 1 | none |
+
+Tokens: `--kc-glass-a-<level>`, `--kc-glass-blur-<level>`, `--glass-border`, `--glass-highlight`, `--glass-sheen`, `--shadow-glass-<level>`, `--kc-aurora-1/2`. Components use `<GlassPanel level>` (`Card` is one); chrome with its own element uses the `glass-<level>` utilities.
+
+**Aurora.** Two soft lights in the direction's `accent` and `accent2` plus the fine grid, behind everything. They drift very slowly on wide screens only.
+
+**Contrast is law.** `brand.test.ts` blends every glass level over the worst-case backdrops (canvas, either aurora light at its peak, a raised surface, the highlight surface), puts the white sheen on top, and requires text, muted text and accent text to pass 4.5:1 plus headroom in all 6 combinations. Crew text is AAA on the solid surface.
+
+**Performance.** Only large panels blur (cards, sidebar, popovers, modals); list tiles use `flat`. Phones (under 768px) raise the surface opacity floor to 0.92 and halve the blur; `prefers-reduced-transparency` makes surfaces solid with no blur; browsers without `backdrop-filter` get the solid surface.
+
+**Motion.** CSS plus a few small hooks in `src/lib/motion/hooks.ts`; no animation library.
+- `<AnimatedNumber>`: counts up the first time it is seen and eases to new values; money is integer cents through `formatCents`; the final text is server-rendered and an invisible copy reserves the width, so nothing shifts. `StatTile` takes `figure` for this.
+- Charts (`AreaChart`, `BarChart`, `Sparkline`): lines draw in, bars grow, values ease when data changes, hover or arrow keys show a tooltip. `format` is a name (`"dollars-short"`, `"dollars"`, `"count"`), not a function, so server pages can pass it.
+- Lists and boards: `kc-enter` staggered fade-up, `kc-settle` when a card lands in a new lane or stage, `hover-lift`, `kc-shimmer` skeletons, a 200ms page transition (`(app)/template.tsx`).
+- Everything animates opacity and transform only. Reduced motion: no count-up, instant state, no drift or shimmer.
+
 ## 5. Typography
 
 Each direction pairs a distinctive display face with a readable body face (section 2), plus DM Mono for ids and codes. All load via `next/font` with `font-display: swap`. Numbers that line up use the `tabular` utility (`tabular-nums lining-nums`); all three display faces have true tabular figures, checked by measurement.

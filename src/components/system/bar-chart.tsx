@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useTweenSeries } from "@/lib/motion/hooks";
+import { formatChartValue, type ChartFormat } from "@/lib/chart-format";
 
 /**
  * Chart default for categorical or daily bars: bars grow from the baseline
@@ -12,14 +13,14 @@ import { useTweenSeries } from "@/lib/motion/hooks";
 export function BarChart({
   values,
   labels,
-  formatValue,
+  format,
   height = 200,
   ariaLabel,
   className,
 }: {
   values: number[];
   labels: string[];
-  formatValue: (v: number) => string;
+  format: ChartFormat;
   height?: number;
   ariaLabel: string;
   className?: string;
@@ -54,7 +55,7 @@ export function BarChart({
             {active === i && (
               <span aria-hidden className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 -translate-x-1/2 rounded-sm border border-hairline glass-popover px-2.5 py-1.5 text-center text-[12px] whitespace-nowrap text-ink tabular">
                 <span className="block text-ink-muted">{labels[i]}</span>
-                <span className="block font-medium">{formatValue(values[i])}</span>
+                <span className="block font-medium">{formatChartValue(values[i], format)}</span>
               </span>
             )}
           </div>

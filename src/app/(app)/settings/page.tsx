@@ -24,7 +24,7 @@ export default async function SettingsPage() {
     // loads all of them; everywhere else loads just the selected direction's.
     <div className={`${allFontClasses} mx-auto w-full max-w-[1200px] space-y-8 px-4 py-6 md:px-6`}>
       <PageHeader eyebrow="Settings" title="Appearance" description="How Keystone looks for you. Everyone on the team picks their own." />
-      <section aria-label="Appearance" className="kc-enter rounded-lg border border-hairline bg-surface/60 p-5 shadow-e1 md:p-6" style={{ "--i": 1 } as React.CSSProperties}>
+      <section aria-label="Appearance" className="kc-enter rounded-lg border glass-card p-5 md:p-6" style={{ "--i": 1 } as React.CSSProperties}>
         <AppearancePicker />
       </section>
       {isOffice && (

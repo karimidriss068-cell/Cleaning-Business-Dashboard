@@ -36,6 +36,9 @@ import { StatusPill } from "@/components/system/status-pill";
 import { StatTile } from "@/components/system/stat-tile";
 import { KanbanCard } from "@/components/system/kanban-card";
 import { CalendarEvent, CalendarNowLine } from "@/components/system/calendar-event";
+import { AnimatedNumber } from "@/components/system/animated-number";
+import { BarChart } from "@/components/system/bar-chart";
+import { GlassPanel } from "@/components/system/glass-panel";
 import { AreaChart } from "@/components/system/area-chart";
 import { EmptyState } from "@/components/system/empty-state";
 import { DataTable } from "@/components/system/data-table";
@@ -238,10 +241,30 @@ export function Showcase({ theme }: { theme: ThemeName }) {
           <AreaChart
             values={[42, 18, 64, 51, 70, 38, 0, 55, 81, 66, 90, 47, 72, 104, 88, 61, 0, 77, 95, 112, 84, 69, 120, 99, 58, 0, 101, 118, 93, 131].map((v) => v * 1000)}
             labels={Array.from({ length: 30 }, (_, i) => `Oct ${i + 1}`)}
-            formatValue={(c) => (c >= 100000 ? `$${(c / 100000).toFixed(1)}k` : `$${Math.round(c / 100)}`)}
+            format="dollars-short"
             ariaLabel="Sample revenue over 30 days"
             height={180}
           />
+        </div>
+      </Section>
+
+      <Section title="Bar chart">
+        <div className="rounded-md border glass-card p-5">
+          <BarChart values={[12, 19, 8, 24, 17, 30, 22, 14, 27, 33, 21, 18].map((v) => v * 1000)} labels={["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]} format="dollars-short" ariaLabel="Sample monthly revenue" height={160} />
+        </div>
+      </Section>
+
+      <Section title="Glass levels and animated numbers">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {(["card", "popover", "modal", "sidebar", "flat", "solid"] as const).map((level) => (
+            <GlassPanel key={level} level={level} className="p-4">
+              <p className="text-[11px] font-semibold tracking-[0.12em] text-ink-muted uppercase">{level}</p>
+              <p className="mt-1 font-heading text-2xl text-ink tabular">
+                <AnimatedNumber value={level === "solid" ? 4821500 : 128400} kind="cents" hideZeroCents />
+              </p>
+              <p className="text-[13px] text-ink-muted">Text stays readable over the aurora.</p>
+            </GlassPanel>
+          ))}
         </div>
       </Section>
 

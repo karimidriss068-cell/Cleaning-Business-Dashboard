@@ -33,8 +33,6 @@ const GOAL_LABELS: Record<GoalMetric, string> = {
 };
 
 const dollars = (cents: number) => formatCents(Math.round(cents / 100) * 100, { hideZeroCents: true });
-/** Axis labels: $0, $850, $1.2k. */
-const shortDollars = (cents: number) => (cents >= 100000 ? `$${(cents / 100000).toFixed(1)}k` : `$${Math.round(cents / 100)}`);
 const stagger = (i: number) => ({ "--i": i }) as React.CSSProperties;
 
 export default async function CommandCenterPage() {
@@ -227,7 +225,7 @@ export default async function CommandCenterPage() {
             <AreaChart
               values={revenue30}
               labels={chartDays.map((d) => formatCalendarDate(d).replace(/, \d{4}$/, ""))}
-              formatValue={shortDollars}
+              format="dollars-short"
               ariaLabel={`Revenue from completed jobs over the last 30 days, ${dollars(revenue30Total)} in total`}
               height={200}
             />

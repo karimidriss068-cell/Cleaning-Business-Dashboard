@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useTweenSeries } from "@/lib/motion/hooks";
+import { formatChartValue, type ChartFormat } from "@/lib/chart-format";
 
 /** Rounds up to 1, 2, 2.5 or 5 x 10^n so axis ticks land on clean values. */
 function niceCeiling(v: number): number {
@@ -22,7 +23,7 @@ function niceCeiling(v: number): number {
 export function AreaChart({
   values,
   labels,
-  formatValue,
+  format,
   height = 220,
   ariaLabel,
   className,
@@ -30,7 +31,7 @@ export function AreaChart({
   values: number[];
   /** One label per value (e.g. "Oct 3"); a few are shown along the x axis. */
   labels: string[];
-  formatValue: (v: number) => string;
+  format: ChartFormat;
   height?: number;
   ariaLabel: string;
   className?: string;
@@ -77,7 +78,7 @@ export function AreaChart({
       >
         {ticks.map((t, i) => (
           <div key={i} className="absolute inset-x-0 flex items-center gap-3" style={{ top: `${(i / (ticks.length - 1)) * 100}%` }}>
-            <span className="w-14 shrink-0 -translate-y-1/2 text-right text-[11px] text-ink-muted tabular">{formatValue(t)}</span>
+            <span className="w-14 shrink-0 -translate-y-1/2 text-right text-[11px] text-ink-muted tabular">{formatChartValue(t, format)}</span>
             <span className="h-px flex-1 -translate-y-1/2 bg-hairline" />
           </div>
         ))}
@@ -111,7 +112,7 @@ export function AreaChart({
               style={{ left: `clamp(3rem, calc(4.25rem + (100% - 4.25rem) * ${at[0] / w}), calc(100% - 3rem))`, top: -4, transform: "translate(-50%, -100%)" }}
             >
               <span className="block text-ink-muted">{labels[active]}</span>
-              <span className="block font-medium">{formatValue(values[active])}</span>
+              <span className="block font-medium">{formatChartValue(values[active], format)}</span>
             </span>
           </>
         )}

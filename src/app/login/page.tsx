@@ -52,7 +52,7 @@ export default function LoginPage() {
       </section>
 
       <section className="relative z-10 flex items-center justify-center px-4 py-12">
-        <div className="kc-enter w-full max-w-[400px] rounded-lg border border-hairline glass p-8 shadow-e3" style={{ "--i": 1 } as React.CSSProperties}>
+        <div className="kc-enter w-full max-w-[400px] rounded-lg border glass-modal p-8" style={{ "--i": 1 } as React.CSSProperties}>
           <div className="mb-8 lg:hidden">
             <BrandLockup />
           </div>

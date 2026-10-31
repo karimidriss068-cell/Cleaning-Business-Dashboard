@@ -161,7 +161,7 @@ await page.waitForTimeout(600);
 check("tapping it explains instead of failing", await page.getByText("You can complete this visit from").first().isVisible().catch(() => false));
 const { data: stillOpen } = await db.from("jobs").select("status").eq("id", jobId).single();
 check("the visit was not completed", stillOpen.status === "scheduled");
-await page.screenshot({ path: process.env.E2E_SHOTS ? `${process.env.E2E_SHOTS}/crew-detail.png` : "/dev/null", fullPage: true });
+if (process.env.E2E_SHOTS) await page.screenshot({ path: `${process.env.E2E_SHOTS}/crew-detail.png`, fullPage: true });
 
 // ---- 6. Complete inside the window, then restore
 const soon = upcoming.find((a) => a.job.id !== jobId) ?? target;
