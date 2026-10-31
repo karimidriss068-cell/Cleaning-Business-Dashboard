@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowDownRight, ArrowRight, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AnimatedNumber, type NumberKind } from "./animated-number";
 import { Sparkline } from "./sparkline";
 
 export type Delta = {
@@ -14,11 +15,13 @@ export type Delta = {
 /**
  * KPI tile: layered surface with a hairline and a lit top edge, a large
  * tabular numeral with a restrained glow, a signed delta (icon + text, never
- * color alone) and a sparkline that draws in. `index` staggers its entrance.
+ * color alone) and a sparkline that draws in. Numbers go in `figure` so they
+ * count up (money as integer cents). `index` staggers its entrance.
  */
 export function StatTile({
   label,
   value,
+  figure,
   delta,
   hint,
   spark,
@@ -27,7 +30,9 @@ export function StatTile({
   className,
 }: {
   label: string;
-  value: string;
+  /** Pre-formatted text; use `figure` instead for numbers so they count up. */
+  value?: string;
+  figure?: { value: number; kind: NumberKind; hideZeroCents?: boolean };
   delta?: Delta;
   hint?: string;
   spark?: number[];
@@ -41,7 +46,7 @@ export function StatTile({
       <span aria-hidden className="pointer-events-none absolute inset-x-6 top-0 h-px bg-linear-to-r from-transparent via-brand/60 to-transparent" />
       <span className="text-[11px] font-semibold tracking-[0.12em] text-ink-muted uppercase">{label}</span>
       <div className="flex items-end justify-between gap-4">
-        <span className="font-heading text-[40px] leading-[44px] font-medium tracking-[-0.02em] text-ink tabular text-glow">{value}</span>
+        <span className="font-heading text-[40px] leading-[44px] font-medium tracking-[-0.02em] text-ink tabular text-glow">{figure ? <AnimatedNumber value={figure.value} kind={figure.kind} hideZeroCents={figure.hideZeroCents} /> : value}</span>
         {spark && spark.length > 1 && <Sparkline values={spark} delayMs={150 + index * 55} className="mb-1.5" />}
       </div>
       <div className="flex min-h-6 flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-ink-muted">
@@ -65,8 +70,8 @@ export function StatTile({
     </>
   );
   const frame = cn(
-    "kc-enter relative flex flex-col gap-3 overflow-hidden rounded-md border glass-card p-5 shadow-e1",
-    href && "transition-[border-color,transform] duration-base ease-standard hover:-translate-y-0.5 hover:border-brand/40",
+    "kc-enter relative flex flex-col gap-3 overflow-hidden rounded-md border glass-card p-5",
+    href && "hover-lift hover:border-brand/40",
     className,
   );
   const style = { "--i": index } as React.CSSProperties;

@@ -7,6 +7,7 @@ import { addDays, formatCalendarDate, formatCents, formatNyDate, formatNyTime, n
 import { cumulative, dailySeries, dayRange, direction, median, minutesBetween, shortDuration, signedCount, signedPercent } from "@/lib/command-center";
 import { coiTone, jobLabel, jobTone } from "@/lib/status";
 import { PageHeader } from "@/components/shell/page-header";
+import { AnimatedNumber } from "@/components/system/animated-number";
 import { StatTile } from "@/components/system/stat-tile";
 import { StatusPill } from "@/components/system/status-pill";
 import { EmptyState } from "@/components/system/empty-state";
@@ -178,7 +179,7 @@ export default async function CommandCenterPage() {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatTile
           label="Jobs today"
-          value={String(todaysLive.length)}
+          figure={{ value: todaysLive.length, kind: "count" }}
           hint={`${done} done · ${todaysLive.length - done} to go`}
           spark={jobsPerDay}
           delta={{ label: `${signedCount(jobsDelta)} vs last ${formatNyDate(now, "weekday").split(",")[0]}`, direction: direction(jobsDelta), good: jobsDelta >= 0 }}
@@ -187,7 +188,7 @@ export default async function CommandCenterPage() {
         />
         <StatTile
           label="Revenue this month"
-          value={dollars(revenue)}
+          figure={{ value: Math.round(revenue / 100) * 100, kind: "cents", hideZeroCents: true }}
           hint="completed jobs"
           spark={revenueSeries}
           delta={revenuePct ? { label: `${revenuePct} vs last month`, direction: direction(revenue - lastMonthRevenue), good: revenue >= lastMonthRevenue } : undefined}
@@ -196,7 +197,7 @@ export default async function CommandCenterPage() {
         />
         <StatTile
           label="Open leads"
-          value={String(openLeadsRes.count ?? 0)}
+          figure={{ value: openLeadsRes.count ?? 0, kind: "count" }}
           hint={replyMedian === null ? undefined : `median reply ${shortDuration(replyMedian)}`}
           spark={newPerDay}
           delta={{ label: `${signedCount(thisWeek - lastWeek)} new vs last week`, direction: direction(thisWeek - lastWeek), good: thisWeek >= lastWeek }}
@@ -205,7 +206,7 @@ export default async function CommandCenterPage() {
         />
         <StatTile
           label="Outstanding"
-          value={dollars(outstanding)}
+          figure={{ value: Math.round(outstanding / 100) * 100, kind: "cents", hideZeroCents: true }}
           hint={`${openInvoices.length} open invoice${openInvoices.length === 1 ? "" : "s"}`}
           delta={overdue.length ? { label: `${dollars(overdueCents)} overdue`, direction: "up", good: false } : undefined}
           href="/money"
@@ -215,13 +216,13 @@ export default async function CommandCenterPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="min-w-0 space-y-6 lg:col-span-2">
-          <section aria-labelledby="revenue-30" className="kc-enter rounded-md border glass-card p-5 shadow-e1" style={stagger(5)}>
+          <section aria-labelledby="revenue-30" className="kc-enter rounded-md border glass-card p-5" style={stagger(5)}>
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
               <div>
                 <h2 id="revenue-30" className="font-heading text-lg font-medium text-ink">Revenue, last 30 days</h2>
                 <p className="text-[13px] text-ink-muted">Completed jobs, by New York day</p>
               </div>
-              <span className="font-heading text-2xl font-medium text-ink tabular">{dollars(revenue30Total)}</span>
+              <AnimatedNumber value={Math.round(revenue30Total / 100) * 100} kind="cents" hideZeroCents className="font-heading text-2xl font-medium text-ink tabular" />
             </div>
             <AreaChart
               values={revenue30}
@@ -319,7 +320,7 @@ export default async function CommandCenterPage() {
             )}
           </section>
 
-          <section aria-labelledby="goals" className="kc-enter rounded-md border glass-card p-5 shadow-e1" style={stagger(8)}>
+          <section aria-labelledby="goals" className="kc-enter rounded-md border glass-card p-5" style={stagger(8)}>
             <h2 id="goals" className="font-heading text-lg font-medium text-ink">Goals this month</h2>
             {(goalsRes.data ?? []).length === 0 ? (
               <p className="mt-2 text-sm text-ink-muted">No goals set for this month.</p>
@@ -347,7 +348,7 @@ export default async function CommandCenterPage() {
                       >
                         <div
                           className={pct >= 100 ? "h-full rounded-full bg-success-fill" : "h-full rounded-full bg-linear-to-r from-brand/60 to-brand shadow-[0_0_12px_var(--kc-glow)]"}
-                          style={{ width: `${pct}%` }}
+                          style={{ width: `${pct}%`, transformOrigin: "left", animation: "kc-grow-x var(--kc-duration-enter) var(--kc-ease-enter) both" }}
                         />
                       </div>
                     </li>

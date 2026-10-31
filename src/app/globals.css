@@ -255,6 +255,84 @@
   }
 }
 
+/* Bars grow from the baseline once. Transform only, so nothing shifts. */
+@utility kc-grow {
+  animation: kc-grow var(--kc-duration-enter) var(--kc-ease-enter) both;
+}
+@keyframes kc-grow {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes kc-grow-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: none;
+  }
+}
+
+/* A card that has just landed in a new place (stage change, new lane) settles in. */
+@utility kc-settle {
+  animation: kc-settle 260ms var(--kc-ease-enter) both;
+}
+@keyframes kc-settle {
+  from {
+    opacity: 0.4;
+    transform: translateY(6px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Soft lift on hover for interactive tiles (transform + shadow only). */
+@utility hover-lift {
+  transition: transform var(--kc-duration-base) var(--kc-ease-standard), border-color var(--kc-duration-base) var(--kc-ease-standard);
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-2px);
+    }
+  }
+}
+
+/* Loading skeleton: a slow sheen across a glass block. */
+@utility kc-shimmer {
+  background-color: color-mix(in oklab, var(--kc-surface) 70%, transparent);
+  background-image: linear-gradient(100deg, transparent 30%, var(--glass-highlight) 50%, transparent 70%);
+  background-size: 220% 100%;
+  animation: kc-shimmer 1.6s linear infinite;
+}
+@keyframes kc-shimmer {
+  from {
+    background-position: 120% 0;
+  }
+  to {
+    background-position: -120% 0;
+  }
+}
+
+/* Page transition: short and subtle (opacity and 4px of travel). */
+@keyframes kc-page {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.kc-page {
+  animation: kc-page 200ms var(--kc-ease-enter) both;
+}
+
 /* Sparklines and charts draw their line once (pathLength="1"). */
 @keyframes kc-draw {
   from {

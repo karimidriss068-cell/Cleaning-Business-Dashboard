@@ -149,7 +149,7 @@ export function Showcase({ theme }: { theme: ThemeName }) {
       </Section>
 
       <Section title="Typography">
-        <div className="space-y-2 rounded-md border glass-card p-5 shadow-e1">
+        <div className="space-y-2 rounded-md border glass-card p-5">
           <div className="font-heading text-[28px] leading-8 font-semibold">Display · Command Center</div>
           <div className="font-heading text-[40px] leading-[44px] font-medium tracking-[-0.02em] tabular text-glow">$48,215.50</div>
           <div className="font-heading text-xl font-semibold">H2 · Today&apos;s schedule</div>
@@ -234,7 +234,7 @@ export function Showcase({ theme }: { theme: ThemeName }) {
       </Section>
 
       <Section title="Area chart">
-        <div className="rounded-md border glass-card p-5 shadow-e1">
+        <div className="rounded-md border glass-card p-5">
           <AreaChart
             values={[42, 18, 64, 51, 70, 38, 0, 55, 81, 66, 90, 47, 72, 104, 88, 61, 0, 77, 95, 112, 84, 69, 120, 99, 58, 0, 101, 118, 93, 131].map((v) => v * 1000)}
             labels={Array.from({ length: 30 }, (_, i) => `Oct ${i + 1}`)}

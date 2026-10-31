@@ -1,7 +1,9 @@
-import { cn } from "@/lib/utils";
+"use client";
 
-// Stable id for the SVG gradient, derived from the data (no hooks needed, so
-// this stays a server component).
+import { cn } from "@/lib/utils";
+import { useTweenSeries } from "@/lib/motion/hooks";
+
+// Stable id for the SVG gradient, derived from the data.
 function gradientId(values: number[]): string {
   let h = 0;
   for (const ch of values.join(",")) h = (h * 31 + ch.charCodeAt(0)) | 0;
@@ -26,8 +28,11 @@ export function Sparkline({
   delayMs?: number;
   className?: string;
 }) {
+  const shown = useTweenSeries(values);
   const pad = 3;
   const n = values.length;
+  const id = gradientId(values);
+  values = shown.length === n ? shown : values;
   const max = Math.max(...values, 0);
   const min = Math.min(...values, 0);
   const range = max - min || 1;
@@ -38,7 +43,6 @@ export function Sparkline({
   const line = points.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
   const area = n > 1 ? `${line} L${points[n - 1][0].toFixed(1)} ${height} L${points[0][0].toFixed(1)} ${height} Z` : "";
   const last = points[n - 1];
-  const id = gradientId(values);
   const delay = { animationDelay: `${delayMs}ms` };
 
   return (

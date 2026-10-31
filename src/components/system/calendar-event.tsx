@@ -43,6 +43,7 @@ export function CalendarEvent({
         style={style}
         title={`${time} ${client}, ${jobLabel[status]}`}
         className={cn(
+          "kc-settle",
           "flex min-h-8 items-center gap-1.5 overflow-hidden rounded-sm border-l-2 px-2.5 text-xs shadow-e1 backdrop-blur-sm",
           toneClass[jobTone(status)],
           status === "cancelled" && "line-through decoration-ink-muted",
@@ -60,6 +61,7 @@ export function CalendarEvent({
       style={style}
       title={`${client}, ${jobLabel[status]}`}
       className={cn(
+          "kc-settle",
         "flex min-h-8 flex-col overflow-hidden rounded-sm border-l-2 px-2.5 py-1.5 text-xs leading-4 shadow-e1 backdrop-blur-sm",
         toneClass[jobTone(status)],
         status === "cancelled" && "line-through decoration-ink-muted",

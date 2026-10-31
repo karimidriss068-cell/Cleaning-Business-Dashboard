@@ -70,7 +70,7 @@ export function AppearancePicker() {
                 aria-describedby={`direction-${id}-mood`}
                 onClick={() => setDirection(id)}
                 className={cn(
-                  "kc-enter group rounded-lg border glass-card p-3 text-left shadow-e1 transition-[border-color,box-shadow,transform] duration-base ease-standard hover:-translate-y-0.5",
+                  "kc-enter group rounded-lg border glass-card p-3 text-left transition-[border-color,box-shadow,transform] duration-base ease-standard hover:-translate-y-0.5",
                   selected ? "border-brand/70 shadow-[0_0_0_1px_var(--kc-accent),0_12px_32px_-12px_var(--kc-glow)]" : "border-hairline hover:border-border-input",
                 )}
                 style={{ "--i": i } as React.CSSProperties}
