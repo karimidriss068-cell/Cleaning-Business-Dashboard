@@ -11,12 +11,16 @@ describe("status tones", () => {
     expect(payoutTone("approved")).toBe("info");
   });
 
-  it("derives overdue from an open invoice past its NY due date", () => {
-    expect(invoiceTone("open", "2026-10-22", "2026-10-23")).toBe("danger");
-    expect(invoiceLabel("open", "2026-10-22", "2026-10-23")).toBe("Overdue");
-    expect(invoiceTone("open", "2026-10-23", "2026-10-23")).toBe("info"); // due today isn't overdue
+  it("derives overdue from a sent invoice past its NY due date", () => {
+    expect(invoiceTone("sent", "2026-10-22", "2026-10-23")).toBe("danger");
+    expect(invoiceLabel("sent", "2026-10-22", "2026-10-23")).toBe("Overdue");
+    expect(invoiceLabel("partially_paid", "2026-10-22", "2026-10-23")).toBe("Overdue");
+    expect(invoiceTone("sent", "2026-10-23", "2026-10-23")).toBe("info"); // due today isn't overdue
     expect(invoiceTone("paid", "2026-01-01", "2026-10-23")).toBe("success");
-    expect(invoiceTone("open", null, "2026-10-23")).toBe("info");
+    expect(invoiceTone("sent", null, "2026-10-23")).toBe("info");
+    expect(invoiceLabel("partially_paid", "2026-11-01", "2026-10-23")).toBe("Partially paid");
+    expect(invoiceTone("void", "2026-01-01", "2026-10-23")).toBe("neutral");
+    expect(invoiceLabel("draft", null, "2026-10-23")).toBe("Draft");
   });
 
   it("flags insurance as expired, expiring within 30 days, or valid", () => {

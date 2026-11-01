@@ -589,30 +589,40 @@ for (const j of jobs) {
   }
 }
 
-// Invoices and payments
+// Invoices and payments. Invoices are inserted as drafts with their lines, then
+// issued (the database freezes lines once an invoice leaves draft), then paid.
 let paymentSeq = 0;
 const completed = jobs.filter((j) => j.status === "completed");
+const invoiceIssue: { id: string; issued: string; sentAt: string }[] = [];
+const invoicePaidAt: { id: string; at: string }[] = [];
+const paidOnByJob = new Map<string, string>(); // job id -> NY date its invoice was paid
+const openInvoices: { id: string; total: number; issued: string; jobIds: string[]; commercial: boolean }[] = [];
+let paidInvoiceCount = 0;
 function addInvoice(opts: { contactId: string | null; accountId: string | null; issued: string; due: string; lines: Job[] }) {
   const id = seedId(T.invoices);
   const total = opts.lines.reduce((s, j) => s + j.price, 0);
   const overdueCutoff = addDays(today, -7);
   const paid = opts.due < addDays(today, -5) ? chance(0.92) : opts.issued < addDays(today, -2) && chance(0.6);
-  const status = paid ? "paid" : "open";
   const receivedOn = addDays(opts.issued, int(0, 4));
-  add("invoices", {
-    id, contact_id: opts.contactId, account_id: opts.accountId, status, issued_on: opts.issued, due_on: opts.due, tax_cents: 0,
-    stripe_invoice_id: null, stripe_hosted_invoice_url: null, sent_at: iso(nyToUtc(opts.issued, "17:00")),
-    paid_at: paid ? iso(nyToUtc(receivedOn, "12:00")) : null, voided_at: null,
-    notes: !paid && opts.due < overdueCutoff ? "Overdue – reminder sent" : null,
-  });
+  add("invoices", { id, contact_id: opts.contactId, account_id: opts.accountId, due_on: opts.due,
+    notes: !paid && opts.due < overdueCutoff ? "Reminder sent" : null });
+  invoiceIssue.push({ id, issued: opts.issued, sentAt: iso(nyToUtc(opts.issued, "17:00")) });
   for (const [i, j] of opts.lines.entries()) {
     add("invoice_line_items", { id: seedId(T.invoiceItems), invoice_id: id, job_id: j.id,
       description: `${svc[j.serviceKey].name} – ${j.date}`, quantity: 1, unit_price_cents: j.price, sort_order: i });
   }
   if (paid) {
+    paidInvoiceCount += 1;
     add("payments", { id: seedId(T.payments), invoice_id: id, amount_cents: total, status: "succeeded",
-      method: opts.accountId ? "ach" : "card", stripe_payment_intent_id: `pi_seed_${String(++paymentSeq).padStart(6, "0")}`,
+      method: opts.accountId ? "ach" : "card", source: opts.accountId ? "manual" : "stripe",
+      reference: opts.accountId ? `seed-ach-${paymentSeq + 1}` : null,
+      stripe_payment_intent_id: opts.accountId ? null : `pi_seed_${String(paymentSeq + 1).padStart(6, "0")}`,
       stripe_charge_id: null, received_at: iso(nyToUtc(receivedOn, "12:00")), refunded_at: null, notes: null });
+    paymentSeq += 1;
+    invoicePaidAt.push({ id, at: iso(nyToUtc(receivedOn, "12:00")) });
+    for (const j of opts.lines) paidOnByJob.set(j.id, receivedOn);
+  } else {
+    openInvoices.push({ id, total, issued: opts.issued, jobIds: opts.lines.map((j) => j.id), commercial: opts.accountId !== null });
   }
 }
 const invoiceQueue: { issued: string; fn: () => void }[] = [];
@@ -633,25 +643,49 @@ for (const a of accounts.filter((x) => x.status === "active")) {
 // Issue in date order so invoice numbers read chronologically.
 invoiceQueue.sort((x, y) => x.issued.localeCompare(y.issued)).forEach((q) => q.fn());
 
-// Biweekly payouts (Mon-Sun periods): older periods paid, the latest one a draft.
+// A couple of recent residential invoices carry a Zelle deposit (partly paid), and
+// one is marked collected (cash at the door), so those screens have something to show.
+const residentialOpen = openInvoices.filter((i) => !i.commercial && i.issued >= addDays(today, -45));
+const partialOnes = residentialOpen.slice(0, 2);
+for (const [n, inv] of partialOnes.entries()) {
+  const amount = Math.round((inv.total * 0.3) / 100) * 100;
+  add("payments", { id: seedId(T.payments), invoice_id: inv.id, amount_cents: amount, status: "succeeded", method: "zelle", source: "manual",
+    reference: `seed-zelle-${n + 1}`, stripe_payment_intent_id: null, stripe_charge_id: null,
+    received_at: iso(nyToUtc(inv.issued, "12:00")), refunded_at: null, notes: null });
+}
+const collectedOne = residentialOpen[2];
+if (collectedOne) for (const id of collectedOne.jobIds) paidOnByJob.set(id, today);
+
+// Weekly payouts (Mon-Sun, newest complete week last): only visits whose invoice was
+// paid or marked collected, each included once. Oldest weeks paid, the one before the
+// latest approved (frozen, waiting for the owner to pay), the latest a draft.
 let lastSunday = addDays(today, -1);
 while (weekday(lastSunday) !== 0) lastSunday = addDays(lastSunday, -1);
 const payoutItemValues: string[] = [];
 const paidPayoutIds: string[] = [];
+const approvedPayoutIds: string[] = [];
+const includedAssignments = new Set<string>();
+const completedIds = new Set(completed.map((j) => j.id));
+let weeks = 0;
+while (addDays(lastSunday, -7 * (weeks + 1) - 6) >= historyStart) weeks += 1;
 let vendorRef = 0;
-for (let k = 0; ; k++) {
-  const end = addDays(lastSunday, -14 * k);
-  const start = addDays(end, -13);
-  if (start < historyStart) break;
+for (let k = weeks; k >= 0; k--) {
+  const end = addDays(lastSunday, -7 * k);
+  const start = addDays(end, -6);
   for (const s of subs) {
-    const items = assignments.filter((a) => a.subId === s.id && a.date >= start && a.date <= end &&
-      completed.some((j) => j.id === a.jobId));
+    const items = assignments.filter((a) => a.subId === s.id && a.date <= end && !includedAssignments.has(a.id) && completedIds.has(a.jobId) &&
+      (paidOnByJob.get(a.jobId) ?? "9999-12-31") <= addDays(end, 1));
     if (items.length === 0) continue;
     const payoutId = seedId(T.payouts);
+    const status = k >= 2 ? "paid" : k === 1 ? "approved" : "draft";
     add("payouts", { id: payoutId, subcontractor_id: s.id, period_start: start, period_end: end, status: "draft",
-      payout_vendor_ref: k === 0 ? null : `seed-po-${++vendorRef}`, notes: null });
-    for (const a of items) payoutItemValues.push(`('${seedId(T.payoutItems)}', '${payoutId}', '${a.id}')`);
-    if (k > 0) paidPayoutIds.push(payoutId);
+      payout_vendor_ref: status === "paid" ? `seed-po-${++vendorRef}` : null, notes: null });
+    for (const a of items) {
+      payoutItemValues.push(`('${seedId(T.payoutItems)}', '${payoutId}', '${a.id}')`);
+      includedAssignments.add(a.id);
+    }
+    if (status === "paid") paidPayoutIds.push(payoutId);
+    if (status === "approved") approvedPayoutIds.push(payoutId);
   }
 }
 
@@ -745,16 +779,34 @@ function buildSeedSql(logins: { key: string; userId: string; email: string; name
     ...["subcontractors"].map((t) => insertSql(t, rows[t] ?? [])),
     insertSql("profiles", loginRows),
     ...["crews", "crew_members", "subcontractor_documents", "job_series", "jobs", "job_assignments", "invoices",
-      "invoice_line_items", "payments", "payouts"].map((t) => insertSql(t, rows[t] ?? [])),
+      "invoice_line_items"].map((t) => insertSql(t, rows[t] ?? [])),
+    // Issue the drafts (lines are frozen from here), then take payments: the database sets each status.
+    `update public.invoices i set status = 'sent', issued_on = v.issued::date, sent_at = v.sent::timestamptz
+from (values\n  ${invoiceIssue.map((x) => `(${lit(x.id)}, ${lit(x.issued)}, ${lit(x.sentAt)})`).join(",\n  ")}\n) as v (id, issued, sent)
+where i.id = v.id::uuid;`,
+    ...["payments"].map((t) => insertSql(t, rows[t] ?? [])),
+    invoicePaidAt.length
+      ? `update public.invoices i set paid_at = v.ts::timestamptz
+from (values\n  ${invoicePaidAt.map((x) => `(${lit(x.id)}, ${lit(x.at)})`).join(",\n  ")}\n) as v (id, ts)
+where i.id = v.id::uuid;`
+      : "",
+    collectedOne
+      ? `update public.invoices set collected_at = ${lit(iso(nyToUtc(today, "09:00")))}, collected_note = 'Cash at the door (demo)' where id = ${lit(collectedOne.id)};`
+      : "",
+    "  perform public.mark_overdue_invoices();",
+    ...["payouts"].map((t) => insertSql(t, rows[t] ?? [])),
     payoutItemValues.length
       ? `insert into public.payout_items (id, payout_id, job_assignment_id, amount_cents)
 select v.id::uuid, v.payout_id::uuid, a.id, a.pay_cents
 from (values\n  ${payoutItemValues.join(",\n  ")}\n) as v (id, payout_id, assignment_id)
 join public.job_assignments a on a.id = v.assignment_id::uuid;`
       : "",
+    paidPayoutIds.length + approvedPayoutIds.length
+      ? `update public.payouts set status = 'approved' where id in (${[...paidPayoutIds, ...approvedPayoutIds].map(lit).join(", ")});`
+      : "",
     paidPayoutIds.length
-      ? `update public.payouts set status = 'approved' where id in (${paidPayoutIds.map(lit).join(", ")});
-update public.payouts set status = 'paid' where id in (${paidPayoutIds.map(lit).join(", ")});`
+      ? `update public.payouts set status = 'paid', paid_method = 'ach', paid_reference = payout_vendor_ref,
+  paid_at = ((period_end + 1) + time '12:00') at time zone 'America/New_York' where id in (${paidPayoutIds.map(lit).join(", ")});`
       : "",
     ...["vendors", "expenses", "automations", "opt_outs", "goals"].map((t) => insertSql(t, rows[t] ?? [])),
     dryRun ? `  raise exception 'SEED_DRY_RUN_OK %', ${countsJson};` : "",
@@ -789,6 +841,31 @@ begin
   -- switched off for this transaction only, like further down.
   alter table public.payouts disable trigger payouts_guard_status;
   alter table public.payout_items disable trigger payout_items_guard;
+  alter table public.invoices disable trigger invoices_guard;
+  alter table public.invoice_line_items disable trigger invoice_line_items_guard;
+  alter table public.refunds disable trigger refunds_guard;
+
+  -- Money rows made while testing on demo data are demo data too: invoices for
+  -- demo customers or visits (with their payments and refunds), payouts of demo
+  -- cleaners, and their finance log. The finance guards are off for this
+  -- transaction only (like the payout ones); any error rolls that back too.
+  create temp table demo_invoices on commit drop as
+    select i.id from public.invoices i
+    where i.id::text like '${SEED_PREFIX}%' or i.contact_id::text like '${SEED_PREFIX}%' or i.account_id::text like '${SEED_PREFIX}%'
+       or exists (select 1 from public.invoice_line_items li where li.invoice_id = i.id
+                  and li.job_id in (select id from public.jobs where id::text like '${SEED_PREFIX}%' or series_id::text like '${SEED_PREFIX}%'));
+  create temp table demo_payouts on commit drop as
+    select id from public.payouts where id::text like '${SEED_PREFIX}%' or subcontractor_id::text like '${SEED_PREFIX}%';
+  delete from public.finance_log where entity_id in (select id from demo_invoices) or entity_id in (select id from demo_payouts)
+    or entity_id in (select id from public.payments where invoice_id in (select id from demo_invoices))
+    or entity_id in (select r.id from public.refunds r join public.payments p on p.id = r.payment_id where p.invoice_id in (select id from demo_invoices))
+    or entity_id::text like '${SEED_PREFIX}%' or (detail ->> 'subcontractor_id') like '${SEED_PREFIX}%';
+  delete from public.refunds where payment_id in (select id from public.payments where invoice_id in (select id from demo_invoices));
+  delete from public.payments where invoice_id in (select id from demo_invoices);
+  delete from public.invoice_line_items where invoice_id in (select id from demo_invoices);
+  delete from public.invoices where id in (select id from demo_invoices);
+  delete from public.payout_items where payout_id in (select id from demo_payouts);
+  delete from public.payouts where id in (select id from demo_payouts);
   delete from public.payout_items where payout_id::text like '${SEED_PREFIX}%' or job_assignment_id in (select a.id from public.job_assignments a where a.job_id in (select id from public.jobs where id::text like '${SEED_PREFIX}%' or series_id::text like '${SEED_PREFIX}%'));
   delete from public.job_assignments where job_id in (select id from public.jobs where id::text like '${SEED_PREFIX}%' or series_id::text like '${SEED_PREFIX}%');
   delete from public.job_checklist_items where job_id in (select id from public.jobs where id::text like '${SEED_PREFIX}%' or series_id::text like '${SEED_PREFIX}%');
@@ -847,6 +924,9 @@ ${afterProfiles.map(del).join("\n")}
 
   alter table public.payouts enable trigger payouts_guard_status;
   alter table public.payout_items enable trigger payout_items_guard;
+  alter table public.invoices enable trigger invoices_guard;
+  alter table public.invoice_line_items enable trigger invoice_line_items_guard;
+  alter table public.refunds enable trigger refunds_guard;
 
   -- If nothing real was ever numbered, restart numbering at 1.
   if not exists (select 1 from public.invoices) then
@@ -899,14 +979,13 @@ async function findSeedUsers() {
 function summary() {
   const count = (t: string) => (rows[t] ?? []).length;
   const statusCount = (s: string) => jobs.filter((j) => j.status === s).length;
-  const invoiceRows = rows.invoices ?? [];
   console.log(`Seed for ${CLEANING_PROJECT_REF}, anchored to ${today} (America/New_York); history from ${historyStart}, visits through ${horizon}.\n`);
   console.log("Rows to insert:");
   for (const t of SEED_TABLES) console.log(`  ${t.padEnd(24)} ${t === "payout_items" ? payoutItemValues.length : count(t)}`);
   console.log(`  ${"profiles (test logins)".padEnd(24)} ${TEST_LOGINS.length}`);
   console.log(`\nJobs: ${statusCount("completed")} completed, ${statusCount("scheduled")} scheduled, ${statusCount("cancelled")} cancelled, ${statusCount("no_access")} no access`);
-  console.log(`Invoices: ${invoiceRows.filter((r) => r.status === "paid").length} paid, ${invoiceRows.filter((r) => r.status === "open").length} open`);
-  console.log(`Payouts: ${paidPayoutIds.length} paid, ${(rows.payouts ?? []).length - paidPayoutIds.length} draft (latest period)`);
+  console.log(`Invoices: ${paidInvoiceCount} paid, ${openInvoices.length} unpaid (${partialOnes.length} with a deposit${collectedOne ? ", 1 marked collected" : ""})`);
+  console.log(`Payouts (weekly): ${paidPayoutIds.length} paid, ${approvedPayoutIds.length} approved, ${(rows.payouts ?? []).length - paidPayoutIds.length - approvedPayoutIds.length} draft`);
   const bySource = new Map<string, number>();
   for (const c of rows.contacts ?? []) bySource.set(String(c.source), (bySource.get(String(c.source)) ?? 0) + 1);
   console.log(`Contact sources: ${[...bySource].map(([s, n]) => `${s} ${n}`).join(", ")}`);
@@ -938,9 +1017,16 @@ function demoPhotoPaths(): string[] {
     union select name as path from storage.objects where bucket_id = 'job-photos' and (storage.foldername(name))[1] in (select id::text from (${seedJobs}) j);`).map((r) => r.path);
 }
 
+/** W-9 files uploaded for demo cleaners (while testing) must be deleted from storage too. */
+function demoW9Paths(): string[] {
+  return queryRows<{ path: string }>(`select name as path from storage.objects where bucket_id = 'subcontractor-documents'
+    and (storage.foldername(name))[1] in (select id::text from public.subcontractors where id::text like '${SEED_PREFIX}%');`).map((r) => r.path);
+}
+
 if (values.purge && values["dry-run"]) {
   const paths = demoPhotoPaths();
   console.log(`Demo photo files that would be deleted from storage: ${paths.length}`);
+  console.log(`Demo W-9 files that would be deleted from storage: ${demoW9Paths().length}`);
   const res = runSql(`begin;\n${buildPurgeSql()}\nrollback;`);
   if (!res.ok) fail(`purge would fail: ${errorLine(res.output)}`);
   console.log("Purge dry run OK: every seed row (and generated demo visit) would be removed; nothing was changed.");
@@ -949,6 +1035,11 @@ if (values.purge && values["dry-run"]) {
   for (let i = 0; i < paths.length; i += 100) {
     const { error } = await admin.storage.from("job-photos").remove(paths.slice(i, i + 100));
     if (error) fail(`removing demo photo files failed, nothing else was changed: ${error.message}`);
+  }
+  const w9Paths = demoW9Paths();
+  for (let i = 0; i < w9Paths.length; i += 100) {
+    const { error } = await admin.storage.from("subcontractor-documents").remove(w9Paths.slice(i, i + 100));
+    if (error) fail(`removing demo W-9 files failed, nothing else was changed: ${error.message}`);
   }
   const res = runSql(buildPurgeSql());
   if (!res.ok) fail(`purge failed, nothing removed: ${errorLine(res.output)}`);

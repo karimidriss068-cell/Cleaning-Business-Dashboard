@@ -1,4 +1,4 @@
-import { timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import type { NextRequest } from "next/server";
 
 /**
@@ -46,4 +46,38 @@ export function verifyRetellSecret(req: NextRequest): boolean {
 export function verifyCronSecret(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
   return verifySecretHeader(req, "authorization", secret ? `Bearer ${secret}` : undefined);
+}
+
+/**
+ * Verifies Stripe's `Stripe-Signature` header (https://docs.stripe.com/webhooks#verify-manually):
+ * `t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>.<raw body>">[,v1=...]`. Compared with
+ * timingSafeEqual, and a timestamp more than five minutes from now is rejected
+ * so a captured request can't be replayed later. Pass the raw, unparsed body.
+ */
+export function verifyStripeSignature(
+  rawBody: string,
+  header: string | null,
+  secret: string | undefined,
+  nowMs: number = Date.now(),
+  toleranceSeconds = 300,
+): boolean {
+  if (!header || !secret) return false;
+  let timestamp: string | null = null;
+  const signatures: string[] = [];
+  for (const part of header.split(",")) {
+    const eq = part.indexOf("=");
+    if (eq < 0) continue;
+    const key = part.slice(0, eq).trim();
+    const value = part.slice(eq + 1).trim();
+    if (key === "t") timestamp = value;
+    else if (key === "v1") signatures.push(value);
+  }
+  if (!timestamp || !/^\d+$/.test(timestamp) || signatures.length === 0) return false;
+  if (Math.abs(nowMs / 1000 - Number(timestamp)) > toleranceSeconds) return false;
+
+  const expected = createHmac("sha256", secret).update(`${timestamp}.${rawBody}`).digest();
+  return signatures.some((sig) => {
+    if (!/^[0-9a-f]{64}$/i.test(sig)) return false;
+    return timingSafeEqual(expected, Buffer.from(sig, "hex"));
+  });
 }

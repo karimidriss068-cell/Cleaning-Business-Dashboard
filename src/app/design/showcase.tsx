@@ -51,7 +51,7 @@ const INVOICES = Array.from({ length: 14 }, (_, i) => ({
   number: 1040 + i,
   client: ["Maria Lopez", "Gowanus Dental Studio", "James Chen", "Aisha Patel", "Astoria Yoga Collective", "Daniel Cohen", "Wei Park"][i % 7],
   due: ["2026-10-12", "2026-10-20", "2026-10-28", "2026-11-03", "2026-11-15"][i % 5],
-  status: (["paid", "open", "open", "paid", "draft", "void", "paid"] as const)[i % 7],
+  status: (["paid", "sent", "partially_paid", "paid", "draft", "void", "paid"] as const)[i % 7],
   totalCents: [18500, 112000, 24500, 32000, 96000, 15000, 28000][i % 7],
 }));
 const TODAY = "2026-10-23";

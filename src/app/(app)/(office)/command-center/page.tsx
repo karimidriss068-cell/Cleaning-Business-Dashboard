@@ -6,6 +6,9 @@ import { createClient } from "@/lib/supabase/server";
 import { addDays, formatCalendarDate, formatCents, formatNyDate, formatNyTime, nyDateString, nyDayRangeUtc, nyToday } from "@/lib/format";
 import { cumulative, dailySeries, dayRange, direction, median, minutesBetween, shortDuration, signedCount, signedPercent } from "@/lib/command-center";
 import { coiTone, jobLabel, jobTone } from "@/lib/status";
+import { loadFinanceMonths } from "@/lib/finance-data";
+import { balanceCents, invoiceNumberLabel } from "@/lib/invoices";
+import { marginBps, monthShort } from "@/lib/payouts";
 import { PageHeader } from "@/components/shell/page-header";
 import { AnimatedNumber } from "@/components/system/animated-number";
 import { StatTile } from "@/components/system/stat-tile";
@@ -13,6 +16,8 @@ import { StatusPill } from "@/components/system/status-pill";
 import { EmptyState } from "@/components/system/empty-state";
 import { DataTable } from "@/components/system/data-table";
 import { AreaChart } from "@/components/system/area-chart";
+import { BarChart } from "@/components/system/bar-chart";
+import { GlassPanel } from "@/components/system/glass-panel";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { Database } from "@/lib/supabase/database.types";
 
@@ -67,7 +72,7 @@ export default async function CommandCenterPage() {
   const todayRange = nyDayRangeUtc(today);
   const in30 = addDays(today, 30);
 
-  const [jobsRes, lastMonthRes, leadsRes, openLeadsRes, waitingRes, invoicesRes, goalsRes, contractsRes, coiRes, followUpsRes] = await Promise.all([
+  const [jobsRes, lastMonthRes, leadsRes, openLeadsRes, waitingRes, invoicesRes, goalsRes, contractsRes, coiRes, followUpsRes, months] = await Promise.all([
     supabase
       .from("jobs")
       .select(
@@ -85,7 +90,11 @@ export default async function CommandCenterPage() {
     supabase.from("leads").select("created_at, first_response_at").gte("created_at", nyDayRangeUtc(addDays(today, -29)).start.toISOString()),
     supabase.from("leads").select("id", { count: "exact", head: true }).in("stage", ["new", "contacted", "quoted"]),
     supabase.from("leads").select("created_at").eq("stage", "new").is("first_response_at", null).order("created_at"),
-    supabase.from("invoices").select("total_cents, amount_paid_cents, due_on").eq("status", "open"),
+    supabase
+      .from("invoices")
+      .select("id, invoice_number, total_cents, amount_paid_cents, due_on, contact:contacts(first_name, last_name), account:accounts(name)")
+      .in("status", ["sent", "partially_paid", "overdue"])
+      .order("due_on"),
     supabase.from("goals").select("id, metric, target_value, period_start, period_end").lte("period_start", today).gte("period_end", today),
     supabase
       .from("quotes")
@@ -94,6 +103,7 @@ export default async function CommandCenterPage() {
       .gte("accepted_at", nyDayRangeUtc(monthStart).start.toISOString()),
     supabase.from("subcontractors").select("id, display_name, coi_expires_on").eq("status", "active").lte("coi_expires_on", in30).order("coi_expires_on"),
     supabase.from("leads").select("next_follow_up_on").in("stage", ["new", "contacted", "quoted"]).lt("next_follow_up_on", today).order("next_follow_up_on"),
+    loadFinanceMonths(supabase, 6),
   ]);
 
   const failed = [jobsRes, lastMonthRes, leadsRes, openLeadsRes, waitingRes, invoicesRes, goalsRes, contractsRes, coiRes, followUpsRes].find((r) => r.error);
@@ -132,9 +142,19 @@ export default async function CommandCenterPage() {
 
   // Money
   const openInvoices = invoicesRes.data ?? [];
-  const outstanding = openInvoices.reduce((s, i) => s + ((i.total_cents ?? 0) - i.amount_paid_cents), 0);
+  const outstanding = openInvoices.reduce((s, i) => s + balanceCents(i.total_cents ?? 0, i.amount_paid_cents), 0);
   const overdue = openInvoices.filter((i) => i.due_on !== null && i.due_on < today);
-  const overdueCents = overdue.reduce((s, i) => s + ((i.total_cents ?? 0) - i.amount_paid_cents), 0);
+  const overdueCents = overdue.reduce((s, i) => s + balanceCents(i.total_cents ?? 0, i.amount_paid_cents), 0);
+  const isAdmin = profile.role === "owner" || profile.role === "admin";
+  const thisMonth = months.at(-1);
+  const overdueList = overdue.slice(0, 5).map((i) => ({
+    id: i.id,
+    number: i.invoice_number,
+    customer: i.account?.name ?? [i.contact?.first_name, i.contact?.last_name].filter(Boolean).join(" "),
+    dueOn: i.due_on as string,
+    balance: balanceCents(i.total_cents ?? 0, i.amount_paid_cents),
+    daysLate: Math.round((Date.parse(`${today}T00:00:00Z`) - Date.parse(`${i.due_on}T00:00:00Z`)) / 86400000),
+  }));
 
   // Attention
   const unassigned = live.filter((j) => j.status === "scheduled" && j.scheduled_start >= now.toISOString() && j.job_assignments.length === 0);
@@ -159,7 +179,7 @@ export default async function CommandCenterPage() {
       text: `${followUps.length} overdue follow-up${followUps.length === 1 ? "" : "s"}`, meta: followUps[0]?.next_follow_up_on ? `oldest due ${formatCalendarDate(followUps[0].next_follow_up_on)}` : "" },
     { key: "unassigned", show: unassigned.length > 0, icon: CalendarX2, href: "/schedule", tone: "warning" as const,
       text: `${unassigned.length} upcoming visit${unassigned.length === 1 ? "" : "s"} without a crew`, meta: "next 7 days" },
-    { key: "overdue", show: overdue.length > 0, icon: Receipt, href: "/money", tone: "danger" as const,
+    { key: "overdue", show: overdue.length > 0, icon: Receipt, href: "/invoices", tone: "danger" as const,
       text: `${overdue.length} overdue invoice${overdue.length === 1 ? "" : "s"}`, meta: dollars(overdueCents) },
     { key: "coi", show: coi.length > 0, icon: ShieldAlert, href: "/crews", tone: coiExpired.length ? ("danger" as const) : ("warning" as const),
       text: coiExpired.length ? `${coiExpired.length} insurance certificate${coiExpired.length === 1 ? "" : "s"} expired` : `${coi.length} insurance certificate${coi.length === 1 ? "" : "s"} expiring`,
@@ -190,7 +210,7 @@ export default async function CommandCenterPage() {
           hint="completed jobs"
           spark={revenueSeries}
           delta={revenuePct ? { label: `${revenuePct} vs last month`, direction: direction(revenue - lastMonthRevenue), good: revenue >= lastMonthRevenue } : undefined}
-          href="/money"
+          href="/invoices"
           index={2}
         />
         <StatTile
@@ -207,10 +227,50 @@ export default async function CommandCenterPage() {
           figure={{ value: Math.round(outstanding / 100) * 100, kind: "cents", hideZeroCents: true }}
           hint={`${openInvoices.length} open invoice${openInvoices.length === 1 ? "" : "s"}`}
           delta={overdue.length ? { label: `${dollars(overdueCents)} overdue`, direction: "up", good: false } : undefined}
-          href="/money"
+          href="/invoices"
           index={4}
         />
       </div>
+
+      <section aria-labelledby="finance" className="space-y-3">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h2 id="finance" className="font-heading text-lg font-medium text-ink">Finance, {thisMonth ? monthShort(thisMonth.monthStart) : "this month"}</h2>
+            <p className="text-[13px] text-ink-muted">Invoiced, collected and paid out, by New York month. Margin is collected minus payouts.</p>
+          </div>
+          <Link href="/invoices" className="text-[13px] text-brand-text underline-offset-4 hover:underline">All invoices</Link>
+        </div>
+        <div className={isAdmin ? "grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5" : "grid grid-cols-1 gap-3 sm:grid-cols-3"} data-testid="finance-tiles">
+          <StatTile label="Invoiced" figure={{ value: thisMonth?.revenueCents ?? 0, kind: "cents", hideZeroCents: true }} hint="sent this month" index={5} />
+          <StatTile label="Collected" figure={{ value: thisMonth?.collectedCents ?? 0, kind: "cents", hideZeroCents: true }} hint="payments minus refunds" index={6} />
+          <StatTile label="Unpaid" figure={{ value: thisMonth?.outstandingCents ?? 0, kind: "cents", hideZeroCents: true }} hint="from this month's invoices" index={7} />
+          {isAdmin && <StatTile label="Payouts" figure={{ value: thisMonth?.payoutsCents ?? 0, kind: "cents", hideZeroCents: true }} hint="marked paid this month" index={8} />}
+          {isAdmin && (
+            <StatTile
+              label="Gross margin"
+              figure={{ value: thisMonth?.marginCents ?? 0, kind: "cents", hideZeroCents: true }}
+              hint={(() => {
+                const bps = marginBps(thisMonth?.marginCents ?? 0, thisMonth?.collectedCents ?? 0);
+                return bps === null ? "nothing collected yet" : `${(bps / 100).toFixed(1)}% of collected`;
+              })()}
+              index={9}
+            />
+          )}
+        </div>
+        <GlassPanel as="div" className="kc-enter p-5" style={{ "--i": 10 } as React.CSSProperties}>
+          <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+            <h3 className="font-heading text-base font-medium text-ink">Collected, last 6 months</h3>
+            <AnimatedNumber value={months.reduce((a, m) => a + m.collectedCents, 0)} kind="cents" hideZeroCents className="font-heading text-xl font-medium text-ink tabular" />
+          </div>
+          <BarChart
+            values={months.map((m) => m.collectedCents)}
+            labels={months.map((m) => monthShort(m.monthStart))}
+            format="dollars-short"
+            ariaLabel={`Money collected per month over the last six months, ${dollars(months.reduce((a, m) => a + m.collectedCents, 0))} in total`}
+            height={160}
+          />
+        </GlassPanel>
+      </section>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="min-w-0 space-y-6 lg:col-span-2">
@@ -318,7 +378,32 @@ export default async function CommandCenterPage() {
             )}
           </section>
 
-          <section aria-labelledby="goals" className="kc-enter rounded-md border glass-card p-5" style={stagger(8)}>
+          <GlassPanel as="section" aria-labelledby="overdue-list" className="kc-enter p-5" style={stagger(8)} data-testid="overdue-list">
+            <div className="flex items-baseline justify-between gap-2">
+              <h2 id="overdue-list" className="font-heading text-lg font-medium text-ink">Overdue invoices</h2>
+              {overdue.length > 0 && <span className="text-[13px] font-medium text-danger tabular">{dollars(overdueCents)}</span>}
+            </div>
+            {overdueList.length === 0 ? (
+              <p className="mt-2 flex items-center gap-2 text-sm text-ink-muted"><CheckCircle2 className="size-4 text-success" aria-hidden /> Nothing overdue.</p>
+            ) : (
+              <ul className="mt-3 divide-y divide-hairline">
+                {overdueList.map((o) => (
+                  <li key={o.id}>
+                    <Link href={`/invoices/${o.id}`} className="flex items-center justify-between gap-3 py-2.5 text-sm hover:text-brand-text">
+                      <span className="min-w-0">
+                        <span className="block truncate font-medium text-ink">{o.customer}</span>
+                        <span className="text-[12px] text-ink-muted tabular">{invoiceNumberLabel(o.number)} · {o.daysLate} day{o.daysLate === 1 ? "" : "s"} late</span>
+                      </span>
+                      <span className="shrink-0 font-medium text-danger tabular">{formatCents(o.balance)}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {overdue.length > overdueList.length && <Link href="/invoices" className="mt-2 inline-block text-[13px] text-brand-text underline-offset-4 hover:underline">+{overdue.length - overdueList.length} more</Link>}
+          </GlassPanel>
+
+          <section aria-labelledby="goals" className="kc-enter rounded-md border glass-card p-5" style={stagger(9)}>
             <h2 id="goals" className="font-heading text-lg font-medium text-ink">Goals this month</h2>
             {(goalsRes.data ?? []).length === 0 ? (
               <p className="mt-2 text-sm text-ink-muted">No goals set for this month.</p>

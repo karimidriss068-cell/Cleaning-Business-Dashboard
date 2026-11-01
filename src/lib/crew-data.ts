@@ -33,3 +33,22 @@ export async function loadCrewVisit(supabase: SupabaseClient<Database>, jobId: s
   const urls = new Map((signed.data ?? []).map((s) => [s.path, s.signedUrl]));
   return { visit, photos: (rows ?? []).map((r) => ({ id: r.id, kind: r.kind, url: urls.get(r.storage_path) ?? null })) };
 }
+
+const payItemSchema = z.object({ job_date: z.string(), service: z.string(), amount_cents: z.number().int() });
+const payPayoutSchema = z.object({
+  period_start: z.string(),
+  period_end: z.string(),
+  status: z.enum(["approved", "paid"]),
+  total_cents: z.number().int(),
+  paid_at: z.string().nullable(),
+  items: z.array(payItemSchema),
+});
+const crewPaySchema = z.object({ ytd_paid_cents: z.number().int(), payouts: z.array(payPayoutSchema) });
+export type CrewPay = z.infer<typeof crewPaySchema>;
+
+/** The cleaner's own approved and paid weeks (date, service, amount). Nothing about clients, invoices or other cleaners. */
+export async function loadCrewPay(supabase: SupabaseClient<Database>): Promise<CrewPay> {
+  const { data, error } = await supabase.rpc("crew_payouts");
+  if (error) throw new Error(`Loading your pay failed: ${error.message}`);
+  return crewPaySchema.parse(data);
+}

@@ -6,7 +6,7 @@ export type Tone = "neutral" | "info" | "success" | "warning" | "danger" | "seco
 
 export type JobStatus = "scheduled" | "in_progress" | "completed" | "cancelled" | "no_access";
 export type LeadStage = "new" | "contacted" | "quoted" | "won" | "lost";
-export type InvoiceStatus = "draft" | "open" | "paid" | "void" | "uncollectible";
+export type InvoiceStatus = "draft" | "sent" | "partially_paid" | "paid" | "overdue" | "void" | "uncollectible";
 export type PayoutStatus = "draft" | "approved" | "paid" | "void";
 
 const jobTones: Record<JobStatus, Tone> = {
@@ -30,18 +30,43 @@ const payoutTones: Record<PayoutStatus, Tone> = {
   void: "neutral",
 };
 
+export const payoutLabel: Record<PayoutStatus, string> = { draft: "Draft", approved: "Approved", paid: "Paid", void: "Void" };
 export const jobTone = (s: JobStatus): Tone => jobTones[s];
 export const leadTone = (s: LeadStage): Tone => leadTones[s];
 export const payoutTone = (s: PayoutStatus): Tone => payoutTones[s];
 
-/** Overdue is derived: an open invoice whose due date (NY calendar) has passed. */
+/**
+ * Overdue is derived at display time as well as stored by the nightly job: a
+ * sent or partially paid invoice whose NY due date has passed reads Overdue
+ * immediately, even before the job has run.
+ */
+export function invoiceDisplayStatus(status: InvoiceStatus, dueOn: string | null, today: string): InvoiceStatus {
+  if ((status === "sent" || status === "partially_paid") && dueOn !== null && dueOn < today) return "overdue";
+  return status;
+}
+const invoiceTones: Record<InvoiceStatus, Tone> = {
+  draft: "neutral",
+  sent: "info",
+  partially_paid: "secondary",
+  paid: "success",
+  overdue: "danger",
+  void: "neutral",
+  uncollectible: "danger",
+};
+export const invoiceStatusLabel: Record<InvoiceStatus, string> = {
+  draft: "Draft",
+  sent: "Sent",
+  partially_paid: "Partially paid",
+  paid: "Paid",
+  overdue: "Overdue",
+  void: "Void",
+  uncollectible: "Uncollectible",
+};
 export function invoiceTone(status: InvoiceStatus, dueOn: string | null, today: string): Tone {
-  if (status === "open" && dueOn !== null && dueOn < today) return "danger";
-  return { draft: "neutral", open: "info", paid: "success", void: "neutral", uncollectible: "danger" }[status] as Tone;
+  return invoiceTones[invoiceDisplayStatus(status, dueOn, today)];
 }
 export function invoiceLabel(status: InvoiceStatus, dueOn: string | null, today: string): string {
-  if (status === "open" && dueOn !== null && dueOn < today) return "Overdue";
-  return { draft: "Draft", open: "Open", paid: "Paid", void: "Void", uncollectible: "Uncollectible" }[status];
+  return invoiceStatusLabel[invoiceDisplayStatus(status, dueOn, today)];
 }
 
 /** Insurance certificate: expired, expiring within 30 days, or valid. */

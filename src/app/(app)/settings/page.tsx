@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Building2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { allFontClasses } from "@/lib/theme/fonts";
 import { PageHeader } from "@/components/shell/page-header";
-import { EmptyState } from "@/components/system/empty-state";
+import { loadSettings } from "@/lib/finance-data";
+import { FinanceSettingsForm } from "@/components/settings/finance-settings-form";
 import { AppearancePicker } from "@/components/settings/appearance-picker";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -18,6 +18,8 @@ export default async function SettingsPage() {
     ? await supabase.from("profiles").select("role").eq("user_id", user.id).maybeSingle()
     : { data: null };
   const isOffice = profile !== null && profile.role !== "subcontractor";
+  const canEditFinance = profile?.role === "owner" || profile?.role === "admin";
+  const finance = isOffice ? await loadSettings(supabase) : null;
 
   return (
     // The previews show every direction's typefaces, so this page (only)
@@ -27,12 +29,13 @@ export default async function SettingsPage() {
       <section aria-label="Appearance" className="kc-enter rounded-lg border glass-card p-5 md:p-6" style={{ "--i": 1 } as React.CSSProperties}>
         <AppearancePicker />
       </section>
-      {isOffice && (
-        <section aria-label="Business settings" className="kc-enter rounded-md border glass-card" style={{ "--i": 2 } as React.CSSProperties}>
-          <EmptyState icon={Building2} title="Team, services and integrations come next">
-            Team members and roles, services and prices, and the GHL and Stripe connections will live here.
-          </EmptyState>
-        </section>
+      {finance && (
+        <>
+          <PageHeader eyebrow="Business" title="Invoicing & payouts" description="Sales tax, due dates and the 1099 threshold." className="pt-2" />
+          <section aria-label="Invoicing and payout settings" className="kc-enter rounded-lg border glass-card p-5 md:p-6" style={{ "--i": 2 } as React.CSSProperties}>
+            <FinanceSettingsForm settings={finance} canEdit={canEditFinance} />
+          </section>
+        </>
       )}
     </div>
   );

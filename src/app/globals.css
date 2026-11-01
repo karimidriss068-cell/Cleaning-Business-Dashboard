@@ -468,3 +468,21 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* The printable invoice: a plain light sheet whatever theme the app is in.
+   System colors under color-scheme: light give white paper and black ink; the
+   text tokens are reset so everything inside (hairlines, muted text) follows. */
+@utility kc-paper {
+  color-scheme: light;
+  background: Canvas;
+  color: CanvasText;
+  --kc-text: CanvasText;
+  --kc-text-muted: color-mix(in srgb, CanvasText 72%, Canvas);
+  border: 1px solid color-mix(in srgb, CanvasText 22%, Canvas);
+  border-radius: 0.5rem;
+}
+@media print {
+  .kc-print-hide { display: none !important; }
+  .kc-paper { border: none; border-radius: 0; padding: 0; }
+  body { background: Canvas !important; }
+}

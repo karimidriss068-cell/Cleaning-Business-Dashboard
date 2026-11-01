@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { CalendarCheck, UserX } from "lucide-react";
+import Link from "next/link";
+import { CalendarCheck, ChevronRight, UserX, Wallet } from "lucide-react";
 import { getMember } from "@/lib/member";
 import { loadCrewHome } from "@/lib/crew-data";
 import { groupVisits, insuranceReminder } from "@/lib/crew";
@@ -61,6 +62,16 @@ export default async function MyJobsPage() {
           todays.map((v, i) => <VisitCard key={v.job_id} visit={v} index={i + 1} />)
         )}
       </section>
+
+      <Link
+        href="/my-jobs/pay"
+        className="kc-enter flex min-h-14 items-center gap-3 rounded-lg border glass-solid px-5 py-3 text-[17px] font-medium text-ink shadow-e1"
+        style={{ "--i": todays.length + 1 } as React.CSSProperties}
+      >
+        <Wallet className="size-5 shrink-0" aria-hidden />
+        <span className="flex-1">My pay</span>
+        <ChevronRight className="size-5 shrink-0 text-crew-muted" aria-hidden />
+      </Link>
 
       {upcoming.length > 0 && (
         <section aria-label="Upcoming" className="space-y-6">

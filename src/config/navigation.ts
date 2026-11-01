@@ -5,6 +5,7 @@ import {
   KanbanSquare,
   Megaphone,
   Receipt,
+  Wallet,
   Settings,
   Users,
   Workflow,
@@ -19,6 +20,8 @@ export type NavItem = {
   icon: LucideIcon;
   /** Shown as a bottom-bar tab on phones; the rest live under "More". */
   tab?: boolean;
+  /** Owner and admin only (payouts and 1099 data). */
+  adminOnly?: boolean;
   /** Sidebar group. */
   section: "Operate" | "Business" | "Crew";
   keywords?: string;
@@ -30,7 +33,8 @@ export const officeNav: NavItem[] = [
   { href: "/leads", label: "Leads & Pipeline", short: "Leads", icon: KanbanSquare, tab: true, section: "Operate", keywords: "pipeline quotes prospects" },
   { href: "/schedule", label: "Schedule", short: "Schedule", icon: CalendarDays, tab: true, section: "Operate", keywords: "calendar jobs dispatch" },
   { href: "/crews", label: "Crews", short: "Crews", icon: Users, section: "Operate", keywords: "subcontractors team cleaners" },
-  { href: "/money", label: "Invoices & Payouts", short: "Money", icon: Receipt, tab: true, section: "Business", keywords: "invoices payments payouts billing" },
+  { href: "/invoices", label: "Invoices", short: "Invoices", icon: Receipt, tab: true, section: "Business", keywords: "invoices payments billing stripe collect" },
+  { href: "/payouts", label: "Payouts", short: "Payouts", icon: Wallet, section: "Business", adminOnly: true, keywords: "payouts pay subcontractors 1099 w-9 zelle" },
   { href: "/marketing", label: "Marketing", short: "Marketing", icon: Megaphone, section: "Business", keywords: "campaigns ads" },
   { href: "/automations", label: "Automations", short: "Automations", icon: Workflow, section: "Business", keywords: "workflows texts reminders" },
   { href: "/settings", label: "Settings", short: "Settings", icon: Settings, section: "Business", keywords: "account team integrations" },
@@ -47,7 +51,7 @@ export type MemberRole = "owner" | "admin" | "staff" | "subcontractor";
 export function navFor(role: MemberRole | null): NavItem[] {
   if (role === "subcontractor") return crewNav;
   if (role === null) return [];
-  return officeNav;
+  return role === "staff" ? officeNav.filter((i) => !i.adminOnly) : officeNav;
 }
 
 export function isActive(pathname: string, href: string): boolean {
