@@ -3103,6 +3103,7 @@ export type Database = {
         }
         Returns: Json
       }
+      ghl_can_text: { Args: { p_contact: string }; Returns: string }
       ghl_claim_message: {
         Args: {
           p_body: string
@@ -3115,6 +3116,33 @@ export type Database = {
           p_template: string
         }
         Returns: Json
+      }
+      ghl_claim_queue: {
+        Args: { p_limit?: number; p_lock_seconds?: number }
+        Returns: {
+          attempts: number
+          completed_at: string | null
+          created_at: string
+          direction: Database["public"]["Enums"]["sync_direction"]
+          entity_id: string | null
+          entity_type: string
+          id: string
+          last_error: string | null
+          locked_until: string | null
+          max_attempts: number
+          next_attempt_at: string
+          operation: string
+          payload: Json
+          provider: string
+          status: Database["public"]["Enums"]["sync_status"]
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "sync_queue"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       ghl_due_messages: {
         Args: { p_now?: string }
@@ -3161,6 +3189,10 @@ export type Database = {
         }
         Returns: Json
       }
+      ghl_queue_defer: {
+        Args: { p_id: string; p_until: string }
+        Returns: undefined
+      }
       ghl_queue_done: {
         Args: { p_id: string; p_note?: string }
         Returns: undefined
@@ -3168,6 +3200,16 @@ export type Database = {
       ghl_queue_fail: {
         Args: { p_error: string; p_id: string }
         Returns: string
+      }
+      ghl_refresh_contact: {
+        Args: {
+          p_dnd?: boolean
+          p_email?: string
+          p_ghl_contact_id: string
+          p_phone?: string
+          p_sms_consent?: boolean
+        }
+        Returns: boolean
       }
       ghl_send_counts: {
         Args: { p_contact: string; p_now?: string }
