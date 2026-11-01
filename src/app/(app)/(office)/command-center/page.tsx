@@ -7,6 +7,8 @@ import { addDays, formatCalendarDate, formatCents, formatNyDate, formatNyTime, n
 import { cumulative, dailySeries, dayRange, direction, median, minutesBetween, shortDuration, signedCount, signedPercent } from "@/lib/command-center";
 import { coiTone, jobLabel, jobTone } from "@/lib/status";
 import { loadFinanceMonths } from "@/lib/finance-data";
+import { loadGrowthSnapshot } from "@/lib/growth-data";
+import { GrowthCard } from "@/components/growth/growth-card";
 import { balanceCents, invoiceNumberLabel } from "@/lib/invoices";
 import { marginBps, monthShort } from "@/lib/payouts";
 import { PageHeader } from "@/components/shell/page-header";
@@ -72,7 +74,7 @@ export default async function CommandCenterPage() {
   const todayRange = nyDayRangeUtc(today);
   const in30 = addDays(today, 30);
 
-  const [jobsRes, lastMonthRes, leadsRes, openLeadsRes, waitingRes, invoicesRes, goalsRes, contractsRes, coiRes, followUpsRes, months] = await Promise.all([
+  const [jobsRes, lastMonthRes, leadsRes, openLeadsRes, waitingRes, invoicesRes, goalsRes, contractsRes, coiRes, followUpsRes, months, growth] = await Promise.all([
     supabase
       .from("jobs")
       .select(
@@ -104,6 +106,7 @@ export default async function CommandCenterPage() {
     supabase.from("subcontractors").select("id, display_name, coi_expires_on").eq("status", "active").lte("coi_expires_on", in30).order("coi_expires_on"),
     supabase.from("leads").select("next_follow_up_on").in("stage", ["new", "contacted", "quoted"]).lt("next_follow_up_on", today).order("next_follow_up_on"),
     loadFinanceMonths(supabase, 6),
+    loadGrowthSnapshot(supabase),
   ]);
 
   const failed = [jobsRes, lastMonthRes, leadsRes, openLeadsRes, waitingRes, invoicesRes, goalsRes, contractsRes, coiRes, followUpsRes].find((r) => r.error);
@@ -231,6 +234,8 @@ export default async function CommandCenterPage() {
           index={4}
         />
       </div>
+
+      <GrowthCard snapshot={growth} index={4} />
 
       <section aria-labelledby="finance" className="space-y-3">
         <div className="flex flex-wrap items-end justify-between gap-2">

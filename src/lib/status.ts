@@ -91,3 +91,24 @@ export const leadLabel: Record<LeadStage, string> = {
   won: "Booked",
   lost: "Lost",
 };
+
+// Growth goal: pace, capacity, cash, budget and the scale light. Always shown
+// with a text label next to the dot (never color alone).
+export type PaceState = "ahead" | "on_track" | "behind";
+export const paceTone: Record<PaceState, Tone> = { ahead: "success", on_track: "info", behind: "warning" };
+export const paceLabel: Record<PaceState, string> = { ahead: "Ahead of pace", on_track: "On track", behind: "Behind pace" };
+
+export type ScaleState = "green" | "amber" | "red";
+export const scaleTone: Record<ScaleState, Tone> = { green: "success", amber: "warning", red: "danger" };
+export const scaleLabel: Record<ScaleState, string> = { green: "Green: safe to scale", amber: "Amber: hold steady", red: "Red: don't scale yet" };
+
+export type ConditionTone = "ok" | "warn" | "fail" | "unknown";
+export const conditionTone: Record<ConditionTone, Tone> = { ok: "success", warn: "warning", fail: "danger", unknown: "neutral" };
+export const conditionLabel: Record<ConditionTone, string> = { ok: "OK", warn: "Close", fail: "Blocking", unknown: "No data" };
+
+export const capacityTone: Record<"ok" | "warn" | "over", Tone> = { ok: "success", warn: "warning", over: "danger" };
+export const capacityLabel: Record<"ok" | "warn" | "over", string> = { ok: "Room to grow", warn: "Near the limit", over: "Over capacity" };
+export const budgetTone: Record<"under" | "near" | "over", Tone> = { under: "success", near: "warning", over: "danger" };
+export const budgetLabel: Record<"under" | "near" | "over", string> = { under: "Within budget", near: "Close to budget", over: "Over budget" };
+export const cashTone: Record<"ok" | "low" | "negative", Tone> = { ok: "success", low: "warning", negative: "danger" };
+export const cashLabel: Record<"ok" | "low" | "negative", string> = { ok: "Above buffer", low: "At or under buffer", negative: "Below zero" };

@@ -112,6 +112,11 @@ begin
   insert into public.contacts (first_name, last_name, phone) values ('Test', 'Lead', '+17185550177') returning id into c;
   insert into public.leads (contact_id, source) values (c, 'instagram') returning id into l;
   r := r || 'instagram-lead-gets-a-meta-campaign=' || coalesce((select m.platform = 'meta' from public.leads x join public.marketing_campaigns m on m.id = x.campaign_id where x.id = l), false) || ' ';
+  -- A seeded demo campaign is never picked, even when it is the only Meta campaign.
+  update public.marketing_campaigns set status = 'paused' where id in (camp, camp2);
+  insert into public.leads (contact_id, source) values (c, 'instagram') returning id into l;
+  r := r || 'no-real-campaign-leaves-lead-unattributed=' || (select not exists (select 1 from public.marketing_campaigns m where m.id = x.campaign_id and m.id::text not like '5eed0000-%') from public.leads x where x.id = l) || ' ';
+  update public.marketing_campaigns set status = 'active' where id in (camp, camp2);
   insert into public.leads (contact_id, source) values (c, 'referral') returning id into l;
   r := r || 'referral-lead-unattributed=' || (select campaign_id is null from public.leads where id = l) || ' ';
   insert into public.leads (contact_id, source, campaign_id) values (c, 'instagram', camp) returning id into l;

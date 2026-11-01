@@ -81,3 +81,13 @@ export function verifyStripeSignature(
     return timingSafeEqual(expected, Buffer.from(sig, "hex"));
   });
 }
+
+/**
+ * Verifies `authorization: Bearer $GROWTH_API_KEY` for the read-only growth
+ * snapshot that Roast Room, Agents and the voice AI poll. The key can read
+ * the numbers and nothing else.
+ */
+export function verifyGrowthKey(req: NextRequest): boolean {
+  const key = process.env.GROWTH_API_KEY;
+  return verifySecretHeader(req, "authorization", key ? `Bearer ${key}` : undefined);
+}

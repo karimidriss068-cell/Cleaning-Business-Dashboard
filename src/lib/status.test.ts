@@ -1,5 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { coiTone, invoiceLabel, invoiceTone, jobTone, leadTone, payoutTone } from "./status";
+import {
+  budgetLabel,
+  budgetTone,
+  capacityLabel,
+  capacityTone,
+  cashLabel,
+  cashTone,
+  coiTone,
+  conditionLabel,
+  conditionTone,
+  invoiceLabel,
+  invoiceTone,
+  jobTone,
+  leadTone,
+  paceLabel,
+  paceTone,
+  payoutTone,
+  scaleLabel,
+  scaleTone,
+} from "./status";
 
 describe("status tones", () => {
   it("maps job, lead and payout statuses per DESIGN.md", () => {
@@ -31,5 +50,21 @@ describe("status tones", () => {
     expect(coiTone("2026-11-22", today, in30)).toBe("warning");
     expect(coiTone("2027-03-01", today, in30)).toBe("success");
     expect(coiTone(null, today, in30)).toBe("neutral");
+  });
+
+  it("maps growth pace, capacity, budget, cash and the scale light to tones with words", () => {
+    expect(paceTone.ahead).toBe("success");
+    expect(paceTone.behind).toBe("warning");
+    expect(paceLabel.on_track).toBe("On track");
+    expect(scaleTone).toEqual({ green: "success", amber: "warning", red: "danger" });
+    expect(scaleLabel.red).toMatch(/^Red/);
+    expect(conditionTone.unknown).toBe("neutral");
+    expect(conditionLabel.fail).toBe("Blocking");
+    expect(capacityTone.warn).toBe("warning");
+    expect(budgetTone.over).toBe("danger");
+    expect(cashTone.negative).toBe("danger");
+    expect(cashLabel.low).toMatch(/buffer/);
+    expect(capacityLabel.over).toBe("Over capacity");
+    expect(budgetLabel.near).toBe("Close to budget");
   });
 });

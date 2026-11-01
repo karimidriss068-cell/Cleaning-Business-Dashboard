@@ -1,6 +1,7 @@
 import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { verifyStripeSignature } from "./webhook-auth";
+import type { NextRequest } from "next/server";
+import { verifyGrowthKey, verifyStripeSignature } from "./webhook-auth";
 
 const secret = "whsec_test_secret";
 const body = JSON.stringify({ id: "evt_1", type: "checkout.session.completed" });
@@ -35,5 +36,22 @@ describe("verifyStripeSignature", () => {
     expect(verifyStripeSignature(body, `t=abc,v1=${sign(body, t)}`, secret, now)).toBe(false);
     expect(verifyStripeSignature(body, `t=${t},v1=not-hex`, secret, now)).toBe(false);
     expect(verifyStripeSignature(body, `t=${t}`, secret, now)).toBe(false);
+  });
+});
+
+describe("verifyGrowthKey", () => {
+  const req = (authorization?: string) => ({ headers: new Headers(authorization ? { authorization } : {}) }) as unknown as NextRequest;
+  it("accepts only the exact bearer key", () => {
+    process.env.GROWTH_API_KEY = "k-123";
+    expect(verifyGrowthKey(req("Bearer k-123"))).toBe(true);
+    expect(verifyGrowthKey(req("Bearer k-124"))).toBe(false);
+    expect(verifyGrowthKey(req("Bearer k-12"))).toBe(false);
+    expect(verifyGrowthKey(req("k-123"))).toBe(false);
+    expect(verifyGrowthKey(req())).toBe(false);
+  });
+  it("rejects everything when no key is configured", () => {
+    delete process.env.GROWTH_API_KEY;
+    expect(verifyGrowthKey(req("Bearer "))).toBe(false);
+    expect(verifyGrowthKey(req("Bearer undefined"))).toBe(false);
   });
 });
