@@ -668,6 +668,83 @@ export type Database = {
           },
         ]
       }
+      growth_settings: {
+        Row: {
+          cac_cents: number
+          cash_start_date: string
+          cleans_per_cleaner_per_week: number
+          close_rate_bps: number
+          comm_account_value_cents: number
+          commercial_target_cents: number
+          created_at: string
+          id: boolean
+          margin_bps: number
+          min_buffer_cents: number
+          monthly_ad_budget_cents: number
+          monthly_fixed_costs_cents: number
+          reply_target_minutes: number
+          res_visit_price_cents: number
+          res_visits_per_month: number
+          residential_target_cents: number
+          start_date: string
+          starting_capital_cents: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          cac_cents?: number
+          cash_start_date?: string
+          cleans_per_cleaner_per_week?: number
+          close_rate_bps?: number
+          comm_account_value_cents?: number
+          commercial_target_cents?: number
+          created_at?: string
+          id?: boolean
+          margin_bps?: number
+          min_buffer_cents?: number
+          monthly_ad_budget_cents?: number
+          monthly_fixed_costs_cents?: number
+          reply_target_minutes?: number
+          res_visit_price_cents?: number
+          res_visits_per_month?: number
+          residential_target_cents?: number
+          start_date?: string
+          starting_capital_cents?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          cac_cents?: number
+          cash_start_date?: string
+          cleans_per_cleaner_per_week?: number
+          close_rate_bps?: number
+          comm_account_value_cents?: number
+          commercial_target_cents?: number
+          created_at?: string
+          id?: boolean
+          margin_bps?: number
+          min_buffer_cents?: number
+          monthly_ad_budget_cents?: number
+          monthly_fixed_costs_cents?: number
+          reply_target_minutes?: number
+          res_visit_price_cents?: number
+          res_visits_per_month?: number
+          residential_target_cents?: number
+          start_date?: string
+          starting_capital_cents?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "growth_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       integration_settings: {
         Row: {
           config: Json
@@ -2596,6 +2673,13 @@ export type Database = {
         }
         Returns: Json
       }
+      create_ad_campaign: {
+        Args: {
+          p_name: string
+          p_platform: Database["public"]["Enums"]["marketing_platform"]
+        }
+        Returns: string
+      }
       create_card_request: {
         Args: { p_account_id?: string; p_contact_id?: string }
         Returns: string
@@ -2660,6 +2744,7 @@ export type Database = {
         Args: { p_invoice_id: string }
         Returns: Json
       }
+      delete_ad_spend: { Args: { p_id: string }; Returns: undefined }
       delete_invoice_draft: {
         Args: { p_invoice_id: string }
         Returns: undefined
@@ -2690,6 +2775,8 @@ export type Database = {
         }[]
       }
       get_integration_secret: { Args: { p_provider: string }; Returns: string }
+      growth_inputs: { Args: never; Returns: Json }
+      growth_inputs_for_bots: { Args: never; Returns: Json }
       invoice_for_pay_token: { Args: { p_token: string }; Returns: Json }
       lead_conversion_by_source: {
         Args: { p_from: string; p_to: string }
@@ -2776,6 +2863,10 @@ export type Database = {
         }
         Returns: string
       }
+      record_ad_spend: {
+        Args: { p_campaign_id: string; p_date: string; p_spend_cents: number }
+        Returns: string
+      }
       record_manual_payment: {
         Args: {
           p_amount_cents: number
@@ -2803,6 +2894,38 @@ export type Database = {
       remove_payment_method: { Args: { p_id: string }; Returns: string }
       remove_subcontractor_document: { Args: { p_id: string }; Returns: string }
       reopen_payout: { Args: { p_payout_id: string }; Returns: undefined }
+      save_cash_settings: {
+        Args: {
+          p_buffer_cents: number
+          p_cash_start_date: string
+          p_fixed_cents: number
+          p_starting_cents: number
+        }
+        Returns: undefined
+      }
+      save_growth_assumptions: {
+        Args: {
+          p_account_value_cents: number
+          p_ad_budget_cents: number
+          p_cac_cents: number
+          p_cleans_per_cleaner: number
+          p_close_rate_bps: number
+          p_margin_bps: number
+          p_reply_target_minutes: number
+          p_visit_price_cents: number
+          p_visits_per_month: number
+        }
+        Returns: undefined
+      }
+      save_growth_plan: {
+        Args: {
+          p_commercial_cents: number
+          p_milestones: number[]
+          p_residential_cents: number
+          p_start_date: string
+        }
+        Returns: undefined
+      }
       save_invoice: {
         Args: {
           p_deposit_cents: number
