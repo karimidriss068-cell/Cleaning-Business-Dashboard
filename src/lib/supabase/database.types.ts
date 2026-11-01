@@ -353,6 +353,21 @@ export type Database = {
           },
         ]
       }
+      channel_test_plan: {
+        Row: {
+          channel: string
+          enabled: boolean
+        }
+        Insert: {
+          channel: string
+          enabled?: boolean
+        }
+        Update: {
+          channel?: string
+          enabled?: boolean
+        }
+        Relationships: []
+      }
       contacts: {
         Row: {
           account_id: string | null
@@ -668,11 +683,92 @@ export type Database = {
           },
         ]
       }
+      growth_decisions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          decided_on: string
+          decision: string
+          id: string
+          kind: string
+          note: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          decided_on: string
+          decision: string
+          id?: string
+          kind?: string
+          note: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          decided_on?: string
+          decision?: string
+          id?: string
+          kind?: string
+          note?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "growth_decisions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      growth_gate_criteria: {
+        Row: {
+          checkpoint: string
+          enabled: boolean
+          metric: string
+          threshold: number
+        }
+        Insert: {
+          checkpoint: string
+          enabled?: boolean
+          metric: string
+          threshold: number
+        }
+        Update: {
+          checkpoint?: string
+          enabled?: boolean
+          metric?: string
+          threshold?: number
+        }
+        Relationships: []
+      }
+      growth_hire_triggers: {
+        Row: {
+          enabled: boolean
+          key: string
+          label: string
+          threshold: number
+        }
+        Insert: {
+          enabled?: boolean
+          key: string
+          label: string
+          threshold: number
+        }
+        Update: {
+          enabled?: boolean
+          key?: string
+          label?: string
+          threshold?: number
+        }
+        Relationships: []
+      }
       growth_settings: {
         Row: {
           cac_cents: number
           cash_start_date: string
           cleans_per_cleaner_per_week: number
+          cleans_per_crew_per_week: number
           close_rate_bps: number
           comm_account_value_cents: number
           commercial_target_cents: number
@@ -681,6 +777,7 @@ export type Database = {
           margin_bps: number
           min_buffer_cents: number
           monthly_ad_budget_cents: number
+          monthly_churn_bps: number
           monthly_fixed_costs_cents: number
           reply_target_minutes: number
           res_visit_price_cents: number
@@ -688,6 +785,17 @@ export type Database = {
           residential_target_cents: number
           start_date: string
           starting_capital_cents: number
+          test_daily_after_cents: number
+          test_daily_week1_cents: number
+          test_judge_leads: number
+          test_judge_spend_cents: number
+          test_loser_ratio_x100: number
+          test_start_date: string | null
+          test_window_weeks: number
+          tier: string
+          tier_base_revenue_cents: number
+          tier_north_profit_cents: number
+          tier_strong_revenue_cents: number
           updated_at: string
           updated_by: string | null
         }
@@ -695,6 +803,7 @@ export type Database = {
           cac_cents?: number
           cash_start_date?: string
           cleans_per_cleaner_per_week?: number
+          cleans_per_crew_per_week?: number
           close_rate_bps?: number
           comm_account_value_cents?: number
           commercial_target_cents?: number
@@ -703,6 +812,7 @@ export type Database = {
           margin_bps?: number
           min_buffer_cents?: number
           monthly_ad_budget_cents?: number
+          monthly_churn_bps?: number
           monthly_fixed_costs_cents?: number
           reply_target_minutes?: number
           res_visit_price_cents?: number
@@ -710,6 +820,17 @@ export type Database = {
           residential_target_cents?: number
           start_date?: string
           starting_capital_cents?: number
+          test_daily_after_cents?: number
+          test_daily_week1_cents?: number
+          test_judge_leads?: number
+          test_judge_spend_cents?: number
+          test_loser_ratio_x100?: number
+          test_start_date?: string | null
+          test_window_weeks?: number
+          tier?: string
+          tier_base_revenue_cents?: number
+          tier_north_profit_cents?: number
+          tier_strong_revenue_cents?: number
           updated_at?: string
           updated_by?: string | null
         }
@@ -717,6 +838,7 @@ export type Database = {
           cac_cents?: number
           cash_start_date?: string
           cleans_per_cleaner_per_week?: number
+          cleans_per_crew_per_week?: number
           close_rate_bps?: number
           comm_account_value_cents?: number
           commercial_target_cents?: number
@@ -725,6 +847,7 @@ export type Database = {
           margin_bps?: number
           min_buffer_cents?: number
           monthly_ad_budget_cents?: number
+          monthly_churn_bps?: number
           monthly_fixed_costs_cents?: number
           reply_target_minutes?: number
           res_visit_price_cents?: number
@@ -732,6 +855,17 @@ export type Database = {
           residential_target_cents?: number
           start_date?: string
           starting_capital_cents?: number
+          test_daily_after_cents?: number
+          test_daily_week1_cents?: number
+          test_judge_leads?: number
+          test_judge_spend_cents?: number
+          test_loser_ratio_x100?: number
+          test_start_date?: string | null
+          test_window_weeks?: number
+          tier?: string
+          tier_base_revenue_cents?: number
+          tier_north_profit_cents?: number
+          tier_strong_revenue_cents?: number
           updated_at?: string
           updated_by?: string | null
         }
@@ -1395,9 +1529,11 @@ export type Database = {
           bathrooms: number | null
           bedrooms: number | null
           campaign_id: string | null
+          channel: string
           closed_at: string | null
           contact_id: string
           created_at: string
+          creative: string | null
           external_id: string | null
           first_response_at: string | null
           ghl_opportunity_id: string | null
@@ -1419,9 +1555,11 @@ export type Database = {
           bathrooms?: number | null
           bedrooms?: number | null
           campaign_id?: string | null
+          channel?: string
           closed_at?: string | null
           contact_id: string
           created_at?: string
+          creative?: string | null
           external_id?: string | null
           first_response_at?: string | null
           ghl_opportunity_id?: string | null
@@ -1443,9 +1581,11 @@ export type Database = {
           bathrooms?: number | null
           bedrooms?: number | null
           campaign_id?: string | null
+          channel?: string
           closed_at?: string | null
           contact_id?: string
           created_at?: string
+          creative?: string | null
           external_id?: string | null
           first_response_at?: string | null
           ghl_opportunity_id?: string | null
@@ -1497,6 +1637,7 @@ export type Database = {
       marketing_campaigns: {
         Row: {
           budget_cents: number | null
+          channel: string
           created_at: string
           end_date: string | null
           external_id: string | null
@@ -1509,6 +1650,7 @@ export type Database = {
         }
         Insert: {
           budget_cents?: number | null
+          channel?: string
           created_at?: string
           end_date?: string | null
           external_id?: string | null
@@ -1521,6 +1663,7 @@ export type Database = {
         }
         Update: {
           budget_cents?: number | null
+          channel?: string
           created_at?: string
           end_date?: string | null
           external_id?: string | null
@@ -1536,8 +1679,10 @@ export type Database = {
       marketing_daily_stats: {
         Row: {
           campaign_id: string
+          channel: string
           clicks: number
           created_at: string
+          creative: string | null
           date: string
           id: string
           impressions: number
@@ -1547,8 +1692,10 @@ export type Database = {
         }
         Insert: {
           campaign_id: string
+          channel?: string
           clicks?: number
           created_at?: string
+          creative?: string | null
           date: string
           id?: string
           impressions?: number
@@ -1558,8 +1705,10 @@ export type Database = {
         }
         Update: {
           campaign_id?: string
+          channel?: string
           clicks?: number
           created_at?: string
+          creative?: string | null
           date?: string
           id?: string
           impressions?: number
@@ -2585,6 +2734,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_growth_decision: {
+        Args: {
+          p_date: string
+          p_decision: string
+          p_kind: string
+          p_note: string
+        }
+        Returns: string
+      }
       approve_payout: {
         Args: { p_expected_updated_at: string; p_payout_id: string }
         Returns: string
@@ -2675,6 +2833,7 @@ export type Database = {
       }
       create_ad_campaign: {
         Args: {
+          p_channel?: string
           p_name: string
           p_platform: Database["public"]["Enums"]["marketing_platform"]
         }
@@ -2745,6 +2904,8 @@ export type Database = {
         Returns: Json
       }
       delete_ad_spend: { Args: { p_id: string }; Returns: undefined }
+      delete_expense: { Args: { p_id: string }; Returns: undefined }
+      delete_growth_decision: { Args: { p_id: string }; Returns: undefined }
       delete_invoice_draft: {
         Args: { p_invoice_id: string }
         Returns: undefined
@@ -2864,7 +3025,21 @@ export type Database = {
         Returns: string
       }
       record_ad_spend: {
-        Args: { p_campaign_id: string; p_date: string; p_spend_cents: number }
+        Args: {
+          p_campaign_id: string
+          p_creative?: string
+          p_date: string
+          p_spend_cents: number
+        }
+        Returns: string
+      }
+      record_expense: {
+        Args: {
+          p_amount_cents: number
+          p_category: Database["public"]["Enums"]["expense_category"]
+          p_date: string
+          p_description?: string
+        }
         Returns: string
       }
       record_manual_payment: {
@@ -2903,6 +3078,24 @@ export type Database = {
         }
         Returns: undefined
       }
+      save_channel_test: {
+        Args: {
+          p_channels: string[]
+          p_daily_after_cents: number
+          p_daily_week1_cents: number
+          p_judge_leads: number
+          p_judge_spend_cents: number
+          p_loser_ratio_x100: number
+          p_start_date: string
+          p_window_weeks: number
+        }
+        Returns: undefined
+      }
+      save_forecast_assumptions: {
+        Args: { p_churn_bps: number; p_cleans_per_crew: number }
+        Returns: undefined
+      }
+      save_gate_criteria: { Args: { p_rows: Json }; Returns: undefined }
       save_growth_assumptions: {
         Args: {
           p_account_value_cents: number
@@ -2926,6 +3119,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      save_hire_triggers: { Args: { p_rows: Json }; Returns: undefined }
       save_invoice: {
         Args: {
           p_deposit_cents: number
@@ -2938,6 +3132,15 @@ export type Database = {
         }
         Returns: string
       }
+      save_tier_settings: {
+        Args: {
+          p_base_cents: number
+          p_north_profit_cents: number
+          p_strong_cents: number
+          p_tier: string
+        }
+        Returns: undefined
+      }
       send_invoice: {
         Args: { p_expected_updated_at: string; p_invoice_id: string }
         Returns: string
@@ -2949,6 +3152,10 @@ export type Database = {
       set_integration_secret: {
         Args: { p_provider: string; p_secret: string }
         Returns: undefined
+      }
+      set_lead_attribution: {
+        Args: { p_channel: string; p_creative?: string; p_lead_id: string }
+        Returns: string
       }
       stripe_link_customer: {
         Args: {
