@@ -49,9 +49,11 @@ export async function updateSession(request: NextRequest) {
   const isAuthRoute = pathname.startsWith("/login");
   // Public routes with their own auth: inbound webhooks verify signatures,
   // cron routes check CRON_SECRET, the read-only growth snapshot checks GROWTH_API_KEY, and the customer pay / save-card pages are
-  // reached by an unguessable token in the link.
+  // reached by an unguessable token in the link, and the lead form is open to the public by design.
   const isPublicApi =
-    pathname.startsWith("/api/webhooks") || pathname.startsWith("/api/cron") || pathname.startsWith("/api/growth/") || pathname.startsWith("/pay/") || pathname.startsWith("/card/");
+    pathname.startsWith("/api/webhooks") || pathname.startsWith("/api/cron") || pathname.startsWith("/api/growth/") || pathname.startsWith("/pay/") || pathname.startsWith("/card/") ||
+    // The website lead form, its API (zod, Turnstile and rate limits), and the script that embeds it.
+    pathname === "/lead-form" || pathname.startsWith("/api/public/") || pathname === "/embed.js";
   // The dev-only design reference renders static samples, no data.
   const isDevDesign = process.env.NODE_ENV !== "production" && pathname.startsWith("/design");
 

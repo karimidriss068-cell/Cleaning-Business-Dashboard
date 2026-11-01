@@ -44,8 +44,9 @@ export const intakeSchema = z
       .min(1, "Please tell us your name")
       .max(120, "That name is too long")
       .refine((v) => !/https?:|www\./i.test(v), "Please enter your name, not a link"),
-    phone: z.string().trim().max(30).optional(),
-    email: z.string().trim().max(254).optional(),
+    // Checked per field (not in superRefine) so every bad field is reported at once.
+    phone: z.string().trim().max(30).refine((v) => normalizeUsPhone(v) !== null, "That isn't a valid US phone number").optional(),
+    email: z.string().trim().max(254).refine((v) => z.string().email().safeParse(normalizeEmail(v)).success, "That email address isn't valid").optional(),
     borough: z.enum(BOROUGHS, { message: "Choose your borough" }),
     serviceType: z.enum(SERVICE_TYPES, { message: "Choose a service" }),
     consent: z.boolean(),
@@ -63,11 +64,6 @@ export const intakeSchema = z
   })
   .strict()
   .superRefine((v, ctx) => {
-    const phone = v.phone ? normalizeUsPhone(v.phone) : null;
-    const email = v.email ? normalizeEmail(v.email) : null;
-    if (v.phone && !phone) ctx.addIssue({ code: "custom", path: ["phone"], message: "That isn't a valid US phone number" });
-    if (v.email && !z.string().email().safeParse(email).success)
-      ctx.addIssue({ code: "custom", path: ["email"], message: "That email address isn't valid" });
     if (!v.phone && !v.email) ctx.addIssue({ code: "custom", path: ["phone"], message: "Add a phone number or an email" });
     if (v.consent && !v.phone) ctx.addIssue({ code: "custom", path: ["phone"], message: "Add your mobile number so we can text you" });
   });
