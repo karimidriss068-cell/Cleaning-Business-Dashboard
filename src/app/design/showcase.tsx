@@ -83,7 +83,7 @@ const PALETTE_COMMANDS: Command[] = [
   { id: "leads", label: "Leads & Pipeline", group: "Go to", icon: KanbanSquare, href: "/leads" },
   { id: "schedule", label: "Schedule", group: "Go to", icon: CalendarDays, href: "/schedule" },
   { id: "crews", label: "Crews", group: "Go to", icon: Users, href: "/crews" },
-  { id: "money", label: "Invoices & Payouts", group: "Go to", icon: Receipt, href: "/money" },
+  { id: "invoices", label: "Invoices", group: "Go to", icon: Receipt, href: "/invoices" },
   { id: "marketing", label: "Marketing", group: "Go to", icon: Megaphone, href: "/marketing" },
   { id: "automations", label: "Automations", group: "Go to", icon: Workflow, href: "/automations" },
   { id: "settings", label: "Settings", group: "Go to", icon: Settings, href: "/settings" },

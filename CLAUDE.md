@@ -29,7 +29,9 @@ The app was previously MAKI Ops, a med-spa marketing dashboard. **MAKI is archiv
 src/
   proxy.ts                    session refresh + redirect to /login (UX only, not a security boundary)
   app/(app)/...               authenticated pages; layout.tsx calls getUser() and renders the shell
-  app/api/webhooks/*          inbound webhooks + cron (service-role client)
+  app/api/webhooks/*          inbound webhooks (stripe) + cron (service-role client)
+  app/(public)/{pay,card}/[token]   customer pay and save-card pages: no login, the link's token is the credential
+  app/(print)/invoices/[id]/print   printable invoice outside the shell
   components/ui/*             shadcn primitives. Regenerate with the shadcn CLI; don't hand-fork them
   components/forms/*          dialogs and forms
   lib/*                       domain logic, one file per feature
@@ -74,6 +76,17 @@ On the server, check the user with `auth.getUser()`, not `getSession()`. The pro
 - `leads.external_id` is reserved for a later CRM sync; nothing writes it yet. Do not add GHL sync without being asked.
 - The board holds its own state after load, so lead actions do not `revalidatePath("/leads")` (it would remount the board and close an open lead); only `createLead` does.
 
+## Invoices & Payouts rules
+
+- **Writes only through functions.** `invoices`, `invoice_line_items`, `payments`, `refunds`, `payouts`, `payout_items`, `business_settings`, `finance_log`, `payment_methods`, `card_requests` and `subcontractor_documents` are read-only to signed-in users (no write grants, no write policies). Every change is a `private.*` SECURITY DEFINER function behind a thin `public.*` invoker wrapper: role check first (`require_admin`), one transaction, a `finance_log` row. Staff can read invoices; only owner/admin change anything; payouts, 1099 data and W-9s are owner/admin only. Error codes: KC001 stale, KC004 not allowed or wrong state, KC005 bad input, KC010 already exists.
+- **Optional function arguments need `default null`.** The API leaves out what the caller didn't send, and a function whose optional args have no default is then "not found". Also no bare `UPDATE`/`DELETE` in a function: the API role refuses a statement without `WHERE`. The SQL tests run as the table owner and miss both, so the browser test (`npm run e2e:finance`) is what catches them.
+- **Invoices:** one live invoice per job (partial unique index on non-voided lines; voiding frees the job) and per quote. Lines freeze when the invoice leaves draft; void is final and needs no payments (record refunds first). Status (sent, partially paid, paid, overdue) is recomputed by a trigger from payments minus refunds; overdue is also derived at display from the NY due date, and `/api/cron/invoice-overdue` stores it daily. Sales tax is **off by default**: per-line `taxable`, a rate in **parts per million** (8.875% = 88750) snapshotted on the invoice at creation, math mirrored in `src/lib/invoices.ts` (tested against the SQL).
+- **Payments:** Stripe in **test mode only** (`assertTestModeKey` refuses a live key). `src/lib/stripe.ts` is the only code that reads the secret key. The signed webhook (`/api/webhooks/stripe`) claims the event in `webhook_events` first, then writes through `stripe_*` functions that are idempotent on Stripe ids; those and `invoice_for_pay_token` are granted to `service_role` only. Manual payments (cash, Zelle, check, ACH) carry a reference (required for Zelle and check) and a client `request_id`, so a double click records once. Refunds are **recorded, never initiated**. Cards on file store only Stripe ids and display details.
+- **Payouts are recorded, never sent.** Weekly Mon-Sun (NY) batches per cleaner from the pay snapshot on each assignment. A visit is payable only when its invoice is **paid or marked collected** (`private.payout_core` gives the reason when it isn't, shown on Payouts). Draft -> approved (frozen: items and pay can't change) -> paid with a method and reference. A visit joins at most one live payout; visits that miss a week carry to the next. Approval re-checks eligibility.
+- **1099:** per cleaner per calendar year by the date the payout was marked paid. The threshold is a setting (`form_1099_threshold_cents`, default $2,000 as a placeholder): never hard-code it, and tell the owner to confirm the figure with their accountant. W-9s live in the private `subcontractor-documents` bucket, owner/admin only; no TIN is stored in a column. CSV cells are formula-escaped (`csvCell`).
+- **Cleaners** see only their own approved/paid weeks through `crew_payouts()` (date, service, amount), never clients, invoices or other cleaners; proven in `supabase/tests/14_invoices_payouts.sql`, `12_crew_view.sql` and the e2e files.
+- Demo data: seeded invoices/payouts keep the `5eed0000-` prefix; `--purge` also removes invoices, payments, refunds, payouts and finance log made while testing on demo records, plus W-9 files in storage.
+
 ## UI rules (Keystone Clean design system)
 
 - **Read `DESIGN.md` before building UI.** All values come from `src/config/brand.ts`, the only place colors, fonts, effects and scales are defined.
@@ -110,6 +123,7 @@ npm run build
 - Unit tests live next to the code (`src/lib/format.test.ts`). Anything touching dates must pass under any machine time zone; CI also runs the suite with `TZ=Pacific/Kiritimati`.
 - Database behavior (RLS, triggers, functions) is tested by the rolled-back SQL files in `supabase/tests/`. Trial-run a new migration together with its test inside `begin; … rollback;` before applying it.
 - Browser end-to-end for leads: `npm run e2e:leads` (see `e2e/leads.mjs`; needs `STAFF_EMAIL`/`STAFF_PASSWORD` for an office login and optionally `CREW_EMAIL`/`CREW_PASSWORD`). Covers drag, Lost reason, Move sheet, quick add, duplicate warning, convert and the cleaner lockout, then restores everything.
+- Browser end-to-end for invoices and payouts: `npm run e2e:finance` (see the header of `e2e/finance.mjs`; needs an admin, a staff and a cleaner login, plus `STRIPE_WEBHOOK_SECRET` matching the server's). Creates a visit, invoices it, takes a deposit, a signed Stripe webhook and a payout through approval and paid, checks 1099/CSV/W-9, staff and cleaner lockout, then removes everything.
 - Browser end-to-end for the crew view: `npm run e2e:crew` (see `e2e/crew.mjs`) signs in as a real cleaner on a phone viewport against a running build and the demo data. Run it after any change to crew screens, `crew_*` functions or crew RLS. It restores everything it changes.
 - Every new table ships with RLS tests, and every webhook ships with tests covering a bad signature, a duplicate event, and invalid input.
 

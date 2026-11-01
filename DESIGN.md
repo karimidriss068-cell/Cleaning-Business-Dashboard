@@ -80,7 +80,7 @@ The same roles exist in every direction and theme:
 |---|---|
 | Job | scheduled → info · in progress → info · completed → success · no access → warning · cancelled → neutral |
 | Lead stage | new → info · contacted → neutral · quoted → secondary · won → success · lost → neutral |
-| Invoice | draft → neutral · open → info · overdue (open, past its NY due date) → danger · paid → success · void → neutral · uncollectible → danger |
+| Invoice | draft → neutral · sent → info · partially paid → secondary · overdue (sent or partly paid, past its NY due date) → danger · paid → success · void → neutral |
 | Payout | draft → neutral · approved → info · paid → success · void → neutral |
 | Insurance (COI) | valid → success · within 30 days → warning · expired → danger |
 
@@ -226,6 +226,15 @@ The crew view (`/my-jobs`, `/my-jobs/[id]`) uses crew mode everywhere:
 - The lead record is a Drawer (right sheet on desktop, bottom sheet on phones): stage and follow-up pills, a Convert to customer panel, editable details, and the activity timeline with a call-note / message / note entry. Overdue follow-ups use the danger pill, due-today uses warning; nothing relies on color alone.
 - Quick add is a Drawer opened by the + button or Cmd+K "New lead"; duplicate phone/email shows a warning panel and requires an explicit "Add as a new lead anyway".
 - All of it uses tokens only and is checked in every direction and theme at 390px and desktop.
+
+## 10d. Invoices & Payouts (built)
+
+- `/invoices`: four KPI tiles (animated), a "Ready to invoice" list (completed visits and accepted quotes without a live invoice), and the invoice table with status chips and search. `/invoices/[id]` is an editor while the invoice is a draft (lines with a per-line Taxable switch, discount, deposit, due date, notes; totals update as you type) and the invoice document once sent, beside a panel with the balance (animated), the actions, the customer pay link, cards on file and payments. Staff see the same screens with no action buttons.
+- `/payouts` (owner and admin only): a week bar (Mon-Sun, New York) with Build payouts, the week's batches as flat glass cards (draft → approved and frozen → paid, with the method and reference), a "Not payable yet" list that says why each completed visit is left out (unpaid or partly paid invoice, no invoice, pay not set), and 1099 tracking (year-to-date paid per cleaner, a threshold bar and pill, W-9 upload/view/remove, CSV for the accountant). Every status is a pill with a word and a dot.
+- Customer pages (`/pay/[token]`, `/card/[token]`) sit outside the shell on the quiet aurora, use the glass levels, and show no contact details. The printable invoice (`/invoices/[id]/print`) is a plain light sheet whatever the theme: the `kc-paper` utility sets color-scheme light and resets the text tokens.
+- Cleaners get **My pay** (`/my-jobs/pay`): weekly batches that are approved or paid, as date, service and amount, in the crew sizes on solid panels at AAA contrast.
+- The Command Center gains a Finance section (invoiced, collected, unpaid; payouts and gross margin for owner/admin) with a six-month collected chart, and an Overdue invoices list.
+- Everything uses tokens only and is checked in every direction and theme at 390px and desktop.
 
 ## 11. Accessibility
 
