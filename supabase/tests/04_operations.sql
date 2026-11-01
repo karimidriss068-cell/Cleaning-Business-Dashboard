@@ -16,7 +16,7 @@ begin
   insert into public.contacts (first_name, last_name, phone) values ('Maria', 'Lopez', '+17185550101') returning id into c;
   insert into public.properties (contact_id, address_line1, zip, borough, access_instructions)
     values (c, '410 5th Ave Apt 3B', '11215', 'brooklyn', 'Lockbox 1234') returning id into p;
-  insert into public.services (name, base_price_cents, default_duration_minutes) values ('Standard clean', 18000, 180) returning id into sv;
+  insert into public.services (name, base_price_cents, default_duration_minutes) values ('Test standard clean', 18000, 180) returning id into sv;
 
   insert into public.jobs (contact_id, property_id, service_id, scheduled_start, scheduled_end, price_cents)
     values (c, p, sv, now() + interval '30 minutes', now() + interval '3 hours', 20000) returning id into ja;

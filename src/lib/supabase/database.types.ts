@@ -254,6 +254,105 @@ export type Database = {
           },
         ]
       }
+      business_settings: {
+        Row: {
+          created_at: string
+          default_line_taxable: boolean
+          form_1099_threshold_cents: number
+          form_1099_warn_bps: number
+          id: boolean
+          invoice_due_days: number
+          tax_rate_ppm: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          default_line_taxable?: boolean
+          form_1099_threshold_cents?: number
+          form_1099_warn_bps?: number
+          id?: boolean
+          invoice_due_days?: number
+          tax_rate_ppm?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          default_line_taxable?: boolean
+          form_1099_threshold_cents?: number
+          form_1099_warn_bps?: number
+          id?: boolean
+          invoice_due_days?: number
+          tax_rate_ppm?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      card_requests: {
+        Row: {
+          account_id: string | null
+          contact_id: string | null
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          token: string
+          used_at: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          token?: string
+          used_at?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          token?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "card_requests_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "card_requests_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "card_requests_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       contacts: {
         Row: {
           account_id: string | null
@@ -484,6 +583,44 @@ export type Database = {
           },
         ]
       }
+      finance_log: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          detail: Json
+          entity: string
+          entity_id: string | null
+          id: string
+          occurred_at: string
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          detail?: Json
+          entity: string
+          entity_id?: string | null
+          id?: string
+          occurred_at?: string
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          detail?: Json
+          entity?: string
+          entity_id?: string | null
+          id?: string
+          occurred_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_log_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       goals: {
         Row: {
           created_at: string
@@ -574,8 +711,10 @@ export type Database = {
           line_total_cents: number | null
           quantity: number
           sort_order: number
+          taxable: boolean
           unit_price_cents: number
           updated_at: string
+          voided: boolean
         }
         Insert: {
           created_at?: string
@@ -586,8 +725,10 @@ export type Database = {
           line_total_cents?: number | null
           quantity?: number
           sort_order?: number
+          taxable?: boolean
           unit_price_cents: number
           updated_at?: string
+          voided?: boolean
         }
         Update: {
           created_at?: string
@@ -598,8 +739,10 @@ export type Database = {
           line_total_cents?: number | null
           quantity?: number
           sort_order?: number
+          taxable?: boolean
           unit_price_cents?: number
           updated_at?: string
+          voided?: boolean
         }
         Relationships: [
           {
@@ -612,7 +755,7 @@ export type Database = {
           {
             foreignKeyName: "invoice_line_items_job_id_fkey"
             columns: ["job_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -622,64 +765,94 @@ export type Database = {
         Row: {
           account_id: string | null
           amount_paid_cents: number
+          collected_at: string | null
+          collected_by: string | null
+          collected_note: string | null
           contact_id: string | null
           created_at: string
+          created_by: string | null
+          deposit_cents: number
+          discount_cents: number
           due_on: string | null
           id: string
           invoice_number: number
           issued_on: string | null
           notes: string | null
           paid_at: string | null
+          pay_token: string
+          quote_id: string | null
           sent_at: string | null
           status: Database["public"]["Enums"]["invoice_status"]
           stripe_hosted_invoice_url: string | null
           stripe_invoice_id: string | null
           subtotal_cents: number
           tax_cents: number
+          tax_rate_ppm: number
           total_cents: number | null
           updated_at: string
+          void_reason: string | null
           voided_at: string | null
         }
         Insert: {
           account_id?: string | null
           amount_paid_cents?: number
+          collected_at?: string | null
+          collected_by?: string | null
+          collected_note?: string | null
           contact_id?: string | null
           created_at?: string
+          created_by?: string | null
+          deposit_cents?: number
+          discount_cents?: number
           due_on?: string | null
           id?: string
           invoice_number?: never
           issued_on?: string | null
           notes?: string | null
           paid_at?: string | null
+          pay_token?: string
+          quote_id?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           stripe_hosted_invoice_url?: string | null
           stripe_invoice_id?: string | null
           subtotal_cents?: number
           tax_cents?: number
+          tax_rate_ppm?: number
           total_cents?: number | null
           updated_at?: string
+          void_reason?: string | null
           voided_at?: string | null
         }
         Update: {
           account_id?: string | null
           amount_paid_cents?: number
+          collected_at?: string | null
+          collected_by?: string | null
+          collected_note?: string | null
           contact_id?: string | null
           created_at?: string
+          created_by?: string | null
+          deposit_cents?: number
+          discount_cents?: number
           due_on?: string | null
           id?: string
           invoice_number?: never
           issued_on?: string | null
           notes?: string | null
           paid_at?: string | null
+          pay_token?: string
+          quote_id?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           stripe_hosted_invoice_url?: string | null
           stripe_invoice_id?: string | null
           subtotal_cents?: number
           tax_cents?: number
+          tax_rate_ppm?: number
           total_cents?: number | null
           updated_at?: string
+          void_reason?: string | null
           voided_at?: string | null
         }
         Relationships: [
@@ -691,10 +864,31 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "invoices_collected_by_fkey"
+            columns: ["collected_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "invoices_contact_id_fkey"
             columns: ["contact_id"]
             isOneToOne: false
             referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "invoices_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
             referencedColumns: ["id"]
           },
         ]
@@ -1339,6 +1533,60 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_methods: {
+        Row: {
+          account_id: string | null
+          brand: string | null
+          contact_id: string | null
+          created_at: string
+          exp_month: number | null
+          exp_year: number | null
+          id: string
+          is_default: boolean
+          last4: string | null
+          stripe_payment_method_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          brand?: string | null
+          contact_id?: string | null
+          created_at?: string
+          exp_month?: number | null
+          exp_year?: number | null
+          id?: string
+          is_default?: boolean
+          last4?: string | null
+          stripe_payment_method_id: string
+        }
+        Update: {
+          account_id?: string | null
+          brand?: string | null
+          contact_id?: string | null
+          created_at?: string
+          exp_month?: number | null
+          exp_year?: number | null
+          id?: string
+          is_default?: boolean
+          last4?: string | null
+          stripe_payment_method_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_methods_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_methods_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount_cents: number
@@ -1348,9 +1596,14 @@ export type Database = {
           method: Database["public"]["Enums"]["payment_method"]
           notes: string | null
           received_at: string | null
+          recorded_by: string | null
+          reference: string | null
           refunded_at: string | null
+          request_id: string | null
+          source: string
           status: Database["public"]["Enums"]["payment_status"]
           stripe_charge_id: string | null
+          stripe_checkout_session_id: string | null
           stripe_payment_intent_id: string | null
           updated_at: string
         }
@@ -1362,9 +1615,14 @@ export type Database = {
           method?: Database["public"]["Enums"]["payment_method"]
           notes?: string | null
           received_at?: string | null
+          recorded_by?: string | null
+          reference?: string | null
           refunded_at?: string | null
+          request_id?: string | null
+          source?: string
           status?: Database["public"]["Enums"]["payment_status"]
           stripe_charge_id?: string | null
+          stripe_checkout_session_id?: string | null
           stripe_payment_intent_id?: string | null
           updated_at?: string
         }
@@ -1376,9 +1634,14 @@ export type Database = {
           method?: Database["public"]["Enums"]["payment_method"]
           notes?: string | null
           received_at?: string | null
+          recorded_by?: string | null
+          reference?: string | null
           refunded_at?: string | null
+          request_id?: string | null
+          source?: string
           status?: Database["public"]["Enums"]["payment_status"]
           stripe_charge_id?: string | null
+          stripe_checkout_session_id?: string | null
           stripe_payment_intent_id?: string | null
           updated_at?: string
         }
@@ -1389,6 +1652,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "invoices"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1445,6 +1715,8 @@ export type Database = {
           id: string
           notes: string | null
           paid_at: string | null
+          paid_method: Database["public"]["Enums"]["payment_method"] | null
+          paid_reference: string | null
           payout_vendor_ref: string | null
           period_end: string
           period_start: string
@@ -1463,6 +1735,8 @@ export type Database = {
           id?: string
           notes?: string | null
           paid_at?: string | null
+          paid_method?: Database["public"]["Enums"]["payment_method"] | null
+          paid_reference?: string | null
           payout_vendor_ref?: string | null
           period_end: string
           period_start: string
@@ -1481,6 +1755,8 @@ export type Database = {
           id?: string
           notes?: string | null
           paid_at?: string | null
+          paid_method?: Database["public"]["Enums"]["payment_method"] | null
+          paid_reference?: string | null
           payout_vendor_ref?: string | null
           period_end?: string
           period_start?: string
@@ -1785,6 +2061,57 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      refunds: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          id: string
+          payment_id: string
+          reason: string | null
+          recorded_by: string | null
+          request_id: string | null
+          source: string
+          stripe_refund_id: string | null
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          id?: string
+          payment_id: string
+          reason?: string | null
+          recorded_by?: string | null
+          request_id?: string | null
+          source?: string
+          stripe_refund_id?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          id?: string
+          payment_id?: string
+          reason?: string | null
+          recorded_by?: string | null
+          request_id?: string | null
+          source?: string
+          stripe_refund_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refunds_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2181,6 +2508,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_payout: {
+        Args: { p_expected_updated_at: string; p_payout_id: string }
+        Returns: string
+      }
+      build_payout_drafts: {
+        Args: { p_subcontractor_id?: string; p_week_start: string }
+        Returns: Json
+      }
+      card_request_for_token: { Args: { p_token: string }; Returns: Json }
       claim_scheduled_tasks: {
         Args: { p_limit?: number; p_lock_seconds?: number }
         Returns: {
@@ -2233,7 +2569,25 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      clear_invoice_collected: {
+        Args: { p_invoice_id: string }
+        Returns: undefined
+      }
       complete_job: { Args: { p_job_id: string }; Returns: undefined }
+      contractor_1099_summary: {
+        Args: { p_year: number }
+        Returns: {
+          approved_cents: number
+          business_entity: Database["public"]["Enums"]["business_entity"]
+          display_name: string
+          legal_name: string
+          paid_cents: number
+          payout_count: number
+          status: Database["public"]["Enums"]["subcontractor_status"]
+          subcontractor_id: string
+          w9_received_at: string
+        }[]
+      }
       convert_lead: {
         Args: {
           p_company_name?: string
@@ -2241,6 +2595,15 @@ export type Database = {
           p_lead_id: string
         }
         Returns: Json
+      }
+      create_card_request: {
+        Args: { p_account_id: string; p_contact_id: string }
+        Returns: string
+      }
+      create_invoice_from_job: { Args: { p_job_id: string }; Returns: string }
+      create_invoice_from_quote: {
+        Args: { p_quote_id: string }
+        Returns: string
       }
       create_lead: {
         Args: {
@@ -2268,6 +2631,7 @@ export type Database = {
           display_name: string
         }[]
       }
+      crew_payouts: { Args: never; Returns: Json }
       crew_visit_detail: { Args: { p_job_id: string }; Returns: Json }
       crew_visits: {
         Args: { p_from?: string; p_to?: string }
@@ -2292,7 +2656,27 @@ export type Database = {
           zip: string
         }[]
       }
+      default_card_for_invoice: {
+        Args: { p_invoice_id: string }
+        Returns: Json
+      }
+      delete_invoice_draft: {
+        Args: { p_invoice_id: string }
+        Returns: undefined
+      }
+      delete_payout_draft: { Args: { p_payout_id: string }; Returns: undefined }
       demo_data_present: { Args: never; Returns: boolean }
+      finance_summary: {
+        Args: { p_months?: number }
+        Returns: {
+          collected_cents: number
+          margin_cents: number
+          month_start: string
+          outstanding_cents: number
+          payouts_cents: number
+          revenue_cents: number
+        }[]
+      }
       find_lead_duplicates: {
         Args: { p_email: string; p_exclude_contact?: string; p_phone: string }
         Returns: {
@@ -2306,6 +2690,7 @@ export type Database = {
         }[]
       }
       get_integration_secret: { Args: { p_provider: string }; Returns: string }
+      invoice_for_pay_token: { Args: { p_token: string }; Returns: Json }
       lead_conversion_by_source: {
         Args: { p_from: string; p_to: string }
         Returns: {
@@ -2316,6 +2701,20 @@ export type Database = {
           open: number
           source: string
         }[]
+      }
+      mark_invoice_collected: {
+        Args: { p_invoice_id: string; p_note: string }
+        Returns: undefined
+      }
+      mark_overdue_invoices: { Args: never; Returns: number }
+      mark_payout_paid: {
+        Args: {
+          p_method: Database["public"]["Enums"]["payment_method"]
+          p_paid_on: string
+          p_payout_id: string
+          p_reference: string
+        }
+        Returns: undefined
       }
       move_lead_stage: {
         Args: {
@@ -2344,6 +2743,27 @@ export type Database = {
           zip: string
         }[]
       }
+      payout_candidates: {
+        Args: { p_subcontractor_id?: string; p_week_start?: string }
+        Returns: {
+          assignment_id: string
+          client_name: string
+          completed_on: string
+          invoice_balance_cents: number
+          invoice_collected: boolean
+          invoice_id: string
+          invoice_number: number
+          invoice_status: Database["public"]["Enums"]["invoice_status"]
+          job_id: string
+          pay_cents: number
+          payout_id: string
+          payout_status: Database["public"]["Enums"]["payout_status"]
+          reason_code: string
+          service_name: string
+          subcontractor_id: string
+          subcontractor_name: string
+        }[]
+      }
       reassign_job: {
         Args: {
           p_crew_id: string
@@ -2356,12 +2776,105 @@ export type Database = {
         }
         Returns: string
       }
+      record_manual_payment: {
+        Args: {
+          p_amount_cents: number
+          p_invoice_id: string
+          p_method: Database["public"]["Enums"]["payment_method"]
+          p_received_on: string
+          p_reference: string
+          p_request_id: string
+        }
+        Returns: string
+      }
+      record_refund: {
+        Args: {
+          p_amount_cents: number
+          p_payment_id: string
+          p_reason: string
+          p_request_id: string
+        }
+        Returns: string
+      }
+      record_w9: {
+        Args: { p_storage_path: string; p_subcontractor_id: string }
+        Returns: string
+      }
+      remove_payment_method: { Args: { p_id: string }; Returns: string }
+      remove_subcontractor_document: { Args: { p_id: string }; Returns: string }
+      reopen_payout: { Args: { p_payout_id: string }; Returns: undefined }
+      save_invoice: {
+        Args: {
+          p_deposit_cents: number
+          p_discount_cents: number
+          p_due_on: string
+          p_expected_updated_at: string
+          p_invoice_id: string
+          p_lines: Json
+          p_notes: string
+        }
+        Returns: string
+      }
+      send_invoice: {
+        Args: { p_expected_updated_at: string; p_invoice_id: string }
+        Returns: string
+      }
       set_checklist_item: {
         Args: { p_done: boolean; p_item_id: string }
         Returns: undefined
       }
       set_integration_secret: {
         Args: { p_provider: string; p_secret: string }
+        Returns: undefined
+      }
+      stripe_link_customer: {
+        Args: {
+          p_account_id: string
+          p_contact_id: string
+          p_customer_id: string
+        }
+        Returns: undefined
+      }
+      stripe_record_payment: {
+        Args: {
+          p_amount_cents: number
+          p_charge: string
+          p_checkout_session: string
+          p_invoice_id: string
+          p_payment_intent: string
+        }
+        Returns: Json
+      }
+      stripe_record_refund: {
+        Args: {
+          p_amount_cents: number
+          p_payment_intent: string
+          p_refund_id: string
+        }
+        Returns: Json
+      }
+      stripe_save_card: {
+        Args: {
+          p_account_id: string
+          p_brand: string
+          p_card_request_id: string
+          p_contact_id: string
+          p_customer_id: string
+          p_exp_month: number
+          p_exp_year: number
+          p_last4: string
+          p_payment_method_id: string
+        }
+        Returns: string
+      }
+      update_business_settings: {
+        Args: {
+          p_default_line_taxable: boolean
+          p_invoice_due_days: number
+          p_tax_rate_ppm: number
+          p_threshold_cents: number
+          p_warn_bps: number
+        }
         Returns: undefined
       }
       update_lead: {
@@ -2371,6 +2884,14 @@ export type Database = {
           p_patch: Json
         }
         Returns: string
+      }
+      void_invoice: {
+        Args: { p_invoice_id: string; p_reason: string }
+        Returns: undefined
+      }
+      void_payout: {
+        Args: { p_payout_id: string; p_reason: string }
+        Returns: undefined
       }
     }
     Enums: {
@@ -2413,7 +2934,14 @@ export type Database = {
         | "residential_jobs_completed"
         | "commercial_contracts_signed"
       goal_period: "week" | "month" | "quarter" | "year"
-      invoice_status: "draft" | "open" | "paid" | "void" | "uncollectible"
+      invoice_status:
+        | "draft"
+        | "sent"
+        | "partially_paid"
+        | "overdue"
+        | "paid"
+        | "void"
+        | "uncollectible"
       job_photo_kind: "before" | "after" | "issue"
       job_status:
         | "scheduled"
@@ -2615,7 +3143,15 @@ export const Constants = {
         "commercial_contracts_signed",
       ],
       goal_period: ["week", "month", "quarter", "year"],
-      invoice_status: ["draft", "open", "paid", "void", "uncollectible"],
+      invoice_status: [
+        "draft",
+        "sent",
+        "partially_paid",
+        "overdue",
+        "paid",
+        "void",
+        "uncollectible",
+      ],
       job_photo_kind: ["before", "after", "issue"],
       job_status: [
         "scheduled",

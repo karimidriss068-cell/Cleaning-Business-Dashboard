@@ -12,7 +12,7 @@ begin
   insert into public.subcontractors (display_name, pay_type, pay_rate_cents) values ('Luis', 'flat', 7500) returning id into s2;
   insert into public.contacts (first_name) values ('Maria') returning id into c;
   insert into public.properties (contact_id, address_line1, zip, borough) values (c, '1 Main St', '11215', 'brooklyn') returning id into p;
-  insert into public.services (name, base_price_cents, default_duration_minutes) values ('Standard clean', 18000, 180) returning id into sv;
+  insert into public.services (name, base_price_cents, default_duration_minutes) values ('Test standard clean', 18000, 180) returning id into sv;
   insert into public.jobs (contact_id, property_id, service_id, scheduled_start, scheduled_end, price_cents, status, completed_at)
     values (c, p, sv, now() - interval '1 day', now() - interval '21 hours', 20000, 'completed', now()) returning id into j1;
   insert into public.jobs (contact_id, property_id, service_id, scheduled_start, scheduled_end, price_cents, status, completed_at)
@@ -22,8 +22,9 @@ begin
   insert into public.job_assignments (job_id, subcontractor_id) values (j1, s2) returning id into b1;
 
   -- As staff: invoices
+  -- Invoice integrity. Direct writes are closed to signed-in users (they go through
+  -- functions, see test 14); here the triggers and constraints are driven directly.
   perform set_config('request.jwt.claims', json_build_object('sub', staff, 'role', 'authenticated')::text, true);
-  execute 'set local role authenticated';
   insert into public.invoices (contact_id, issued_on, due_on) values (c, current_date, current_date + 15) returning id into inv;
   insert into public.invoice_line_items (invoice_id, job_id, description, unit_price_cents) values (inv, j1, 'Standard clean', 20000);
   insert into public.invoice_line_items (invoice_id, description, quantity, unit_price_cents) values (inv, 'Inside oven', 1, 4000);
@@ -35,6 +36,7 @@ begin
   begin insert into public.invoice_line_items (invoice_id, job_id, description, unit_price_cents) values (inv2, j1, 'Again', 20000);
     r := r || 'bill-job-twice:ALLOWED(BAD) ';
   exception when unique_violation then r := r || 'bill-job-twice:rejected '; end;
+  execute 'set local role authenticated';
   begin insert into public.payments (invoice_id, amount_cents, status) values (inv, 1000, 'succeeded'); r := r || 'staff-record-payment:ALLOWED(BAD) ';
   exception when insufficient_privilege then r := r || 'staff-record-payment:rejected '; end;
   select count(*) into n from public.payouts; r := r || 'staff sees payouts=' || n || ' ';
@@ -53,7 +55,6 @@ begin
 
   -- As owner: payouts
   perform set_config('request.jwt.claims', json_build_object('sub', owner, 'role', 'authenticated')::text, true);
-  execute 'set local role authenticated';
   insert into public.payouts (subcontractor_id, period_start, period_end) values (s1, current_date - 7, current_date) returning id into po;
   insert into public.payout_items (payout_id, job_assignment_id, amount_cents) select po, id, pay_cents from public.job_assignments where id in (a1, a2);
   select total_cents into v from public.payouts where id = po; r := r || '| payout total(40% of $200+$300)=' || v;

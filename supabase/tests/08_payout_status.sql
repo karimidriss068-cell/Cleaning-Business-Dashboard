@@ -11,7 +11,7 @@ begin
   insert into public.subcontractors (display_name, pay_rate_bps) values ('Ana', 4000) returning id into s1;
   insert into public.contacts (first_name) values ('Maria') returning id into c;
   insert into public.properties (contact_id, address_line1, zip, borough) values (c, '1 Main St', '11215', 'brooklyn') returning id into p;
-  insert into public.services (name, base_price_cents, default_duration_minutes) values ('Standard clean', 18000, 180) returning id into sv;
+  insert into public.services (name, base_price_cents, default_duration_minutes) values ('Test standard clean', 18000, 180) returning id into sv;
   insert into public.jobs (contact_id, property_id, service_id, scheduled_start, scheduled_end, price_cents, status, completed_at)
     values (c, p, sv, now() - interval '3 days', now() - interval '70 hours', 20000, 'completed', now()) returning id into j1;
   insert into public.jobs (contact_id, property_id, service_id, scheduled_start, scheduled_end, price_cents, status, completed_at)
@@ -19,19 +19,19 @@ begin
   insert into public.job_assignments (job_id, subcontractor_id) values (j1, s1) returning id into a1;
   insert into public.job_assignments (job_id, subcontractor_id) values (j2, s1) returning id into a2;
 
+  -- Payouts are written through functions now (test 14); this test drives the status triggers directly.
   perform set_config('request.jwt.claims', json_build_object('sub', owner, 'role', 'authenticated')::text, true);
-  execute 'set local role authenticated';
   insert into public.payouts (subcontractor_id, period_start, period_end) values (s1, current_date - 14, current_date) returning id into po;
   insert into public.payout_items (payout_id, job_assignment_id, amount_cents) select po, id, pay_cents from public.job_assignments where id in (a1, a2);
 
-  begin update public.payouts set status = 'paid' where id = po; r := r || 'draft->paid:ALLOWED(BAD) ';
+  begin update public.payouts set status = 'paid', paid_method = 'zelle', paid_reference = 'T-1' where id = po; r := r || 'draft->paid:ALLOWED(BAD) ';
   exception when others then r := r || 'draft->paid:rejected '; end;
   update public.payouts set status = 'approved' where id = po;
   select (approved_at is not null and approved_by = owner)::text into v from public.payouts where id = po; r := r || 'approve-stamped=' || v || ' ';
   update public.payouts set status = 'draft' where id = po;
   select (approved_at is null and approved_by is null)::text into v from public.payouts where id = po; r := r || 'approved->draft-cleared=' || v || ' ';
   update public.payouts set status = 'approved' where id = po;
-  update public.payouts set status = 'paid' where id = po;
+  update public.payouts set status = 'paid', paid_method = 'zelle', paid_reference = 'T-1' where id = po;
   select (paid_at is not null)::text into v from public.payouts where id = po; r := r || 'paid-stamped=' || v || ' ';
   begin update public.payouts set notes = 'edit' where id = po; r := r || 'edit-paid:ALLOWED(BAD) ';
   exception when others then r := r || 'edit-paid:rejected '; end;
@@ -77,8 +77,8 @@ begin
   execute 'set local role authenticated';
   update public.job_assignments set pay_override_cents = 7000 where id = a2; get diagnostics n = row_count;
   r := r || '| staff-edit-pay-of-voided-only rows=' || n;
-  update public.payouts set status = 'approved' where id = po4; get diagnostics n = row_count;
-  r := r || ' staff-approve rows=' || n;
+  begin update public.payouts set status = 'approved' where id = po4; r := r || ' staff-approve:ALLOWED(BAD)';
+  exception when insufficient_privilege then r := r || ' staff-approve:rejected'; end;
   execute 'reset role';
   raise exception 'RESULTS: %', r;
 end $$;

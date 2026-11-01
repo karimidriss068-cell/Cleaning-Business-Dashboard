@@ -39,7 +39,7 @@ begin
   foreach tbl in array array['invoices', 'invoice_line_items', 'payments', 'payouts', 'payout_items', 'contacts', 'accounts', 'properties', 'leads',
       'quotes', 'quote_items', 'subcontractors', 'subcontractor_documents', 'crews', 'crew_members', 'services', 'service_checklist_items', 'jobs',
       'job_assignments', 'job_series', 'activities', 'expenses', 'vendors', 'marketing_campaigns', 'goals', 'automations', 'integration_settings',
-      'webhook_events', 'opt_outs'] loop
+      'webhook_events', 'opt_outs', 'refunds', 'payment_methods', 'card_requests', 'finance_log', 'business_settings'] loop
     execute format('select count(*) from public.%I', tbl) into n;
     if n <> 0 then r := r || tbl || '-VISIBLE(BAD)=' || n || ' '; end if;
   end loop;
