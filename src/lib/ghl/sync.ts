@@ -250,9 +250,8 @@ export async function runOutbound(db: Db, client: GhlClient | null, now: Date): 
       }),
     );
     const { data: claim, error: claimErr } = await db.rpc("ghl_claim_message", {
-      p_template: m.template_key as TemplateKey, p_dedupe: m.dedupe_key, p_contact: m.contact_id,
+      p_template: m.template_key as TemplateKey, p_dedupe: m.dedupe_key, p_contact: m.contact_id, p_body: body, p_dry_run: dry,
       p_lead: m.lead_id ?? undefined, p_job: m.job_id ?? undefined, p_invoice: m.invoice_id ?? undefined,
-      p_body: body, p_dry_run: dry,
     });
     if (claimErr) fail("Claiming a text", claimErr);
     const k = typeof claim === "object" && claim !== null && !Array.isArray(claim) ? claim : {};

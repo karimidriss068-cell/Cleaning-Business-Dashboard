@@ -3110,9 +3110,9 @@ export type Database = {
           p_contact: string
           p_dedupe: string
           p_dry_run: boolean
-          p_invoice: string
-          p_job: string
-          p_lead: string
+          p_invoice?: string
+          p_job?: string
+          p_lead?: string
           p_template: string
         }
         Returns: Json

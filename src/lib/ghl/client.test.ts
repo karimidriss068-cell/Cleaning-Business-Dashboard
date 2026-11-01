@@ -16,6 +16,21 @@ describe("ghlConfig", () => {
   });
 });
 
+describe("test base URL", () => {
+  it("only a local fake is honored; any other host is ignored", () => {
+    const before = { ...process.env };
+    process.env.GHL_API_TOKEN = "t";
+    process.env.GHL_LOCATION_ID = "l";
+    process.env.GHL_API_BASE = "http://127.0.0.1:3190";
+    expect(ghlConfig()?.baseUrl).toBe("http://127.0.0.1:3190");
+    process.env.GHL_API_BASE = "https://evil.example.com";
+    expect(ghlConfig()?.baseUrl).toBeUndefined();
+    process.env.GHL_API_BASE = "http://127.0.0.1.evil.com";
+    expect(ghlConfig()?.baseUrl).toBeUndefined();
+    process.env = before;
+  });
+});
+
 describe("GHL client", () => {
   it("sends the bearer token and version header and parses the contact", async () => {
     const f = reply(200, { contact: { id: "c1", firstName: "Dana", tags: ["sms-consent"] } });

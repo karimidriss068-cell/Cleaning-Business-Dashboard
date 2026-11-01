@@ -112,3 +112,11 @@ export const budgetTone: Record<"under" | "near" | "over", Tone> = { under: "suc
 export const budgetLabel: Record<"under" | "near" | "over", string> = { under: "Within budget", near: "Close to budget", over: "Over budget" };
 export const cashTone: Record<"ok" | "low" | "negative", Tone> = { ok: "success", low: "warning", negative: "danger" };
 export const cashLabel: Record<"ok" | "low" | "negative", string> = { ok: "Above buffer", low: "At or under buffer", negative: "Below zero" };
+
+// Automated texts and the GHL sync. A dry run is "info", never "success": nothing was sent.
+export type MessageOutcome = "pending" | "sent" | "dry_run" | "blocked" | "failed";
+export const messageOutcomeTone: Record<MessageOutcome, Tone> = { sent: "success", dry_run: "info", pending: "warning", blocked: "neutral", failed: "danger" };
+export const messageOutcomeLabel: Record<MessageOutcome, string> = { sent: "Sent", dry_run: "Dry run", pending: "Sending", blocked: "Blocked", failed: "Failed" };
+export function messageOutcome(value: string): MessageOutcome {
+  return value in messageOutcomeTone ? (value as MessageOutcome) : "failed";
+}

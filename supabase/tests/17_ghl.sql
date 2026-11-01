@@ -101,16 +101,16 @@ begin
   ----------------------------------------------------------------------- outbound claim
   insert into public.contacts (first_name, phone, ghl_contact_id) values ('Optin', '+17185550177', 'ghl-c-2') returning id into c2;
   execute 'set local role service_role';
-  res := public.ghl_claim_message('review_request', 'review_request:a', c2, null, null, null, 'hello', true);
+  res := public.ghl_claim_message(p_template => 'review_request', p_dedupe => 'review_request:a', p_contact => c2, p_body => 'hello', p_dry_run => true);
   r := r || coalesce((coalesce(('no-consent-blocked=')::text, 'NULL'))::text, 'NULL') || coalesce((coalesce(((res ->> 'claimed'))::text, 'NULL'))::text, 'NULL') || coalesce((coalesce(('/')::text, 'NULL'))::text, 'NULL') || coalesce((coalesce(((res ->> 'reason'))::text, 'NULL'))::text, 'NULL') || coalesce((coalesce((' ')::text, 'NULL'))::text, 'NULL');
   execute 'reset role';
   update public.contacts set sms_consent = true, sms_consent_at = now() where id = c2;
   execute 'set local role service_role';
-  res := public.ghl_claim_message('review_request', 'review_request:b', c2, null, null, null, 'hello', true);
+  res := public.ghl_claim_message(p_template => 'review_request', p_dedupe => 'review_request:b', p_contact => c2, p_body => 'hello', p_dry_run => true);
   r := r || coalesce((coalesce(('dry-run=')::text, 'NULL'))::text, 'NULL') || coalesce((coalesce(((res ->> 'claimed'))::text, 'NULL'))::text, 'NULL') || coalesce((coalesce(('/')::text, 'NULL'))::text, 'NULL') || coalesce((coalesce(((res ->> 'dry_run'))::text, 'NULL'))::text, 'NULL') || coalesce((coalesce(('/')::text, 'NULL'))::text, 'NULL') || coalesce((coalesce(((select outcome from public.message_log where dedupe_key = 'review_request:b'))::text, 'NULL'))::text, 'NULL') || coalesce((coalesce((' ')::text, 'NULL'))::text, 'NULL');
-  res := public.ghl_claim_message('review_request', 'review_request:b', c2, null, null, null, 'hello', true);
+  res := public.ghl_claim_message(p_template => 'review_request', p_dedupe => 'review_request:b', p_contact => c2, p_body => 'hello', p_dry_run => true);
   r := r || coalesce((coalesce(('duplicate-claim=')::text, 'NULL'))::text, 'NULL') || coalesce((coalesce(((res ->> 'claimed'))::text, 'NULL'))::text, 'NULL') || coalesce((coalesce((' ')::text, 'NULL'))::text, 'NULL');
-  res := public.ghl_claim_message('review_request', 'review_request:c', c2, null, null, null, 'hello', false);
+  res := public.ghl_claim_message(p_template => 'review_request', p_dedupe => 'review_request:c', p_contact => c2, p_body => 'hello', p_dry_run => false);
   r := r || coalesce((coalesce(('live-claim=')::text, 'NULL'))::text, 'NULL') || coalesce((coalesce(((res ->> 'claimed'))::text, 'NULL'))::text, 'NULL') || coalesce((coalesce((' ')::text, 'NULL'))::text, 'NULL');
   perform public.ghl_finish_message((res ->> 'id')::uuid, 'sent', 'm-out-1');
   perform public.ghl_finish_message((res ->> 'id')::uuid, 'failed', null, 'late');
@@ -120,7 +120,7 @@ begin
   execute 'reset role';
   insert into public.opt_outs (channel, value, source) values ('sms', '+17185550177', 'manual');
   execute 'set local role service_role';
-  res := public.ghl_claim_message('review_request', 'review_request:d', c2, null, null, null, 'hello', false);
+  res := public.ghl_claim_message(p_template => 'review_request', p_dedupe => 'review_request:d', p_contact => c2, p_body => 'hello', p_dry_run => false);
   r := r || coalesce((coalesce(('opted-out-blocked=')::text, 'NULL'))::text, 'NULL') || coalesce((coalesce(((res ->> 'claimed'))::text, 'NULL'))::text, 'NULL') || coalesce((coalesce(('/')::text, 'NULL'))::text, 'NULL') || coalesce((coalesce(((res ->> 'reason'))::text, 'NULL'))::text, 'NULL') || coalesce((coalesce((' ')::text, 'NULL'))::text, 'NULL');
   execute 'reset role';
 
@@ -163,7 +163,7 @@ begin
   exception when sqlstate 'KC004' then r := r || 'staff-save-settings:rejected '; end;
   begin perform public.ghl_upsert_lead('x', 'a', 'b', '7185550101', null); r := r || 'staff-ghl-upsert:ALLOWED(BAD) ';
   exception when insufficient_privilege then r := r || 'staff-ghl-upsert:rejected '; end;
-  begin perform public.ghl_claim_message('review_request', 'z', c2, null, null, null, 'x', false); r := r || 'staff-ghl-claim:ALLOWED(BAD) ';
+  begin perform public.ghl_claim_message(p_template => 'review_request', p_dedupe => 'z', p_contact => c2, p_body => 'x', p_dry_run => false); r := r || 'staff-ghl-claim:ALLOWED(BAD) ';
   exception when insufficient_privilege then r := r || 'staff-ghl-claim:rejected '; end;
   begin update public.message_templates set mode = 'live'; r := r || 'staff-direct-template-update:ALLOWED(BAD) ';
   exception when insufficient_privilege then r := r || 'staff-direct-template-update:rejected '; end;

@@ -9,6 +9,8 @@ import { coiTone, jobLabel, jobTone } from "@/lib/status";
 import { loadFinanceMonths } from "@/lib/finance-data";
 import { loadGrowthSnapshot } from "@/lib/growth-data";
 import { GrowthCard } from "@/components/growth/growth-card";
+import { FailedSyncsCard } from "@/components/ghl/failed-syncs-card";
+import { loadSyncStatus } from "@/lib/ghl/status-data";
 import { balanceCents, invoiceNumberLabel } from "@/lib/invoices";
 import { marginBps, monthShort } from "@/lib/payouts";
 import { PageHeader } from "@/components/shell/page-header";
@@ -73,6 +75,9 @@ export default async function CommandCenterPage() {
   const lastMonthSameDay = addDays(lastMonthStart, Number(today.slice(8, 10)) - 1);
   const todayRange = nyDayRangeUtc(today);
   const in30 = addDays(today, 30);
+
+  // Owner/admin only: the status function refuses anyone else, and a hiccup here must not break the page.
+  const ghlStatus = profile.role === "owner" || profile.role === "admin" ? await loadSyncStatus(supabase).catch(() => null) : null;
 
   const [jobsRes, lastMonthRes, leadsRes, openLeadsRes, waitingRes, invoicesRes, goalsRes, contractsRes, coiRes, followUpsRes, months, growth] = await Promise.all([
     supabase
@@ -236,6 +241,8 @@ export default async function CommandCenterPage() {
       </div>
 
       <GrowthCard snapshot={growth} index={4} />
+
+      {ghlStatus && <FailedSyncsCard status={ghlStatus} />}
 
       <section aria-labelledby="finance" className="space-y-3">
         <div className="flex flex-wrap items-end justify-between gap-2">

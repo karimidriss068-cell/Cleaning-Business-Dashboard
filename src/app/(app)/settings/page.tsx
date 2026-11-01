@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { allFontClasses } from "@/lib/theme/fonts";
 import { PageHeader } from "@/components/shell/page-header";
@@ -29,6 +31,19 @@ export default async function SettingsPage() {
       <section aria-label="Appearance" className="kc-enter rounded-lg border glass-card p-5 md:p-6" style={{ "--i": 1 } as React.CSSProperties}>
         <AppearancePicker />
       </section>
+      {canEditFinance && (
+        <Link
+          href="/settings/integrations"
+          className="kc-enter flex items-center justify-between gap-3 rounded-lg border glass-card p-5 outline-none transition-colors hover:border-brand focus-visible:ring-2 focus-visible:ring-ring md:p-6"
+          style={{ "--i": 2 } as React.CSSProperties}
+        >
+          <span>
+            <span className="block font-heading text-lg font-medium text-ink">Integrations</span>
+            <span className="block text-[13px] text-ink-muted">GoHighLevel connection, automated texts, sync status and failed syncs.</span>
+          </span>
+          <ArrowRight className="size-4 shrink-0 text-ink-muted" aria-hidden />
+        </Link>
+      )}
       {finance && (
         <>
           <PageHeader eyebrow="Business" title="Invoicing & payouts" description="Sales tax, due dates and the 1099 threshold." className="pt-2" />

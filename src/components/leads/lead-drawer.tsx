@@ -9,6 +9,7 @@ import { leadTone } from "@/lib/status";
 import type { LeadRow, TeamMember, TimelineEntry } from "@/lib/leads-data";
 import { addLeadNote, convertLead, getLeadTimeline, updateLead } from "@/app/actions/leads";
 import { setLeadAttribution } from "@/app/actions/growth";
+import { setSmsConsent } from "@/app/actions/ghl";
 import { CHANNELS, channelLabel } from "@/lib/schemas/growth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,6 +66,16 @@ function LeadBody({ lead, team, today, onMove, onChanged }: Props & { lead: Lead
   const [channel, setChannel] = useState<string>(lead.channel);
   const [creative, setCreative] = useState(lead.creative ?? "");
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  function changeConsent(consent: boolean) {
+    start(async () => {
+      const r = await setSmsConsent({ contactId: lead.contactId, consent, source: "staff" });
+      if (!r.ok) return void toast.error(r.message);
+      toast.success(consent ? "Text consent recorded" : "Text consent removed");
+      onChanged(lead.id, { smsConsent: consent });
+      reload();
+    });
+  }
 
   function saveAttribution(e: React.FormEvent) {
     e.preventDefault();
@@ -228,6 +239,23 @@ function LeadBody({ lead, team, today, onMove, onChanged }: Props & { lead: Lead
           <Button type="submit" variant="secondary" disabled={pending} className="h-11 md:h-9" data-testid="save-attribution">Save attribution</Button>
         </div>
       </form>
+
+      <section aria-label="Text messages" className="space-y-2 border-t border-hairline pt-4" data-testid="sms-consent">
+        <h3 className="font-heading text-lg font-medium text-ink">Text messages</h3>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="space-y-1">
+            <StatusPill tone={lead.smsOptedOut ? "danger" : lead.smsConsent ? "success" : "neutral"}>
+              {lead.smsOptedOut ? "Replied STOP" : lead.smsConsent ? "Agreed to texts" : "No consent on file"}
+            </StatusPill>
+            <p className="text-[12px] text-ink-muted">Automated texts (replies, reminders, review and payment links) only go to customers who agreed to them.</p>
+          </div>
+          {!lead.smsOptedOut && (
+            <Button type="button" variant="secondary" disabled={pending || !lead.phone} className="h-11 md:h-9" onClick={() => changeConsent(!lead.smsConsent)} data-testid="toggle-sms-consent">
+              {lead.smsConsent ? "Remove consent" : "Record consent"}
+            </Button>
+          )}
+        </div>
+      </section>
 
       <section aria-label="Activity" className="space-y-3 border-t border-hairline pt-4">
         <h3 className="font-heading text-lg font-medium text-ink">Activity</h3>

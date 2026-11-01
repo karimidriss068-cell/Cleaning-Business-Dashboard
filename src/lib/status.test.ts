@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  messageOutcome,
+  messageOutcomeLabel,
+  messageOutcomeTone,
   budgetLabel,
   budgetTone,
   capacityLabel,
@@ -66,5 +69,17 @@ describe("status tones", () => {
     expect(cashLabel.low).toMatch(/buffer/);
     expect(capacityLabel.over).toBe("Over capacity");
     expect(budgetLabel.near).toBe("Close to budget");
+  });
+});
+
+describe("message outcomes", () => {
+  it("never shows a dry run as sent, and every outcome has a label", () => {
+    expect(messageOutcomeTone.dry_run).not.toBe("success");
+    expect(messageOutcomeLabel.dry_run).toBe("Dry run");
+    for (const o of ["pending", "sent", "dry_run", "blocked", "failed"] as const) {
+      expect(messageOutcomeLabel[o].length).toBeGreaterThan(0);
+      expect(messageOutcome(o)).toBe(o);
+    }
+    expect(messageOutcome("something new")).toBe("failed");
   });
 });

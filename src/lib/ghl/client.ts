@@ -10,15 +10,21 @@ import {
 // response is parsed with zod before use and an error carries the status, never the body, so
 // nothing from a contact reaches a log.
 
-const BASE = "https://services.leadconnectorhq.com";
+const DEFAULT_BASE = "https://services.leadconnectorhq.com";
 const API_VERSION = "2021-07-28";
 
-export type GhlConfig = { token: string; locationId: string };
+export type GhlConfig = { token: string; locationId: string; baseUrl?: string };
+
+/** Tests point the client at a fake GHL on this machine with GHL_API_BASE; anything else is ignored. */
+function testBase(): string | undefined {
+  const base = process.env.GHL_API_BASE;
+  return base && /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(base) ? base : undefined;
+}
 
 export function ghlConfig(): GhlConfig | null {
   const token = process.env.GHL_API_TOKEN;
   const locationId = process.env.GHL_LOCATION_ID;
-  return token && locationId ? { token, locationId } : null;
+  return token && locationId ? { token, locationId, baseUrl: testBase() } : null;
 }
 
 export class GhlError extends Error {
@@ -50,7 +56,7 @@ export function createGhlClient(config: GhlConfig, fetchImpl: typeof fetch = fet
     const qs = opts.query ? `?${new URLSearchParams(Object.entries(opts.query).map(([k, v]) => [k, String(v)])).toString()}` : "";
     let res: Response;
     try {
-      res = await fetchImpl(`${BASE}${path}${qs}`, {
+      res = await fetchImpl(`${config.baseUrl ?? DEFAULT_BASE}${path}${qs}`, {
         method,
         headers: {
           Authorization: `Bearer ${config.token}`,
