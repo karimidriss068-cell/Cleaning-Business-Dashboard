@@ -160,6 +160,136 @@ export type Database = {
           },
         ]
       }
+      ai_budgets: {
+        Row: {
+          daily_cap_cents: number | null
+          hard_stop: boolean
+          id: string
+          monthly_cap_cents: number | null
+          scope: string
+          scope_key: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          daily_cap_cents?: number | null
+          hard_stop?: boolean
+          id?: string
+          monthly_cap_cents?: number | null
+          scope: string
+          scope_key: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          daily_cap_cents?: number | null
+          hard_stop?: boolean
+          id?: string
+          monthly_cap_cents?: number | null
+          scope?: string
+          scope_key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_budgets_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      ai_settings: {
+        Row: {
+          id: boolean
+          kill_switch: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: boolean
+          kill_switch?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: boolean
+          kill_switch?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      ai_usage: {
+        Row: {
+          actor_id: string
+          actor_type: string
+          cache_write_tokens: number
+          cached_input_tokens: number
+          cost_cents: number | null
+          cost_micros: number
+          created_at: string
+          detail: string | null
+          feature: string
+          id: string
+          input_tokens: number
+          model: string
+          output_tokens: number
+          provider: string
+          run_id: string | null
+          settled_at: string | null
+          status: string
+        }
+        Insert: {
+          actor_id: string
+          actor_type: string
+          cache_write_tokens?: number
+          cached_input_tokens?: number
+          cost_cents?: number | null
+          cost_micros?: number
+          created_at?: string
+          detail?: string | null
+          feature: string
+          id?: string
+          input_tokens?: number
+          model: string
+          output_tokens?: number
+          provider: string
+          run_id?: string | null
+          settled_at?: string | null
+          status: string
+        }
+        Update: {
+          actor_id?: string
+          actor_type?: string
+          cache_write_tokens?: number
+          cached_input_tokens?: number
+          cost_cents?: number | null
+          cost_micros?: number
+          created_at?: string
+          detail?: string | null
+          feature?: string
+          id?: string
+          input_tokens?: number
+          model?: string
+          output_tokens?: number
+          provider?: string
+          run_id?: string | null
+          settled_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       automation_runs: {
         Row: {
           automation_id: string
@@ -2967,6 +3097,34 @@ export type Database = {
         }
         Returns: string
       }
+      ai_fail: {
+        Args: { p_detail?: string; p_usage_id: string }
+        Returns: undefined
+      }
+      ai_reserve: {
+        Args: {
+          p_actor_id: string
+          p_actor_type: string
+          p_est_micros: number
+          p_feature: string
+          p_model: string
+          p_provider: string
+          p_run_id?: string
+        }
+        Returns: Json
+      }
+      ai_settle: {
+        Args: {
+          p_cache_write: number
+          p_cached: number
+          p_cost_micros: number
+          p_input: number
+          p_output: number
+          p_usage_id: string
+        }
+        Returns: undefined
+      }
+      ai_usage_summary: { Args: never; Returns: Json }
       approve_payout: {
         Args: { p_expected_updated_at: string; p_payout_id: string }
         Returns: string
@@ -3128,6 +3286,10 @@ export type Database = {
         Returns: Json
       }
       delete_ad_spend: { Args: { p_id: string }; Returns: undefined }
+      delete_ai_budget: {
+        Args: { p_key: string; p_scope: string }
+        Returns: undefined
+      }
       delete_expense: { Args: { p_id: string }; Returns: undefined }
       delete_growth_decision: { Args: { p_id: string }; Returns: undefined }
       delete_invoice_draft: {
@@ -3456,6 +3618,16 @@ export type Database = {
       remove_subcontractor_document: { Args: { p_id: string }; Returns: string }
       reopen_payout: { Args: { p_payout_id: string }; Returns: undefined }
       retry_ghl_sync: { Args: { p_id: string }; Returns: undefined }
+      save_ai_budget: {
+        Args: {
+          p_daily?: number
+          p_hard_stop?: boolean
+          p_key: string
+          p_monthly?: number
+          p_scope: string
+        }
+        Returns: undefined
+      }
       save_cash_settings: {
         Args: {
           p_buffer_cents: number
@@ -3547,6 +3719,7 @@ export type Database = {
         Args: { p_expected_updated_at: string; p_invoice_id: string }
         Returns: string
       }
+      set_ai_kill_switch: { Args: { p_on: boolean }; Returns: undefined }
       set_checklist_item: {
         Args: { p_done: boolean; p_item_id: string }
         Returns: undefined
