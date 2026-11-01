@@ -1,7 +1,7 @@
 import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import type { NextRequest } from "next/server";
-import { verifyGrowthKey, verifyStripeSignature } from "./webhook-auth";
+import { verifyGhlSecret, verifyGrowthKey, verifyStripeSignature } from "./webhook-auth";
 
 const secret = "whsec_test_secret";
 const body = JSON.stringify({ id: "evt_1", type: "checkout.session.completed" });
@@ -53,5 +53,33 @@ describe("verifyGrowthKey", () => {
     delete process.env.GROWTH_API_KEY;
     expect(verifyGrowthKey(req("Bearer "))).toBe(false);
     expect(verifyGrowthKey(req("Bearer undefined"))).toBe(false);
+  });
+});
+
+describe("verifyGhlSecret", () => {
+  const long = "a1b2c3d4".repeat(8); // 64 characters
+  const req = (value: string | null) => ({ headers: new Headers(value === null ? {} : { "x-ghl-webhook-secret": value }) }) as unknown as NextRequest;
+  const withEnv = (value: string | undefined, run: () => void) => {
+    const before = process.env.GHL_WEBHOOK_SECRET;
+    if (value === undefined) delete process.env.GHL_WEBHOOK_SECRET;
+    else process.env.GHL_WEBHOOK_SECRET = value;
+    try {
+      run();
+    } finally {
+      if (before === undefined) delete process.env.GHL_WEBHOOK_SECRET;
+      else process.env.GHL_WEBHOOK_SECRET = before;
+    }
+  };
+  it("accepts the right secret", () => withEnv(long, () => expect(verifyGhlSecret(req(long))).toBe(true)));
+  it("rejects a wrong, same-length, missing or empty header", () =>
+    withEnv(long, () => {
+      expect(verifyGhlSecret(req("b".repeat(64)))).toBe(false);
+      expect(verifyGhlSecret(req(long.slice(0, 63)))).toBe(false);
+      expect(verifyGhlSecret(req(""))).toBe(false);
+      expect(verifyGhlSecret(req(null))).toBe(false);
+    }));
+  it("treats a missing or short configured secret as not configured, even if the header matches", () => {
+    withEnv(undefined, () => expect(verifyGhlSecret(req("anything")).valueOf()).toBe(false));
+    withEnv("short-secret", () => expect(verifyGhlSecret(req("short-secret"))).toBe(false));
   });
 });

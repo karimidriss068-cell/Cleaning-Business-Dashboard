@@ -34,6 +34,23 @@ export function verifyRetellSecret(req: NextRequest): boolean {
   return verifySecretHeader(req, "x-retell-secret", process.env.RETELL_WEBHOOK_SECRET);
 }
 
+/** The shortest GHL webhook secret we accept: 32+ characters from `openssl rand -hex 32` (64). */
+export const GHL_SECRET_MIN_LENGTH = 32;
+
+/**
+ * Verifies the `x-ghl-webhook-secret` header of a GoHighLevel workflow webhook against
+ * GHL_WEBHOOK_SECRET. GHL workflow webhooks can't sign the body, so this is the weaker
+ * "dedicated secret header" guarantee from CLAUDE.md rule 1; the route compensates by treating
+ * the body as a notification only (it re-fetches the record by id), by a replay window on the
+ * payload's timestamp, and by rejecting repeated event ids. A secret shorter than
+ * GHL_SECRET_MIN_LENGTH is treated as not configured.
+ */
+export function verifyGhlSecret(req: NextRequest): boolean {
+  const expected = process.env.GHL_WEBHOOK_SECRET;
+  if (!expected || expected.length < GHL_SECRET_MIN_LENGTH) return false;
+  return verifySecretHeader(req, "x-ghl-webhook-secret", expected);
+}
+
 /**
  * Verifies Vercel Cron's own auth contract: an `authorization: Bearer
  * $CRON_SECRET` header, automatically sent on every cron-triggered request
