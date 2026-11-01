@@ -384,6 +384,9 @@ export type Database = {
           last_name: string | null
           notes: string | null
           phone: string | null
+          sms_consent: boolean
+          sms_consent_at: string | null
+          sms_consent_source: string | null
           source: string | null
           state: string
           stripe_customer_id: string | null
@@ -411,6 +414,9 @@ export type Database = {
           last_name?: string | null
           notes?: string | null
           phone?: string | null
+          sms_consent?: boolean
+          sms_consent_at?: string | null
+          sms_consent_source?: string | null
           source?: string | null
           state?: string
           stripe_customer_id?: string | null
@@ -438,6 +444,9 @@ export type Database = {
           last_name?: string | null
           notes?: string | null
           phone?: string | null
+          sms_consent?: boolean
+          sms_consent_at?: string | null
+          sms_consent_source?: string | null
           source?: string | null
           state?: string
           stripe_customer_id?: string | null
@@ -635,6 +644,48 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      ghl_settings: {
+        Row: {
+          business_name: string
+          id: boolean
+          last_reconcile_at: string | null
+          last_reconcile_note: string | null
+          last_webhook_at: string | null
+          max_texts_per_contact_per_day: number
+          max_texts_per_hour: number
+          opportunity_sync_mode: string
+          pipeline_id: string | null
+          stage_ids: Json
+          updated_at: string
+        }
+        Insert: {
+          business_name?: string
+          id?: boolean
+          last_reconcile_at?: string | null
+          last_reconcile_note?: string | null
+          last_webhook_at?: string | null
+          max_texts_per_contact_per_day?: number
+          max_texts_per_hour?: number
+          opportunity_sync_mode?: string
+          pipeline_id?: string | null
+          stage_ids?: Json
+          updated_at?: string
+        }
+        Update: {
+          business_name?: string
+          id?: boolean
+          last_reconcile_at?: string | null
+          last_reconcile_note?: string | null
+          last_webhook_at?: string | null
+          max_texts_per_contact_per_day?: number
+          max_texts_per_hour?: number
+          opportunity_sync_mode?: string
+          pipeline_id?: string | null
+          stage_ids?: Json
+          updated_at?: string
+        }
+        Relationships: []
       }
       goals: {
         Row: {
@@ -1725,6 +1776,114 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      message_log: {
+        Row: {
+          body: string | null
+          contact_id: string | null
+          created_at: string
+          dedupe_key: string
+          ghl_message_id: string | null
+          id: string
+          invoice_id: string | null
+          job_id: string | null
+          lead_id: string | null
+          outcome: string
+          reason: string | null
+          sent_at: string | null
+          template_key: string
+        }
+        Insert: {
+          body?: string | null
+          contact_id?: string | null
+          created_at?: string
+          dedupe_key: string
+          ghl_message_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          job_id?: string | null
+          lead_id?: string | null
+          outcome: string
+          reason?: string | null
+          sent_at?: string | null
+          template_key: string
+        }
+        Update: {
+          body?: string | null
+          contact_id?: string | null
+          created_at?: string
+          dedupe_key?: string
+          ghl_message_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          job_id?: string | null
+          lead_id?: string | null
+          outcome?: string
+          reason?: string | null
+          sent_at?: string | null
+          template_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_log_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_log_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_log_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_log_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_log_template_key_fkey"
+            columns: ["template_key"]
+            isOneToOne: false
+            referencedRelation: "message_templates"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
+      message_templates: {
+        Row: {
+          body: string
+          key: string
+          label: string
+          mode: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          key: string
+          label: string
+          mode?: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          key?: string
+          label?: string
+          mode?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       opt_outs: {
         Row: {
@@ -2936,6 +3095,105 @@ export type Database = {
         }[]
       }
       get_integration_secret: { Args: { p_provider: string }; Returns: string }
+      ghl_apply_stage: {
+        Args: {
+          p_lost_reason?: string
+          p_opportunity_id: string
+          p_stage: string
+        }
+        Returns: Json
+      }
+      ghl_claim_message: {
+        Args: {
+          p_body: string
+          p_contact: string
+          p_dedupe: string
+          p_dry_run: boolean
+          p_invoice: string
+          p_job: string
+          p_lead: string
+          p_template: string
+        }
+        Returns: Json
+      }
+      ghl_due_messages: {
+        Args: { p_now?: string }
+        Returns: {
+          contact_id: string
+          dedupe_key: string
+          event_at: string
+          first_name: string
+          ghl_contact_id: string
+          invoice_id: string
+          job_id: string
+          lead_id: string
+          pay_token: string
+          template_key: string
+        }[]
+      }
+      ghl_finish_message: {
+        Args: {
+          p_error?: string
+          p_ghl_message_id?: string
+          p_id: string
+          p_outcome: string
+        }
+        Returns: undefined
+      }
+      ghl_log_appointment: {
+        Args: {
+          p_appointment_id: string
+          p_end: string
+          p_ghl_contact_id: string
+          p_start: string
+          p_status: string
+        }
+        Returns: Json
+      }
+      ghl_log_message: {
+        Args: {
+          p_at: string
+          p_automated?: boolean
+          p_body: string
+          p_direction: string
+          p_ghl_contact_id: string
+          p_message_id: string
+        }
+        Returns: Json
+      }
+      ghl_queue_done: {
+        Args: { p_id: string; p_note?: string }
+        Returns: undefined
+      }
+      ghl_queue_fail: {
+        Args: { p_error: string; p_id: string }
+        Returns: string
+      }
+      ghl_send_counts: {
+        Args: { p_contact: string; p_now?: string }
+        Returns: Json
+      }
+      ghl_sync_status: { Args: never; Returns: Json }
+      ghl_touch: {
+        Args: { p_note?: string; p_what: string }
+        Returns: undefined
+      }
+      ghl_upsert_lead: {
+        Args: {
+          p_dnd?: boolean
+          p_email: string
+          p_first_name: string
+          p_ghl_contact_id: string
+          p_last_name: string
+          p_opportunity_id?: string
+          p_phone: string
+          p_service_type?: string
+          p_sms_consent?: boolean
+          p_source?: string
+          p_utm?: Json
+        }
+        Returns: Json
+      }
       growth_inputs: { Args: never; Returns: Json }
       growth_inputs_for_bots: { Args: never; Returns: Json }
       invoice_for_pay_token: { Args: { p_token: string }; Returns: Json }
@@ -3069,6 +3327,7 @@ export type Database = {
       remove_payment_method: { Args: { p_id: string }; Returns: string }
       remove_subcontractor_document: { Args: { p_id: string }; Returns: string }
       reopen_payout: { Args: { p_payout_id: string }; Returns: undefined }
+      retry_ghl_sync: { Args: { p_id: string }; Returns: undefined }
       save_cash_settings: {
         Args: {
           p_buffer_cents: number
@@ -3096,6 +3355,17 @@ export type Database = {
         Returns: undefined
       }
       save_gate_criteria: { Args: { p_rows: Json }; Returns: undefined }
+      save_ghl_settings: {
+        Args: {
+          p_business_name: string
+          p_max_per_contact_per_day: number
+          p_max_per_hour: number
+          p_opportunity_sync_mode: string
+          p_pipeline_id: string
+          p_stage_ids: Json
+        }
+        Returns: undefined
+      }
       save_growth_assumptions: {
         Args: {
           p_account_value_cents: number
@@ -3132,6 +3402,10 @@ export type Database = {
         }
         Returns: string
       }
+      save_message_template: {
+        Args: { p_body: string; p_key: string; p_mode: string }
+        Returns: undefined
+      }
       save_tier_settings: {
         Args: {
           p_base_cents: number
@@ -3156,6 +3430,10 @@ export type Database = {
       set_lead_attribution: {
         Args: { p_channel: string; p_creative?: string; p_lead_id: string }
         Returns: string
+      }
+      set_sms_consent: {
+        Args: { p_consent: boolean; p_contact_id: string; p_source?: string }
+        Returns: undefined
       }
       stripe_link_customer: {
         Args: {
