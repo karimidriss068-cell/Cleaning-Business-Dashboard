@@ -11,6 +11,8 @@ import { loadGrowthSnapshot } from "@/lib/growth-data";
 import { GrowthCard } from "@/components/growth/growth-card";
 import { FailedSyncsCard } from "@/components/ghl/failed-syncs-card";
 import { loadSyncStatus } from "@/lib/ghl/status-data";
+import { loadAiSummary } from "@/lib/ai/usage-data";
+import { AiBudgetBanner } from "@/components/ai/budget-banner";
 import { balanceCents, invoiceNumberLabel } from "@/lib/invoices";
 import { marginBps, monthShort } from "@/lib/payouts";
 import { PageHeader } from "@/components/shell/page-header";
@@ -77,6 +79,8 @@ export default async function CommandCenterPage() {
   const in30 = addDays(today, 30);
 
   // Owner/admin only: the status function refuses anyone else, and a hiccup here must not break the page.
+  // The AI budget banner is the owner's alone.
+  const aiSummary = profile.role === "owner" ? await loadAiSummary(supabase) : null;
   const ghlStatus = profile.role === "owner" || profile.role === "admin" ? await loadSyncStatus(supabase).catch(() => null) : null;
 
   const [jobsRes, lastMonthRes, leadsRes, openLeadsRes, waitingRes, invoicesRes, goalsRes, contractsRes, coiRes, followUpsRes, months, growth] = await Promise.all([
@@ -241,6 +245,8 @@ export default async function CommandCenterPage() {
       </div>
 
       <GrowthCard snapshot={growth} index={4} />
+
+      {aiSummary && <AiBudgetBanner summary={aiSummary} />}
 
       {ghlStatus && <FailedSyncsCard status={ghlStatus} />}
 

@@ -14,7 +14,8 @@
     "e2e:finance": "node e2e/finance.mjs",
     "e2e:growth": "node e2e/growth.mjs",
     "e2e:ghl": "node e2e/ghl.mjs",
-    "e2e:intake": "node e2e/intake.mjs"
+    "e2e:intake": "node e2e/intake.mjs",
+    "e2e:ai": "node e2e/ai.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

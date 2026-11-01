@@ -20,6 +20,7 @@ export default async function SettingsPage() {
     ? await supabase.from("profiles").select("role").eq("user_id", user.id).maybeSingle()
     : { data: null };
   const isOffice = profile !== null && profile.role !== "subcontractor";
+  const isOwner = profile?.role === "owner";
   const canEditFinance = profile?.role === "owner" || profile?.role === "admin";
   const finance = isOffice ? await loadSettings(supabase) : null;
 
@@ -40,6 +41,19 @@ export default async function SettingsPage() {
           <span>
             <span className="block font-heading text-lg font-medium text-ink">Integrations</span>
             <span className="block text-[13px] text-ink-muted">GoHighLevel connection, automated texts, sync status and failed syncs.</span>
+          </span>
+          <ArrowRight className="size-4 shrink-0 text-ink-muted" aria-hidden />
+        </Link>
+      )}
+      {isOwner && (
+        <Link
+          href="/settings/ai-usage"
+          className="kc-enter flex items-center justify-between gap-3 rounded-lg border glass-card p-5 outline-none transition-colors hover:border-brand focus-visible:ring-2 focus-visible:ring-ring md:p-6"
+          style={{ "--i": 3 } as React.CSSProperties}
+        >
+          <span>
+            <span className="block font-heading text-lg font-medium text-ink">AI usage</span>
+            <span className="block text-[13px] text-ink-muted">What AI has cost, spending caps and the kill switch.</span>
           </span>
           <ArrowRight className="size-4 shrink-0 text-ink-muted" aria-hidden />
         </Link>

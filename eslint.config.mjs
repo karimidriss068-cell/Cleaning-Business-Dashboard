@@ -11,9 +11,13 @@ const eslintConfig = defineConfig([
     files: ["src/**/*.{ts,tsx}", "e2e/**/*.mjs", "scripts/**/*.{ts,mts,mjs}"],
     ignores: ["src/lib/ai/**"],
     rules: {
-      "no-restricted-imports": ["error", { patterns: [
-        { group: ["@anthropic-ai/*", "openai", "openai/*", "@ai-sdk/*", "ai"], message: "Call models through callModel() in src/lib/ai/call-model.ts." },
-      ] }],
+      "no-restricted-imports": ["error", {
+        paths: [
+          { name: "openai", message: "Call models through callModel() in src/lib/ai/call-model.ts." },
+          { name: "ai", message: "Call models through callModel() in src/lib/ai/call-model.ts." },
+        ],
+        patterns: [{ group: ["@anthropic-ai/*", "openai/*", "@ai-sdk/*"], message: "Call models through callModel() in src/lib/ai/call-model.ts." }],
+      }],
       "no-restricted-syntax": ["error",
         { selector: "Literal[value=/api\\.(anthropic\\.com|x\\.ai|openai\\.com)/]", message: "Call models through callModel() in src/lib/ai/call-model.ts." },
         { selector: "TemplateElement[value.raw=/api\\.(anthropic\\.com|x\\.ai|openai\\.com)/]", message: "Call models through callModel() in src/lib/ai/call-model.ts." },
