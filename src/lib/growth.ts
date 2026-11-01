@@ -344,7 +344,7 @@ export function scaleLight(args: { reply: GrowthInputs["reply"]; replyTargetMinu
 
 // The snapshot ----------------------------------------------------------------
 
-export type GrowthSnapshot = {
+export type CoreSnapshot = {
   generatedAt: string;
   today: string;
   /** True while demo rows (ids starting 5eed0000-) exist, so the numbers are not all real. */
@@ -384,7 +384,7 @@ export type GrowthSnapshot = {
   scaleLight: ScaleLight | null;
 };
 
-export function buildGrowthSnapshot(inputs: GrowthInputs, now: Date = new Date()): GrowthSnapshot {
+export function buildCoreSnapshot(inputs: GrowthInputs, now: Date = new Date()): CoreSnapshot {
   const s = inputs.settings;
   const needs = planNeeds(s);
   const pos = planPosition(inputs.today, s.startDate);

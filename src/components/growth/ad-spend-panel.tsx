@@ -5,7 +5,7 @@ import { Trash2 } from "lucide-react";
 import { createAdCampaign, deleteAdSpend, recordAdSpend } from "@/app/actions/growth";
 import { formatCalendarDate, formatCents, parseDollarsToCents } from "@/lib/format";
 import { AD_PLATFORMS, adSpendSchema, campaignSchema, platformLabel } from "@/lib/schemas/growth";
-import type { GrowthSnapshot } from "@/lib/growth";
+import type { GrowthSnapshot } from "@/lib/growth-snapshot";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

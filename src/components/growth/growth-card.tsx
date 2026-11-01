@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import type { GrowthSnapshot } from "@/lib/growth";
+import type { GrowthSnapshot } from "@/lib/growth-snapshot";
 import { paceLabel, paceTone, scaleLabel, scaleTone } from "@/lib/status";
 import { AnimatedNumber } from "@/components/system/animated-number";
 import { GlassPanel } from "@/components/system/glass-panel";

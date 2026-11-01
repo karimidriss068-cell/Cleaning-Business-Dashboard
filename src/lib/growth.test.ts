@@ -4,7 +4,7 @@ import {
   addMonths,
   adMetrics,
   avgMonthlyClientValueCents,
-  buildGrowthSnapshot,
+  buildCoreSnapshot,
   capacity,
   cashPosition,
   currentMilestone,
@@ -19,6 +19,7 @@ import {
   type Milestone,
 } from "@/lib/growth";
 import { growthInputsSchema, planSchema, type GrowthInputs } from "@/lib/schemas/growth";
+import { EXTENDED } from "@/lib/growth-fixture";
 
 const settings: GrowthInputs["settings"] = {
   startDate: "2026-12-01",
@@ -55,6 +56,7 @@ function inputs(over: Partial<GrowthInputs> = {}): GrowthInputs {
     capacity: { activeCleaners: 3, scheduledNext7Days: 9 },
     cash: { collectedCents: 300000, payoutsCents: 100000, adSpendCents: 30000, fixedMonths: 0, last30: { collectedCents: 300000, payoutsCents: 100000, adSpendCents: 60000 } },
     demo: { adSpend: false, leads: false, jobs: false, invoices: false, payments: false },
+    ...EXTENDED,
     ...over,
   };
 }
@@ -309,7 +311,7 @@ describe("scale light", () => {
 
 describe("snapshot", () => {
   it("assembles the goal, pace, ads, capacity, cash and light", () => {
-    const s = buildGrowthSnapshot(inputs(), new Date("2026-12-16T15:00:00Z"));
+    const s = buildCoreSnapshot(inputs(), new Date("2026-12-16T15:00:00Z"));
     expect(s.pace).toMatchObject({ phase: "active", planMonth: 1, milestoneCents: 100000, revenueCents: 50000 });
     expect(s.goal).toMatchObject({ deadline: "2027-06-01", monthlyGoalCents: 1000000 });
     expect(s.clients.residential).toEqual({ have: 10, need: 18 });
@@ -320,11 +322,11 @@ describe("snapshot", () => {
     expect(s.generatedAt).toBe("2026-12-16T15:00:00.000Z");
   });
   it("sits at zero target before the plan starts and says how long to go", () => {
-    const s = buildGrowthSnapshot(inputs({ today: "2026-11-02", monthStart: "2026-11-01", nextMonthStart: "2026-12-01" }));
+    const s = buildCoreSnapshot(inputs({ today: "2026-11-02", monthStart: "2026-11-01", nextMonthStart: "2026-12-01" }));
     expect(s.pace).toMatchObject({ phase: "before", planMonth: null, daysUntilStart: 29, status: "on_track" });
   });
   it("hides cash and the light from staff and flags demo data", () => {
-    const s = buildGrowthSnapshot(inputs({ cash: null, demo: { adSpend: true, leads: false, jobs: false, invoices: false, payments: false } }));
+    const s = buildCoreSnapshot(inputs({ cash: null, demo: { adSpend: true, leads: false, jobs: false, invoices: false, payments: false } }));
     expect(s.cash).toBeNull();
     expect(s.scaleLight).toBeNull();
     expect(s.includesDemo).toBe(true);

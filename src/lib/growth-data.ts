@@ -1,7 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
-import { buildGrowthSnapshot, type GrowthSnapshot } from "@/lib/growth";
+import { buildGrowthSnapshot, type GrowthSnapshot } from "@/lib/growth-snapshot";
 import { growthInputsSchema } from "@/lib/schemas/growth";
 
 type Db = SupabaseClient<Database>;
