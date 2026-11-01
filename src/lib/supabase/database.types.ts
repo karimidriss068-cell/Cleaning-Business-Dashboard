@@ -368,6 +368,53 @@ export type Database = {
         }
         Relationships: []
       }
+      consent_records: {
+        Row: {
+          applied: boolean
+          channel: string
+          contact_id: string
+          granted_at: string
+          id: string
+          ip_hash: string | null
+          page: string | null
+          source: string
+          wording: string
+          wording_version: string
+        }
+        Insert: {
+          applied: boolean
+          channel?: string
+          contact_id: string
+          granted_at?: string
+          id?: string
+          ip_hash?: string | null
+          page?: string | null
+          source: string
+          wording: string
+          wording_version: string
+        }
+        Update: {
+          applied?: boolean
+          channel?: string
+          contact_id?: string
+          granted_at?: string
+          id?: string
+          ip_hash?: string | null
+          page?: string | null
+          source?: string
+          wording?: string
+          wording_version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consent_records_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contacts: {
         Row: {
           account_id: string | null
@@ -929,6 +976,24 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      intake_hits: {
+        Row: {
+          created_at: string
+          id: number
+          key: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          key: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          key?: string
+        }
+        Relationships: []
       }
       integration_settings: {
         Row: {
@@ -3238,6 +3303,27 @@ export type Database = {
       }
       growth_inputs: { Args: never; Returns: Json }
       growth_inputs_for_bots: { Args: never; Returns: Json }
+      intake_lead: {
+        Args: {
+          p_borough?: Database["public"]["Enums"]["borough"]
+          p_consent?: boolean
+          p_consent_version?: string
+          p_consent_wording?: string
+          p_email: string
+          p_first_name: string
+          p_ip_hash?: string
+          p_last_name: string
+          p_page?: string
+          p_phone: string
+          p_service_type: Database["public"]["Enums"]["lead_service_type"]
+          p_utm?: Json
+        }
+        Returns: Json
+      }
+      intake_rate_hit: {
+        Args: { p_key: string; p_limit: number; p_window_seconds: number }
+        Returns: boolean
+      }
       invoice_for_pay_token: { Args: { p_token: string }; Returns: Json }
       lead_conversion_by_source: {
         Args: { p_from: string; p_to: string }
