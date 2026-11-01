@@ -4,7 +4,7 @@
 do $$
 declare
   owner uuid := gen_random_uuid(); staff uuid := gen_random_uuid(); u1 uuid := gen_random_uuid();
-  s1 uuid; c uuid; c2 uuid; p uuid; sv uuid; j1 uuid; camp uuid; campg uuid; l1 uuid; l2 uuid; l3 uuid; ex uuid; dec uuid; sp uuid;
+  s1 uuid; c uuid; c2 uuid; p uuid; sv uuid; j1 uuid; camp uuid; campg uuid; l1 uuid; l2 uuid; l3 uuid; l4 uuid; ex uuid; dec uuid; sp uuid;
   r text := ''; n int; js jsonb; b0 bigint; b1 bigint; cash bigint;
   v_today date := (now() at time zone 'America/New_York')::date;
   v_month date := date_trunc('month', (now() at time zone 'America/New_York'))::date;
@@ -121,6 +121,14 @@ begin
   -- an unanswered-then-slow lead from a referral
   insert into public.leads (contact_id, source, stage, first_response_at, created_at)
     values (c2, 'referral', 'contacted', now() - interval '2 hours' + interval '90 minutes', now() - interval '2 hours') returning id into l2;
+  -- two referral leads lost after contact: one went through Quote sent first, one never did
+  insert into public.leads (contact_id, source, stage, first_response_at, created_at, closed_at, lost_reason)
+    values (c2, 'referral', 'lost', now(), now() - interval '3 hours', now(), 'Too expensive') returning id into l3;
+  insert into public.activities (type, subject, lead_id, contact_id) values ('status_change', 'Stage: Contacted -> Quote sent', l3, c2);
+  insert into public.activities (type, subject, lead_id, contact_id) values ('status_change', 'Stage: Quote sent -> Lost', l3, c2);
+  insert into public.leads (contact_id, source, stage, first_response_at, created_at, closed_at, lost_reason)
+    values (c2, 'referral', 'lost', now(), now() - interval '3 hours', now(), 'No answer') returning id into l4;
+  insert into public.activities (type, subject, lead_id, contact_id) values ('status_change', 'Stage: New -> Lost', l4, c2);
   perform set_config('request.jwt.claims', json_build_object('sub', owner, 'role', 'authenticated')::text, true);
   execute 'set local role authenticated';
   r := r || 'lead-channel-from-campaign=' || (select channel from public.leads where id = l1) || ' ';
@@ -132,6 +140,9 @@ begin
     from jsonb_array_elements(ch0) a join jsonb_array_elements(ch1) b on a ->> 'key' = b ->> 'key' where a ->> 'key' = 'meta') || ' ';
   r := r || 'referral-contacted-delta=' || (
     select (b ->> 'contacted')::int - (a ->> 'contacted')::int
+    from jsonb_array_elements(ch0) a join jsonb_array_elements(ch1) b on a ->> 'key' = b ->> 'key' where a ->> 'key' = 'referral') || ' ';
+  r := r || 'referral-quoted-delta-counts-lost-after-quote=' || (
+    select (b ->> 'quoted')::int - (a ->> 'quoted')::int
     from jsonb_array_elements(ch0) a join jsonb_array_elements(ch1) b on a ->> 'key' = b ->> 'key' where a ->> 'key' = 'referral') || ' ';
   r := r || 'meta-spend-in-funnel=' || ((select (b ->> 'spendCents')::bigint from jsonb_array_elements(ch1) b where b ->> 'key' = 'meta') >= 6000) || ' ';
   rb1 := public.growth_inputs() -> 'replyBuckets';
