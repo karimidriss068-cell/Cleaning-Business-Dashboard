@@ -8,6 +8,8 @@ import { formatNyDateTime } from "@/lib/format";
 import { leadTone } from "@/lib/status";
 import type { LeadRow, TeamMember, TimelineEntry } from "@/lib/leads-data";
 import { addLeadNote, convertLead, getLeadTimeline, updateLead } from "@/app/actions/leads";
+import { setLeadAttribution } from "@/app/actions/growth";
+import { CHANNELS, channelLabel } from "@/lib/schemas/growth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -60,7 +62,20 @@ function LeadBody({ lead, team, today, onMove, onChanged }: Props & { lead: Lead
   const [error, setError] = useState<string | null>(null);
   const [kind, setKind] = useState<"note" | "call" | "sms">("call");
   const [noteText, setNoteText] = useState("");
+  const [channel, setChannel] = useState<string>(lead.channel);
+  const [creative, setCreative] = useState(lead.creative ?? "");
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  function saveAttribution(e: React.FormEvent) {
+    e.preventDefault();
+    start(async () => {
+      const r = await setLeadAttribution({ leadId: lead.id, channel, creative: creative.trim() === "" ? undefined : creative });
+      if (!r.ok) return void toast.error(r.message);
+      toast.success("Attribution saved");
+      onChanged(lead.id, { channel, creative: creative.trim() === "" ? null : creative.trim(), updatedAt: r.updatedAt });
+      reload();
+    });
+  }
 
   const reload = useCallback(() => setVersion((v) => v + 1), []);
   useEffect(() => {
@@ -72,6 +87,7 @@ function LeadBody({ lead, team, today, onMove, onChanged }: Props & { lead: Lead
   }, [lead.id, lead.updatedAt, version]);
 
   const serviceItems = SERVICE_TYPES.map((s) => ({ value: s, label: serviceTypeLabel[s] }));
+  const channelItems = CHANNELS.map((c) => ({ value: c, label: channelLabel[c] }));
   const sourceItems = SOURCES.map((s) => ({ value: s, label: sourceLabel[s] }));
   const boroughItems = [{ value: "none", label: "Not set" }, ...BOROUGHS.map((b) => ({ value: b, label: boroughLabel(b) }))];
   const ownerItems = [{ value: "none", label: "Nobody" }, ...team.map((t) => ({ value: t.id, label: t.name }))];
@@ -199,6 +215,17 @@ function LeadBody({ lead, team, today, onMove, onChanged }: Props & { lead: Lead
         {error && <p role="alert" className="text-[13px] text-danger">{error}</p>}
         <div className="flex justify-end">
           <Button type="submit" disabled={pending || form.firstName.trim() === ""} className="h-11 md:h-9">Save changes</Button>
+        </div>
+      </form>
+
+      <form onSubmit={saveAttribution} className="space-y-3 border-t border-hairline pt-4" aria-label="Ad attribution" noValidate>
+        <h3 className="font-heading text-lg font-medium text-ink">Where it came from</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <PickField label="Channel" items={channelItems} value={channel} onChange={setChannel} />
+          <Field id="ld-creative" label="Creative"><Input id="ld-creative" value={creative} onChange={(e) => setCreative(e.target.value)} className="h-11 md:h-9" placeholder="Ad or video name" /></Field>
+        </div>
+        <div className="flex justify-end">
+          <Button type="submit" variant="secondary" disabled={pending} className="h-11 md:h-9" data-testid="save-attribution">Save attribution</Button>
         </div>
       </form>
 

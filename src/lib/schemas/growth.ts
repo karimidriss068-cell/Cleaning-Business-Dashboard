@@ -33,13 +33,14 @@ const campaignRowSchema = z.object({
   id: uuid,
   name: z.string(),
   platform: z.string(),
+  channel: z.string(),
   status: z.string(),
   isDemo: z.boolean(),
   spend30Cents: cents,
   leads30: count,
   booked30: count,
 });
-const spendRowSchema = z.object({ id: uuid, campaignId: uuid, campaign: z.string(), date: day, spendCents: cents, isDemo: z.boolean() });
+const spendRowSchema = z.object({ id: uuid, campaignId: uuid, campaign: z.string(), creative: z.string().nullable(), date: day, spendCents: cents, isDemo: z.boolean() });
 
 const baseInputsSchema = z.object({
   today: day,

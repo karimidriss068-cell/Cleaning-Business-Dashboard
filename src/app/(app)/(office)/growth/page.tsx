@@ -15,6 +15,13 @@ import { AnimatedNumber } from "@/components/system/animated-number";
 import { Meter } from "@/components/system/meter";
 import { StatusPill } from "@/components/system/status-pill";
 import { GrowthCard } from "@/components/growth/growth-card";
+import { TiersPanel } from "@/components/growth/tiers-panel";
+import { ProfitPanel } from "@/components/growth/profit-panel";
+import { ForecastPanel } from "@/components/growth/forecast-panel";
+import { DecisionLog, GatesPanel, HireTriggersPanel } from "@/components/growth/gates-panel";
+import { FunnelPanel } from "@/components/growth/funnel-panel";
+import { ChannelTestPanel } from "@/components/growth/channel-test-panel";
+import { ForecastForm, TierForm } from "@/components/growth/north-forms";
 import { DemoDataPill } from "@/components/growth/demo-pill";
 import { AdSpendPanel } from "@/components/growth/ad-spend-panel";
 import { AssumptionsForm, CashForm, PlanForm } from "@/components/growth/growth-forms";
@@ -87,6 +94,24 @@ export default async function GrowthPage() {
 
       <GrowthCard snapshot={snapshot} index={1} />
 
+      <Section id="north-star" title="North star: 12 months" description={`Pace against the ${snapshot.tiers.selected === "north_star" ? "north star" : snapshot.tiers.selected} tier, with the others beside it. Month ${snapshot.tiers.planMonth === 0 ? "1 hasn't started" : `${snapshot.tiers.planMonth} of 12`}.`} index={2}>
+        <TiersPanel snapshot={snapshot} />
+      </Section>
+
+      <Section id="profit" title="Profit" description="Revenue minus cleaner pay, ad spend and other costs, by New York month." index={2}>
+        <ProfitPanel snapshot={snapshot} canEdit={canEdit} />
+      </Section>
+
+      <Section id="forecast" title="What each tier takes" description="Revenue, clients, cleans a week, crews and ad budget needed by month 12, with churn replaced." index={2}>
+        <ForecastPanel snapshot={snapshot} />
+      </Section>
+
+      <Section id="gates" title="Go/no-go gates" description="Checkpoints at day 30 and months 3, 6, 9 and 12, judged from real data." index={2}>
+        <GatesPanel gates={snapshot.gates} canEdit={canEdit} />
+        <HireTriggersPanel triggers={snapshot.hireTriggers} canEdit={canEdit} />
+        <DecisionLog decisions={snapshot.decisions} canEdit={canEdit} today={snapshot.today} />
+      </Section>
+
       <Section id="milestones" title="Monthly milestones" description="Revenue earned each plan month (invoiced, plus completed visits not yet invoiced) against its milestone." index={2}>
         <div className="grid gap-4 lg:grid-cols-5">
           <GlassPanel as="div" className="p-5 lg:col-span-2">
@@ -152,6 +177,14 @@ export default async function GrowthPage() {
         <AdSpendPanel ads={ads} today={snapshot.today} canEdit={canEdit} />
       </Section>
 
+      <Section id="funnel" title="Channels and funnel" description="Where leads come from and how far they get, with reply time and churn." index={7}>
+        <FunnelPanel snapshot={snapshot} />
+      </Section>
+
+      <Section id="channel-test" title="Channel test" description="Channels side by side against your rules. It recommends; you decide." index={7}>
+        <ChannelTestPanel snapshot={snapshot} canEdit={canEdit} />
+      </Section>
+
       <Section id="operations" title="Capacity, cash and the scale light" index={8}>
         <div className="grid gap-4 lg:grid-cols-2">
           <CapacityPanel capacity={snapshot.capacity} />
@@ -177,6 +210,14 @@ export default async function GrowthPage() {
       <Section id="assumptions" title="Assumptions" description="Change these and the accounts and leads the plan needs update. Saved for everyone." index={10}>
         <GlassPanel as="div" className="p-5 md:p-6">
           <AssumptionsForm key={JSON.stringify(settings)} settings={settings} canEdit={canEdit} />
+        </GlassPanel>
+      </Section>
+
+      <Section id="tiers-settings" title="Tiers and forecast" description="Which tier to track, the three targets, and the churn and crew assumptions behind the forecast." index={10}>
+        <GlassPanel as="div" className="space-y-6 p-5 md:p-6">
+          <TierForm key={JSON.stringify([snapshot.settingsExtra.tier, snapshot.settingsExtra.tierBaseRevenueCents, snapshot.settingsExtra.tierStrongRevenueCents, snapshot.settingsExtra.tierNorthProfitCents])} extra={snapshot.settingsExtra} canEdit={canEdit} />
+          <hr className="border-hairline" />
+          <ForecastForm key={`${snapshot.settingsExtra.monthlyChurnBps}-${snapshot.settingsExtra.cleansPerCrewPerWeek}`} extra={snapshot.settingsExtra} canEdit={canEdit} />
         </GlassPanel>
       </Section>
 

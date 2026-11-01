@@ -89,7 +89,17 @@ export function GrowthCard({ snapshot, index = 0 }: { snapshot: GrowthSnapshot; 
         </div>
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t border-hairline pt-4">
+      <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-hairline pt-4 text-[13px] text-ink-muted" data-testid="growth-card-tiers">
+        <span>12-month north star, month {snapshot.tiers.planMonth === 0 ? "not started" : `${snapshot.tiers.planMonth} of 12`}:</span>
+        {snapshot.tiers.paces.map((t) => (
+          <span key={t.tier} className="inline-flex items-center gap-1.5" data-selected={t.selected || undefined}>
+            <span className={t.selected ? "font-medium text-ink" : undefined}>{t.label}{t.selected ? " (tracking)" : ""}</span>
+            {t.pace && snapshot.tiers.planMonth > 0 ? <StatusPill tone={paceTone[t.pace.status]}>{paceLabel[t.pace.status]}</StatusPill> : <StatusPill tone="neutral">{snapshot.tiers.planMonth === 0 ? "Not started" : "Owner/admin only"}</StatusPill>}
+          </span>
+        ))}
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t border-hairline pt-4">
         {snapshot.scaleLight ? (
           <div className="flex flex-wrap items-center gap-2 text-[13px] text-ink-muted" data-testid="growth-scale-light">
             <StatusPill tone={scaleTone[snapshot.scaleLight.status]}>{scaleLabel[snapshot.scaleLight.status]}</StatusPill>

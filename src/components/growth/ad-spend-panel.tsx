@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { createAdCampaign, deleteAdSpend, recordAdSpend } from "@/app/actions/growth";
 import { formatCalendarDate, formatCents, parseDollarsToCents } from "@/lib/format";
-import { AD_PLATFORMS, adSpendSchema, campaignSchema, platformLabel } from "@/lib/schemas/growth";
+import { AD_PLATFORMS, CHANNELS, adSpendSchema, campaignSchema, channelLabel, platformLabel } from "@/lib/schemas/growth";
 import type { GrowthSnapshot } from "@/lib/growth-snapshot";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import { StatusPill } from "@/components/system/status-pill";
 import { fieldErrors, useFinanceAction } from "@/components/invoices/use-finance-action";
 
 const cents = (c: number | null) => (c === null ? "—" : formatCents(c, { hideZeroCents: true }));
+const channelItems = CHANNELS.map((c) => ({ value: c, label: channelLabel[c] }));
 const platformItems = AD_PLATFORMS.map((p) => ({ value: p, label: platformLabel[p] }));
 const platformName = (p: string) => (p in platformLabel ? platformLabel[p as keyof typeof platformLabel] : p);
 
@@ -31,6 +32,8 @@ export function AdSpendPanel({ ads, today, canEdit }: { ads: GrowthSnapshot["ads
   const [campaignId, setCampaignId] = useState<string>(campaigns.find((c) => c.status === "active")?.id ?? campaigns[0]?.id ?? "");
   const [date, setDate] = useState(today);
   const [spend, setSpend] = useState("");
+  const [creative, setCreative] = useState("");
+  const [channel, setChannel] = useState<string>("meta");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [platform, setPlatform] = useState<string>("meta");
   const [name, setName] = useState("");
@@ -42,7 +45,7 @@ export function AdSpendPanel({ ads, today, canEdit }: { ads: GrowthSnapshot["ads
     e.preventDefault();
     const spendCents = parseDollarsToCents(spend);
     if (spendCents === null) return setErrors({ spendCents: "Enter dollars, like 42.50" });
-    const input = { campaignId, date, spendCents };
+    const input = { campaignId, date, spendCents, creative: creative.trim() === "" ? undefined : creative };
     const parsed = adSpendSchema.safeParse(input);
     if (!parsed.success) return setErrors(fieldErrors(parsed.error));
     setErrors({});
@@ -51,7 +54,7 @@ export function AdSpendPanel({ ads, today, canEdit }: { ads: GrowthSnapshot["ads
 
   function addCampaign(e: React.FormEvent) {
     e.preventDefault();
-    const input = { platform, name };
+    const input = { platform, name, channel };
     const parsed = campaignSchema.safeParse(input);
     if (!parsed.success) return setCampErrors(fieldErrors(parsed.error));
     setCampErrors({});
@@ -91,7 +94,7 @@ export function AdSpendPanel({ ads, today, canEdit }: { ads: GrowthSnapshot["ads
                         <span className="font-medium text-ink">{c.name}</span>
                         {c.isDemo && <StatusPill tone="warning">Demo</StatusPill>}
                       </div>
-                      <div className="text-[12px] text-ink-muted">{platformName(c.platform)}{c.status !== "active" ? ` · ${c.status}` : ""}</div>
+                      <div className="text-[12px] text-ink-muted">{platformName(c.platform)} · {channelLabel[c.channel as keyof typeof channelLabel] ?? c.channel}{c.status !== "active" ? ` · ${c.status}` : ""}</div>
                     </div>
                   </TableCell>
                   <TableCell label="Spend" className="text-right tabular">{cents(c.spend30Cents)}</TableCell>
@@ -132,6 +135,11 @@ export function AdSpendPanel({ ads, today, canEdit }: { ads: GrowthSnapshot["ads
                   {errors.spendCents && <p role="alert" className="text-[12px] text-danger">{errors.spendCents}</p>}
                 </div>
               </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="spend-creative">Creative (optional)</Label>
+                <Input id="spend-creative" value={creative} onChange={(e) => setCreative(e.target.value)} className="h-11 md:h-9" placeholder="Before and after reel" />
+                <p className="text-[12px] text-ink-muted">Use the same name on the lead so the funnel can tell creatives apart.</p>
+              </div>
               <Button type="submit" disabled={pending || campaignId === ""} className="h-11 sm:h-9" data-testid="add-ad-spend">{pending ? "Saving…" : "Add spend"}</Button>
             </form>
           ) : (
@@ -146,9 +154,16 @@ export function AdSpendPanel({ ads, today, canEdit }: { ads: GrowthSnapshot["ads
             <form onSubmit={addCampaign} className="space-y-4" noValidate aria-label="Add a campaign">
               <div className="space-y-1.5">
                 <Label>Platform</Label>
-                <Select items={platformItems} value={platform} onValueChange={(v) => v && setPlatform(v)}>
+                <Select items={platformItems} value={platform} onValueChange={(v) => { if (!v) return; setPlatform(v); setChannel(v === "meta" ? "meta" : v === "google" ? "google_search" : "other"); }}>
                   <SelectTrigger className="h-11 w-full md:h-9" aria-label="Platform"><SelectValue /></SelectTrigger>
                   <SelectContent>{platformItems.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Channel</Label>
+                <Select items={channelItems} value={channel} onValueChange={(v) => v && setChannel(v)}>
+                  <SelectTrigger className="h-11 w-full min-w-0 md:h-9" aria-label="Channel"><SelectValue className="min-w-0 truncate" /></SelectTrigger>
+                  <SelectContent>{channelItems.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
@@ -176,7 +191,7 @@ export function AdSpendPanel({ ads, today, canEdit }: { ads: GrowthSnapshot["ads
               <li key={r.id} className="flex items-center justify-between gap-3 px-5 py-2.5 text-sm">
                 <div className="min-w-0">
                   <span className="font-medium text-ink">{formatCalendarDate(r.date)}</span>
-                  <span className="text-ink-muted"> · {r.campaign}</span>
+                  <span className="text-ink-muted"> · {r.campaign}{r.creative ? ` · ${r.creative}` : ""}</span>
                   {r.isDemo && <span className="ml-2 align-middle"><StatusPill tone="warning">Demo</StatusPill></span>}
                 </div>
                 <div className="flex items-center gap-2">

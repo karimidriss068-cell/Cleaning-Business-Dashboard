@@ -284,19 +284,19 @@ function homePrice(service: keyof typeof svc, bedrooms: number, bathrooms: numbe
 
 // Marketing
 const campaigns = [
-  { id: seedId(T.campaigns), platform: "google", ext: "seed-g-1", name: "Search – house cleaning NYC", utm: "google", daily: [3500, 9000] },
-  { id: seedId(T.campaigns), platform: "meta", ext: "seed-m-1", name: "Fall deep clean – Brooklyn & Queens", utm: "facebook", daily: [2000, 6000] },
-  { id: seedId(T.campaigns), platform: "nextdoor", ext: "seed-n-1", name: "Neighborhood intro offer", utm: "nextdoor", daily: [800, 2500] },
-  { id: seedId(T.campaigns), platform: "yelp", ext: "seed-y-1", name: "Yelp ads – Manhattan", utm: "yelp", daily: [1500, 4000] },
+  { id: seedId(T.campaigns), platform: "google", channel: "google_search", ext: "seed-g-1", name: "Search – house cleaning NYC", utm: "google", daily: [3500, 9000], creatives: ["Search: house cleaning", "Search: deep clean"] },
+  { id: seedId(T.campaigns), platform: "meta", channel: "meta", ext: "seed-m-1", name: "Fall deep clean – Brooklyn & Queens", utm: "facebook", daily: [2000, 6000], creatives: ["Before and after reel", "Cleaner day-in-the-life", "Owner intro video"] },
+  { id: seedId(T.campaigns), platform: "nextdoor", channel: "other", ext: "seed-n-1", name: "Neighborhood intro offer", utm: "nextdoor", daily: [800, 2500], creatives: ["Neighbor offer post"] },
+  { id: seedId(T.campaigns), platform: "yelp", channel: "other", ext: "seed-y-1", name: "Yelp ads – Manhattan", utm: "yelp", daily: [1500, 4000], creatives: ["Yelp featured ad"] },
 ] as const;
 for (const c of campaigns) {
-  add("marketing_campaigns", { id: c.id, platform: c.platform, external_id: c.ext, name: c.name, status: "active",
+  add("marketing_campaigns", { id: c.id, platform: c.platform, channel: c.channel, external_id: c.ext, name: c.name, status: "active",
     start_date: historyStart, end_date: null, budget_cents: 300000 });
   for (let d = historyStart; d < today; d = addDays(d, 1)) {
     const spend = int(c.daily[0], c.daily[1]);
     const impressions = Math.round(spend * (rand() * 0.6 + 0.7));
     const clicks = Math.round(impressions * (0.012 + rand() * 0.02));
-    add("marketing_daily_stats", { id: seedId(T.stats), campaign_id: c.id, date: d, spend_cents: spend,
+    add("marketing_daily_stats", { id: seedId(T.stats), campaign_id: c.id, date: d, spend_cents: spend, creative: pick(c.creatives),
       impressions, clicks, leads: chance(0.35) ? int(1, 2) : 0 });
   }
 }
@@ -375,6 +375,7 @@ for (const [i, stage] of stagePlan.entries()) {
   const area = pick(BOROUGHS[borough].areas);
   const phone = fakePhone(area);
   const campaign = chance(0.65) ? pick(campaigns) : null;
+  const creative = campaign ? pick(campaign.creatives) : null;
   const source = campaign ? campaign.platform : chance(0.6) ? "referral" : "repeat";
   // New leads are recent; won leads are spread so their jobs fill the history.
   const daysAgo = stage === "new" ? int(0, 3) : stage === "won" ? int(30, 88) : int(4, 85);
@@ -387,7 +388,7 @@ for (const [i, stage] of stagePlan.entries()) {
     email: `${slug(first)}.${slug(last)}${i}@example.com`, address_line1: addr.line1, address_line2: chance(0.6) ? `Apt ${int(1, 9)}${pick(["A", "B", "C", "D"])}` : null,
     city: addr.city, state: "NY", zip: addr.zip, borough, source,
     utm_source: campaign?.utm ?? null, utm_medium: campaign ? "cpc" : null, utm_campaign: campaign ? campaign.ext : null,
-    utm_term: null, utm_content: null, ghl_contact_id: null, stripe_customer_id: null, account_id: null, notes: null,
+    utm_term: null, utm_content: creative, ghl_contact_id: null, stripe_customer_id: null, account_id: null, notes: null,
     created_at: iso(created),
   });
   const service = stage === "won" ? pick(["standard", "standard", "deep", "move"] as const) : pick(["standard", "deep", "move"] as const);

@@ -21,6 +21,9 @@ export type LeadRow = {
   zip: string | null;
   serviceType: ServiceType;
   source: string | null;
+  /** Where the lead came from for ad reporting (meta, google_search, ...) and the creative, if known. */
+  channel: string;
+  creative: string | null;
   notes: string | null;
   ownerId: string | null;
   ownerName: string | null;
@@ -33,7 +36,7 @@ export type TimelineEntry = { id: string; type: string; direction: string | null
 export type TeamMember = { id: string; name: string };
 
 const SELECT =
-  "id, updated_at, created_at, stage, stage_changed_at, contact_id, service_type, source, notes, owner_id, next_follow_up_on, lost_reason, " +
+  "id, updated_at, created_at, stage, stage_changed_at, contact_id, service_type, source, channel, creative, notes, owner_id, next_follow_up_on, lost_reason, " +
   "contact:contacts(first_name, last_name, phone, email, borough, address_line1, zip), quotes(id, quote_number, status, created_at)";
 
 /** Every lead for the board (closed ones only from the last 60 days), newest activity first. */
@@ -48,7 +51,7 @@ export async function loadLeads(supabase: SupabaseClient<Database>, since: strin
   const names = new Map(team.map((t) => [t.id, t.name]));
   const rows = (leadsRes.data ?? []) as unknown as Array<{
     id: string; updated_at: string; created_at: string; stage: LeadStage; stage_changed_at: string; contact_id: string; service_type: ServiceType | null;
-    source: string | null; notes: string | null; owner_id: string | null; next_follow_up_on: string | null; lost_reason: string | null;
+    source: string | null; channel: string; creative: string | null; notes: string | null; owner_id: string | null; next_follow_up_on: string | null; lost_reason: string | null;
     contact: { first_name: string; last_name: string | null; phone: string | null; email: string | null; borough: string | null; address_line1: string | null; zip: string | null } | null;
     quotes: { id: string; quote_number: number; status: string; created_at: string }[];
   }>;
@@ -71,6 +74,8 @@ export async function loadLeads(supabase: SupabaseClient<Database>, since: strin
       zip: l.contact?.zip ?? null,
       serviceType: l.service_type ?? "residential",
       source: l.source,
+      channel: l.channel,
+      creative: l.creative,
       notes: l.notes,
       ownerId: l.owner_id,
       ownerName: l.owner_id ? (names.get(l.owner_id) ?? null) : null,

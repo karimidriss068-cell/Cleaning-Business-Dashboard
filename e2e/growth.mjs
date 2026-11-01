@@ -11,7 +11,9 @@
  * As an admin it edits the assumptions (watching the accounts and leads the
  * plan needs change), edits and rejects a bad milestone set, adds a campaign,
  * enters, replaces and deletes ad spend, changes the cash buffer to turn the
- * scale light red and checks which condition blocks it. Staff can read but not
+ * scale light red and checks which condition blocks it. It also adds and removes an
+ * expense (watching profit), switches the tier, views the channel test and tries a
+ * plan that would breach the cash buffer, and corrects a lead's channel. Staff can read but not
  * change anything and see no cash; a cleaner is sent away; the bot endpoint
  * needs its key and only answers GET. Everything it changes is restored.
  */
@@ -34,6 +36,9 @@ const db = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { pe
 const results = [];
 const check = (name, ok, detail = "") => results.push({ name, ok: Boolean(ok), detail: String(detail) });
 const MARK = "E2E-GROWTH campaign";
+const SEED_LO = "5eed0000-0000-0000-0000-000000000000";
+const SEED_HI = "5eed0001-0000-0000-0000-000000000000";
+let leadRestore = null;
 const t0 = new Date().toISOString();
 const nyToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date());
 
@@ -56,18 +61,26 @@ function runSql(sql) {
 
 // What to put back at the end.
 const { data: settingsBefore } = await db.from("growth_settings").select("*").single();
+const { data: planBefore } = await db.from("channel_test_plan").select("channel, enabled");
 const { data: goalsBefore } = await db.from("goals").select("metric, period, period_start, period_end, target_value, notes, created_by").eq("metric", "revenue_cents").eq("period", "month");
 
 async function cleanup() {
+  if (leadRestore) {
+    await db.from("leads").update({ channel: leadRestore.channel, creative: leadRestore.creative }).eq("id", leadRestore.id);
+    await db.from("activities").delete().eq("lead_id", leadRestore.id).like("subject", "Attribution set to%");
+  }
   const { data: camps } = await db.from("marketing_campaigns").select("id").like("name", `${MARK}%`);
   const ids = (camps ?? []).map((c) => `'${c.id}'`).join(",");
   const restore = { ...settingsBefore };
   for (const k of ["id", "created_at", "updated_at"]) delete restore[k];
   await db.from("growth_settings").update(restore).eq("id", true);
+  for (const p of planBefore ?? []) await db.from("channel_test_plan").update({ enabled: p.enabled }).eq("channel", p.channel);
   await db.from("goals").delete().eq("metric", "revenue_cents").eq("period", "month");
   if (goalsBefore?.length) await db.from("goals").insert(goalsBefore);
   runSql(`begin;
 ${ids ? `delete from public.marketing_daily_stats where campaign_id in (${ids});\ndelete from public.leads where campaign_id in (${ids});\ndelete from public.marketing_campaigns where id in (${ids});` : ""}
+delete from public.expenses where description like 'E2E-GROWTH%';
+delete from public.growth_decisions where note like 'E2E-GROWTH%';
 delete from public.finance_log where occurred_at >= '${t0}' and entity = 'growth';
 commit;`);
 }
@@ -191,6 +204,124 @@ try {
   const sl = await page.getByTestId("scale-light").innerText();
   check("each of the four conditions is listed", /Lead reply time/.test(sl) && /Cleaner capacity/.test(sl) && /CAC payback/.test(sl) && /Cash buffer/.test(sl));
 
+
+  // -- profit: add an expense and watch other costs and net profit move
+  await page.goto(`${base}/growth`, { waitUntil: "networkidle" });
+  check("profit panel shows the month's revenue, cleaner pay, ads, other costs, net profit and margin", await page.getByTestId("profit-panel").getByText(/Net profit/).first().isVisible() && (await page.getByTestId("profit-margin").count()) === 1);
+  await page.fill("#exp-amount", "85.50");
+  await page.fill("#exp-desc", "E2E-GROWTH expense");
+  await page.click('[data-testid="add-expense"]');
+  await toast(page, "Expense saved");
+  const { data: ex1 } = await db.from("expenses").select("id, amount_cents, category, incurred_on").eq("description", "E2E-GROWTH expense");
+  check("expense saved as integer cents for today", ex1.length === 1 && ex1[0].amount_cents === 8550 && ex1[0].incurred_on === today && ex1[0].category === "supplies", JSON.stringify(ex1));
+  await page.waitForFunction(() => document.querySelector('[data-testid="expense-list"]')?.textContent?.includes("E2E-GROWTH expense"), null, { timeout: 10000 });
+  check("expense appears in the list", true);
+  await page.fill("#exp-amount", "0");
+  await page.click('[data-testid="add-expense"]');
+  check("a zero expense is rejected inline", ((await db.from("expenses").select("id").eq("description", "E2E-GROWTH expense")).data ?? []).length === 1);
+  await page.getByRole("button", { name: /^Delete .*expense of \$85\.50/ }).first().click();
+  await toast(page, "Expense deleted");
+  check("expense deleted", ((await db.from("expenses").select("id").eq("description", "E2E-GROWTH expense")).data ?? []).length === 0);
+
+  // -- tiers: three side by side, track another
+  check("three tiers are shown side by side", (await page.getByTestId("tiers-panel").locator('[data-testid^="tier-"]').count()) === 3);
+  check("the base tier is the one being tracked", (await page.getByTestId("tier-base").getAttribute("data-selected")) !== null);
+  check("forecast shows base, strong and north star", (await page.getByTestId("forecast-panel").locator('[data-testid^="forecast-"]').count()) === 3);
+  check("five go/no-go gates are shown", (await page.getByTestId("gates-panel").locator('[data-testid^="gate-"]').count()) === 5);
+  check("three hire triggers are shown", (await page.getByTestId("hire-triggers").locator('[data-testid^="hire-"]').count()) === 3);
+  await page.click('[data-testid="tier-pick-strong"]');
+  await page.click('[data-testid="save-tiers"]');
+  await toast(page, "Tiers saved");
+  check("tracking another tier is saved", (await db.from("growth_settings").select("tier").single()).data.tier === "strong");
+  await page.reload({ waitUntil: "networkidle" });
+  check("the strong tier is now the tracked one", (await page.getByTestId("tier-strong").getAttribute("data-selected")) !== null);
+  await page.fill("#tier-strong", "40000");
+  await page.click('[data-testid="save-tiers"]');
+  check("a strong tier at or below the base tier is rejected inline", (await page.getByText("The strong tier must be above the base tier").count()) >= 1);
+
+  // -- gates: edit a threshold
+  await page.locator("summary", { hasText: "Edit the gates" }).click();
+  await page.fill('[id="gate-month3/month_revenue_cents"]', "4500");
+  await page.click('[data-testid="save-gates"]');
+  await toast(page, "Gate criteria saved");
+  check("gate threshold saved in cents", (await db.from("growth_gate_criteria").select("threshold").eq("checkpoint", "month3").eq("metric", "month_revenue_cents").single()).data.threshold === 450000);
+  await page.fill('[id="gate-month3/month_revenue_cents"]', "4000");
+  await page.click('[data-testid="save-gates"]');
+  await toast(page, "Gate criteria saved");
+
+  // -- funnel
+  check("funnel shows cost per booked client and per recurring client", /cost per booked client/i.test(await page.getByTestId("funnel-panel").innerText()) && /cost per recurring client/i.test(await page.getByTestId("funnel-panel").innerText()));
+  const chRows = await page.getByTestId("funnel-table").locator("tbody tr").count();
+  check("the funnel lists all six channels", chRows === 6, chRows);
+  await page.click('[data-testid="funnel-view-campaigns"]');
+  check("the funnel can be grouped by campaign", (await page.getByTestId("funnel-table").locator("tbody tr").count()) >= 1);
+  await page.click('[data-testid="funnel-view-creatives"]');
+  check("and by creative", (await page.getByTestId("funnel-table").count()) === 1 || /No creative is tagged yet/.test(await page.getByTestId("funnel-panel").innerText()));
+  check("reply-time buckets with booking rates", (await page.getByTestId("reply-buckets").locator('[data-testid^="reply-"]').count()) === 3);
+  check("churn tracker shows the average and the assumption", /Average over these months/.test(await page.getByTestId("churn-tracker").innerText()));
+
+  // -- channel test view and the cash buffer
+  const test = page.getByTestId("channel-test");
+  check("channel test shows six channels side by side", (await test.getByTestId("channel-cards").locator('[data-testid^="channel-card-"]').count()) === 6);
+  check("it shows a recommendation", (await test.getByTestId("recommendation").getAttribute("data-state")) !== null);
+  check("the recommendation says what to do", /Keep testing|Shift|Keep scaling/.test(await test.getByTestId("recommendation").innerText()));
+  check("default rules: $750 and 20 leads", (await page.inputValue("#ct-spend")) === "750" && (await page.inputValue("#ct-leads")) === "20" && (await page.inputValue("#ct-ratio")) === "1.5");
+  check("default daily budgets $20 then $30 over 4 weeks", (await page.inputValue("#ct-w1")) === "20" && (await page.inputValue("#ct-after")) === "30" && (await page.inputValue("#ct-weeks")) === "4");
+  check("the default plan fits above the buffer", (await page.getByTestId("budget-ok").count()) === 1);
+  await page.fill("#ct-w1", "5000");
+  await page.fill("#ct-after", "5000");
+  check("a plan that would breach the buffer is flagged as you type", /buffer/.test(await page.getByTestId("budget-warning").innerText()));
+  check("and can't be saved", await page.getByTestId("save-channel-test").isDisabled());
+  const dailyBefore = (await db.from("growth_settings").select("test_daily_week1_cents").single()).data.test_daily_week1_cents;
+  check("nothing was saved by the blocked plan", dailyBefore === 2000, dailyBefore);
+  // the database refuses it too, whatever the page says
+  const adminDb = createClient(url, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+  await adminDb.auth.signInWithPassword({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
+  const refused = await adminDb.rpc("save_channel_test", { p_judge_spend_cents: 75000, p_judge_leads: 20, p_loser_ratio_x100: 150, p_daily_week1_cents: 500000, p_daily_after_cents: 500000, p_window_weeks: 4, p_start_date: null, p_channels: ["meta"] });
+  check("the database refuses a plan that would breach the buffer", refused.error?.code === "KC005" && /buffer/.test(refused.error.message), refused.error?.message);
+  await page.fill("#ct-w1", "25");
+  await page.fill("#ct-after", "35");
+  await page.fill("#ct-spend", "800");
+  await page.click('[data-testid="save-channel-test"]');
+  await toast(page, "Channel test saved");
+  const { data: ts } = await db.from("growth_settings").select("test_judge_spend_cents, test_daily_week1_cents, test_daily_after_cents").single();
+  check("a plan within the buffer saves in cents", ts.test_judge_spend_cents === 80000 && ts.test_daily_week1_cents === 2500 && ts.test_daily_after_cents === 3500, JSON.stringify(ts));
+  await page.getByRole("checkbox", { name: "Test Google LSA" }).click();
+  await page.click('[data-testid="save-channel-test"]');
+  await toast(page, "Channel test saved");
+  let lsaOff = false;
+  for (let i = 0; i < 20 && !lsaOff; i++) {
+    lsaOff = (await db.from("channel_test_plan").select("enabled").eq("channel", "google_lsa").single()).data.enabled === false;
+    if (!lsaOff) await page.waitForTimeout(500);
+  }
+  check("channels in the test can be switched off", lsaOff);
+  await page.getByTestId("log-recommendation").click();
+  await page.fill("#rec-note", "E2E-GROWTH keep going");
+  await page.click('[data-testid="save-recommendation-decision"]');
+  await toast(page, "Decision logged");
+  const { data: dl } = await db.from("growth_decisions").select("kind, decision").like("note", "E2E-GROWTH%");
+  check("logging the recommendation writes a decision, and nothing else changes", dl.length === 1 && dl[0].kind === "channel", JSON.stringify(dl));
+  await page.reload({ waitUntil: "networkidle" });
+  check("the decision shows in the log", (await page.getByTestId("decision-list").innerText()).includes("E2E-GROWTH keep going"));
+  await page.getByRole("button", { name: /^Delete the decision/ }).first().click();
+  await toast(page, "Decision deleted");
+
+  // -- a lead's channel and creative can be corrected from the lead
+  const { data: leadRows } = await db.from("leads").select("id, channel, creative, contact:contacts(first_name)").in("stage", ["new", "contacted", "quoted"]).gte("id", SEED_LO).lt("id", SEED_HI).limit(1);
+  const lead = leadRows[0];
+  leadRestore = { id: lead.id, channel: lead.channel, creative: lead.creative };
+  await page.goto(`${base}/leads`, { waitUntil: "networkidle" });
+  await page.locator(`[data-lead-card="${lead.id}"]`).getByRole("button").first().click();
+  await page.getByLabel("Ad attribution").waitFor({ timeout: 10000 });
+  await page.getByRole("combobox", { name: "Channel" }).click();
+  await page.getByRole("option", { name: lead.channel === "google_lsa" ? "Referral" : "Google LSA" }).click();
+  await page.fill("#ld-creative", "E2E-GROWTH creative");
+  await page.click('[data-testid="save-attribution"]');
+  await toast(page, "Attribution saved");
+  const { data: l1 } = await db.from("leads").select("channel, creative").eq("id", lead.id).single();
+  check("the lead's channel and creative are saved", l1.channel === (lead.channel === "google_lsa" ? "referral" : "google_lsa") && l1.creative === "E2E-GROWTH creative", JSON.stringify(l1));
+  await page.goto(`${base}/growth`, { waitUntil: "networkidle" });
+
   // -- the bot endpoint
   const noKey = await fetch(`${base}/api/growth/snapshot`);
   check("snapshot without a key is 401", noKey.status === 401);
@@ -199,6 +330,8 @@ try {
   const ok = await fetch(`${base}/api/growth/snapshot`, { headers: { authorization: `Bearer ${key}` } });
   const snap = await ok.json();
   check("snapshot with the key returns goal, pace, ads, capacity, cash and the light", ok.status === 200 && snap.goal && snap.pace && snap.ads && snap.capacity && snap.cash && snap.scaleLight, Object.keys(snap).join());
+  check("snapshot carries the north star: tiers, profit, forecast, gates, funnel and the channel test", ["tiers", "profit", "forecast", "gates", "hireTriggers", "decisions", "funnel", "replyBuckets", "churn", "channelTest"].every((k) => k in snap && snap[k] !== undefined), Object.keys(snap).join());
+  check("snapshot has three tiers, five gates, six channels and a recommendation", snap.tiers.paces.length === 3 && snap.gates.length === 5 && snap.funnel.channels.length === 6 && typeof snap.channelTest.recommendation.state === "string");
   check("snapshot money is integer cents", Number.isInteger(snap.goal.monthlyGoalCents) && Number.isInteger(snap.pace.revenueCents) && Number.isInteger(snap.cash.onHandCents));
   check("snapshot says it includes demo data", snap.includesDemo === true);
   const post = await fetch(`${base}/api/growth/snapshot`, { method: "POST", headers: { authorization: `Bearer ${key}` } });
@@ -225,6 +358,10 @@ try {
   check("staff have no save buttons or spend entry", (await sp.locator('[data-testid^="save-"], [data-testid="add-ad-spend"], [data-testid="add-campaign"]').count()) === 0);
   check("staff see no cash or scale light", (await sp.getByTestId("cash-panel").count()) === 0 && (await sp.getByTestId("scale-light").count()) === 0 && /only the owner or an admin sees it/.test(staffText));
   check("staff fields are disabled", await sp.locator("#as-price").isDisabled());
+  check("staff see the tiers, gates, funnel and channel test", (await sp.getByTestId("tiers-panel").count()) === 1 && (await sp.getByTestId("gates-panel").count()) === 1 && (await sp.getByTestId("funnel-panel").count()) === 1 && (await sp.getByTestId("channel-test").count()) === 1);
+  check("staff don't see profit, expenses or the cleaner-pay line", /only the owner or an admin sees it/.test(await sp.getByTestId("profit-panel").innerText()) && (await sp.getByTestId("expense-panel").count()) === 0);
+  check("staff can't add an expense, edit the gates or save the test", (await sp.getByTestId("add-expense").count()) === 0 && (await sp.getByTestId("save-gates").count()) === 0 && (await sp.getByTestId("save-channel-test").count()) === 0);
+  check("staff still see the recommendation, but can't log a decision", (await sp.getByTestId("recommendation").count()) === 1 && (await sp.getByTestId("log-recommendation").count()) === 0);
   await sctx.close();
 
   // ================================================================ cleaner

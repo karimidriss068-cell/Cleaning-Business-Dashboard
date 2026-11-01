@@ -42,6 +42,8 @@ import {
 import { PAID_CHANNELS, type GrowthInputs, type TierKey } from "@/lib/schemas/growth";
 
 export type GrowthSnapshot = CoreSnapshot & {
+  /** The north-star settings (tier targets, churn, crew size, test rules) as saved. */
+  settingsExtra: GrowthInputs["settingsExtra"];
   tiers: { selected: TierKey; planMonth: number; paces: TierPace[]; ramp: number[] };
   /** Null for staff: profit includes what the cleaners are paid. */
   profit: {
@@ -102,6 +104,7 @@ export function buildGrowthSnapshot(inputs: GrowthInputs, now: Date = new Date()
 
   return {
     ...core,
+    settingsExtra: e,
     tiers: {
       selected: e.tier,
       planMonth: planMonthOf(inputs.today, inputs.settings.startDate),
