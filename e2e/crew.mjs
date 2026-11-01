@@ -79,7 +79,7 @@ check("no teammate's pay appears", ![...teammatePay].some((p) => bodyText.includ
 check("no phone numbers or emails on the page", !/\+1\d{10}|@example\.com|\(\d{3}\) \d{3}/.test(bodyText));
 
 // ---- 2. Office routes bounce to My jobs
-for (const path of ["/command-center", "/schedule", "/money", "/leads", "/crews", "/marketing", "/automations"]) {
+for (const path of ["/command-center", "/schedule", "/invoices", "/payouts", "/leads", "/crews", "/marketing", "/automations"]) {
   await page.goto(`${base}${path}`, { waitUntil: "networkidle" });
   check(`${path} redirects to My jobs`, new URL(page.url()).pathname === "/my-jobs", new URL(page.url()).pathname);
 }
@@ -93,11 +93,17 @@ if (othersOnly) {
 // ---- 4. Raw API as this cleaner: office tables are empty, RPC returns only theirs
 const apiClient = createClient(url, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, { auth: { persistSession: false } });
 await apiClient.auth.signInWithPassword({ email, password });
-for (const t of ["invoices", "payments", "payouts", "contacts", "accounts", "jobs", "job_assignments", "leads", "quotes", "subcontractors", "crews", "services", "expenses"]) {
+for (const t of ["invoices", "payments", "payouts", "contacts", "accounts", "jobs", "job_assignments", "leads", "quotes", "subcontractors", "crews", "services", "expenses", "invoice_line_items", "payout_items", "refunds", "payment_methods", "card_requests", "finance_log", "business_settings"]) {
   const { data, error } = await apiClient.from(t).select("*").limit(5);
   if ((data ?? []).length > 0 || (error && error.code !== "42501")) check(`API: ${t} readable by a cleaner`, false, JSON.stringify(data?.[0] ?? error).slice(0, 120));
 }
 check("API: office tables return nothing to a cleaner", true);
+for (const [fn, args] of [["finance_summary", { p_months: 1 }], ["payout_candidates", {}], ["contractor_1099_summary", { p_year: 2026 }], ["build_payout_drafts", { p_week_start: "2026-10-26" }]]) {
+  const { data, error } = await apiClient.rpc(fn, args);
+  check(`API: ${fn} is refused to a cleaner`, error?.code === "KC004" && !data, JSON.stringify(error ?? data).slice(0, 100));
+}
+const { data: apiPay, error: apiPayError } = await apiClient.rpc("crew_payouts");
+check("API: crew_payouts returns only pay (no clients, invoices or other cleaners)", !apiPayError && !/invoice|client|phone|email|last_name|customer/i.test(JSON.stringify(apiPay)) && typeof apiPay.ytd_paid_cents === "number", JSON.stringify(apiPayError ?? Object.keys(apiPay)));
 const { data: apiVisits } = await apiClient.rpc("crew_visits");
 check("API: crew_visits returns only their visits", apiVisits.length === inWindow.length && apiVisits.every((v) => myJobIds.has(v.job_id)));
 check("API: crew_visits has no billing/contact columns", !Object.keys(apiVisits[0] ?? {}).some((k) => /price|invoice|phone|email|last_name|payout|account/.test(k)));

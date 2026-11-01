@@ -268,6 +268,8 @@ begin
   select month_start || ':' || revenue_cents || '/' || collected_cents || '/' || outstanding_cents || '/' || coalesce(payouts_cents::text, 'null') || '/' || coalesce(margin_cents::text, 'null') into v
   from public.finance_summary(1); r := r || 'finance-owner=' || v || ' ';
   select count(*) into n from public.finance_log; r := r || 'log-rows>0=' || (n > 0) || ' ';
+  -- Optional arguments may be left out (the API omits what the caller didn't send).
+  select length(public.create_card_request(c)) into n; r := r || 'card-link-token-length=' || n || ' ';
   execute 'reset role';
 
   perform set_config('request.jwt.claims', json_build_object('sub', staff, 'role', 'authenticated')::text, true);

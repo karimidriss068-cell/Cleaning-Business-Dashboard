@@ -151,10 +151,9 @@ export async function loadInvoiceDetail(db: Db, id: string): Promise<InvoiceDeta
   if (error) throw new Error(`Loading the invoice failed: ${error.message}`);
   if (!inv) return null;
 
-  const [linesRes, paymentsRes, logRes, cardsRes] = await Promise.all([
+  const [linesRes, paymentsRes, cardsRes] = await Promise.all([
     db.from("invoice_line_items").select("id, job_id, description, quantity, unit_price_cents, taxable").eq("invoice_id", id).eq("voided", false).order("sort_order").order("created_at"),
-    db.from("payments").select("id, amount_cents, method, source, reference, received_at, status, refunds(amount_cents)").eq("invoice_id", id).order("created_at"),
-    db.from("finance_log").select("id, occurred_at, action, detail").eq("entity_id", id).order("occurred_at", { ascending: false }).limit(40),
+    db.from("payments").select("id, amount_cents, method, source, reference, received_at, status, refunds(id, amount_cents)").eq("invoice_id", id).order("created_at"),
     inv.account_id || inv.contact_id
       ? db
           .from("payment_methods")
@@ -162,7 +161,11 @@ export async function loadInvoiceDetail(db: Db, id: string): Promise<InvoiceDeta
           .or([inv.account_id ? `account_id.eq.${inv.account_id}` : null, inv.contact_id ? `contact_id.eq.${inv.contact_id}` : null].filter(Boolean).join(","))
       : Promise.resolve({ data: [], error: null }),
   ]);
-  for (const r of [linesRes, paymentsRes, logRes, cardsRes]) if (r.error) throw new Error(`Loading the invoice failed: ${r.error.message}`);
+  for (const r of [linesRes, paymentsRes, cardsRes]) if (r.error) throw new Error(`Loading the invoice failed: ${r.error.message}`);
+  // The invoice's own history plus that of its payments and refunds.
+  const logIds = [id, ...(paymentsRes.data ?? []).flatMap((p) => [p.id, ...(p.refunds ?? []).map((r) => r.id)])];
+  const logRes = await db.from("finance_log").select("id, occurred_at, entity, action, detail").in("entity_id", logIds).order("occurred_at", { ascending: false }).limit(60);
+  if (logRes.error) throw new Error(`Loading the invoice history failed: ${logRes.error.message}`);
 
   return {
     id: inv.id,
@@ -197,7 +200,7 @@ export async function loadInvoiceDetail(db: Db, id: string): Promise<InvoiceDeta
       status: p.status,
       refundedCents: (p.refunds ?? []).reduce((s, r) => s + r.amount_cents, 0),
     })),
-    log: (logRes.data ?? []).map((l) => ({ id: l.id, at: l.occurred_at, action: l.action, detail: (l.detail ?? {}) as Record<string, unknown> })),
+    log: (logRes.data ?? []).map((l) => ({ id: l.id, at: l.occurred_at, action: `${l.entity}:${l.action}`, detail: (l.detail ?? {}) as Record<string, unknown> })),
     cards: (cardsRes.data ?? []).map((c) => ({ id: c.id, brand: c.brand, last4: c.last4, expMonth: c.exp_month, expYear: c.exp_year, isDefault: c.is_default })),
   };
 }

@@ -17,17 +17,17 @@ export const metadata: Metadata = { title: "Invoice" };
 export const dynamic = "force-dynamic";
 
 const ACTION_LABELS: Record<string, string> = {
-  created: "Draft created",
-  edited: "Draft edited",
-  sent: "Invoice sent",
-  voided: "Invoice voided",
-  draft_deleted: "Draft deleted",
-  recorded: "Payment recorded",
-  stripe_payment: "Card payment received",
-  stripe_refund: "Refund recorded (Stripe)",
-  marked_collected: "Marked collected",
-  collected_cleared: "Collected mark removed",
-  marked_overdue: "Marked overdue",
+  "invoice:created": "Draft created",
+  "invoice:edited": "Draft edited",
+  "invoice:sent": "Invoice sent",
+  "invoice:voided": "Invoice voided",
+  "invoice:marked_collected": "Marked collected",
+  "invoice:collected_cleared": "Collected mark removed",
+  "invoice:marked_overdue": "Marked overdue",
+  "payment:recorded": "Payment recorded",
+  "payment:stripe_payment": "Card payment received",
+  "refund:recorded": "Refund recorded",
+  "refund:stripe_refund": "Refund recorded (Stripe)",
 };
 
 export default async function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -87,7 +87,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               <ol className="mt-3 space-y-2.5" data-testid="activity-log">
                 {invoice.log.map((l) => (
                   <li key={l.id} className="flex items-baseline justify-between gap-3 text-sm">
-                    <span className="text-ink">{ACTION_LABELS[l.action] ?? l.action.replace(/_/g, " ")}</span>
+                    <span className="text-ink">{ACTION_LABELS[l.action] ?? l.action.replace(/[:_]/g, " ")}</span>
                     <span className="shrink-0 text-[12px] text-ink-muted tabular">{formatNyDate(l.at)} · {formatNyTime(l.at)}</span>
                   </li>
                 ))}

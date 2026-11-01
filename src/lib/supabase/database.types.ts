@@ -2597,7 +2597,7 @@ export type Database = {
         Returns: Json
       }
       create_card_request: {
-        Args: { p_account_id: string; p_contact_id: string }
+        Args: { p_account_id?: string; p_contact_id?: string }
         Returns: string
       }
       create_invoice_from_job: { Args: { p_job_id: string }; Returns: string }
@@ -2710,7 +2710,7 @@ export type Database = {
       mark_payout_paid: {
         Args: {
           p_method: Database["public"]["Enums"]["payment_method"]
-          p_paid_on: string
+          p_paid_on?: string
           p_payout_id: string
           p_reference: string
         }
@@ -2781,9 +2781,9 @@ export type Database = {
           p_amount_cents: number
           p_invoice_id: string
           p_method: Database["public"]["Enums"]["payment_method"]
-          p_received_on: string
-          p_reference: string
-          p_request_id: string
+          p_received_on?: string
+          p_reference?: string
+          p_request_id?: string
         }
         Returns: string
       }
@@ -2791,8 +2791,8 @@ export type Database = {
         Args: {
           p_amount_cents: number
           p_payment_id: string
-          p_reason: string
-          p_request_id: string
+          p_reason?: string
+          p_request_id?: string
         }
         Returns: string
       }
@@ -2807,11 +2807,11 @@ export type Database = {
         Args: {
           p_deposit_cents: number
           p_discount_cents: number
-          p_due_on: string
+          p_due_on?: string
           p_expected_updated_at: string
           p_invoice_id: string
           p_lines: Json
-          p_notes: string
+          p_notes?: string
         }
         Returns: string
       }

@@ -10,7 +10,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "e2e:crew": "node e2e/crew.mjs",
-    "e2e:leads": "node e2e/leads.mjs"
+    "e2e:leads": "node e2e/leads.mjs",
+    "e2e:finance": "node e2e/finance.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
