@@ -65,8 +65,13 @@ describe("sceneFromSession", () => {
     expect(Object.keys(scene.replies ?? {})).toEqual(["cash_ruin"]);
     expect(scene.votes?.cash_ruin).toBe("conditional");
   });
-  it("no readable synthesis means no scene", () => {
-    expect(sceneFromSession(row({ synthesis: null }))).toBeNull();
-    expect(sceneFromSession(row({ synthesis: { raw: "text" }, status: "partial" }))).toBeNull();
+  it("no readable synthesis still plays the debate with a no-verdict chair line", () => {
+    const sc = sceneFromSession(row({ synthesis: null }));
+    expect(sc?.verdict.actions).toEqual([]);
+    expect(sc?.verdict.verdict).toMatch(/could not give a clean verdict/);
   });
+  it("no advisor answers means no scene", () => {
+    expect(sceneFromSession(row({ synthesis: null, advisor_outputs: [] }))).toBeNull();
+  });
+
 });

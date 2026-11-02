@@ -6,12 +6,13 @@ import { GlassPanel } from "@/components/system/glass-panel";
 import { StatTile } from "@/components/system/stat-tile";
 import { StatusPill } from "@/components/system/status-pill";
 import { SynthesisPanel } from "@/components/board/synthesis-panel";
-import { Boardroom } from "@/components/board/scene/boardroom";
+import { Boardroom, StyleSwitcher } from "@/components/board/scene/boardroom";
+import type { SceneStyle } from "@/components/board/scene/styles";
 import { buildScript } from "@/lib/board/scene/script";
 import { sceneFromSession } from "@/lib/board/scene/from-session";
 
 /** One saved session: the question, what it cost, each advisor's answer by round, and the synthesis. */
-export function SessionView({ session }: { session: BoardSessionRow }) {
+export function SessionView({ session, style = "a" }: { session: BoardSessionRow; style?: SceneStyle }) {
   const rounds = Array.from({ length: session.rounds }, (_, i) => i + 1);
   // Replayed from what was saved: no model is called to watch it.
   const scene = sceneFromSession(session);
@@ -26,6 +27,17 @@ export function SessionView({ session }: { session: BoardSessionRow }) {
         </p>
       </GlassPanel>
 
+      {scene && (
+        <section aria-labelledby="board-room" className="space-y-3" data-testid="board-room">
+          <div>
+            <h2 id="board-room" className="font-heading text-lg font-medium text-ink">The boardroom — live debate</h2>
+            <p className="text-[13px] text-ink-muted">Your question, debated live: each advisor takes the floor, the others agree or push back, everyone votes, then the chair rules. Played from this session&apos;s real answers; nothing is re-sent to an AI.</p>
+          </div>
+          <StyleSwitcher current={style} />
+          <Boardroom key={style} script={buildScript(scene)} advisors={scene.advisors} style={style} />
+        </section>
+      )}
+
       <div className="grid gap-3 sm:grid-cols-3" data-testid="board-cost">
         <StatTile index={1} label="Cost of this session" figure={{ value: microsToCents(session.cost_micros), kind: "cents" }} hint="Counted against the AI caps" />
         <StatTile index={2} label="Estimate was up to" figure={{ value: microsToCents(session.est_micros), kind: "cents" }} hint="The most it could have cost" />
@@ -37,15 +49,6 @@ export function SessionView({ session }: { session: BoardSessionRow }) {
         </GlassPanel>
       )}
 
-      {scene && (
-        <section aria-labelledby="board-room" className="space-y-3" data-testid="board-room">
-          <div>
-            <h2 id="board-room" className="font-heading text-lg font-medium text-ink">The boardroom</h2>
-            <p className="text-[13px] text-ink-muted">Replayed from the saved answers; nothing is sent to an AI to watch it. Votes are read from each advisor&apos;s stance.</p>
-          </div>
-          <Boardroom script={buildScript(scene)} advisors={scene.advisors} style="b" />
-        </section>
-      )}
 
       {rounds.map((round) => (
         <section key={round} aria-labelledby={`board-round-${round}`} className="space-y-3" data-testid="board-round">

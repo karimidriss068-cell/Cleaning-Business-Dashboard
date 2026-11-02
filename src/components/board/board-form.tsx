@@ -116,7 +116,19 @@ export function BoardForm() {
           {running ? <><Loader2 className="animate-spin" aria-hidden /> The advisors are thinking…</> : <><Play aria-hidden /> Run the review</>}
         </Button>
       </div>
-      {running && <p className="text-[13px] text-ink-muted" role="status">This takes up to a minute. You can leave this page open; the result is saved when it finishes.</p>}
+      {running && (
+        <div className="space-y-3" role="status" data-testid="board-convening">
+          <p className="text-[13px] text-ink-muted">The board is in session — each advisor is drafting a position on your question. When they finish you go straight into the live debate: who speaks, who agrees or pushes back, the vote and the chair&apos;s verdict.</p>
+          <div className="flex flex-wrap gap-3">
+            {picked.map((k, i) => (
+              <div key={k} className="flex flex-col items-center gap-1 animate-pulse" style={{ animationDelay: `${i * 180}ms` }}>
+                <Bust who={k} state="thinking" className="size-16" alt="" />
+                <span className="text-[11px] text-ink-muted">{ADVISORS.find((a) => a.key === k)?.name.split(" ")[0]}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </GlassPanel>
   );
 }
