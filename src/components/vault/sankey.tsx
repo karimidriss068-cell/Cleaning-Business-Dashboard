@@ -6,8 +6,8 @@ import { bandPath, flowNodes, layoutSankey, type FlowNode } from "@/lib/vault/sa
 import { money } from "@/components/growth/format";
 
 const W = 720;
-const H = 300;
-const NODE_W = 14;
+const H = 230;
+const NODE_W = 8;
 const LABEL_W = 150;
 
 const toneVar: Record<FlowNode["tone"], string> = {
@@ -33,12 +33,12 @@ export function Sankey({ month, ariaLabel }: { month: { revenueCents: number; su
   const live = (...keys: string[]) => hot === null || keys.includes(hot);
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={ariaLabel} className="block h-auto w-full" data-testid="sankey" onPointerLeave={() => setHot(null)}>
+    <div className="overflow-x-auto"><svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={ariaLabel} className="block h-auto w-full min-w-[560px]" data-testid="sankey" onPointerLeave={() => setHot(null)}>
       <defs>
         {layout.bands.map((b) => (
           <linearGradient key={`${b.from}-${b.to}`} id={`kc-sk-${b.from}-${b.to}`} x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0" stopColor={toneVar[layout.left.find((n) => n.key === b.from)?.tone ?? "revenue"]} stopOpacity="0.55" />
-            <stop offset="1" stopColor={toneVar[layout.right.find((n) => n.key === b.to)?.tone ?? "cost"]} stopOpacity="0.55" />
+            <stop offset="0" stopColor={toneVar[layout.left.find((n) => n.key === b.from)?.tone ?? "revenue"]} stopOpacity="0.38" />
+            <stop offset="1" stopColor={toneVar[layout.right.find((n) => n.key === b.to)?.tone ?? "cost"]} stopOpacity="0.38" />
           </linearGradient>
         ))}
       </defs>
@@ -55,19 +55,19 @@ export function Sankey({ month, ariaLabel }: { month: { revenueCents: number; su
         ))}
         {layout.left.map((n) => (
           <g key={n.key} onPointerEnter={() => setHot(n.key)} style={{ opacity: live(n.key) || layout.bands.some((b) => b.from === n.key && live(b.to)) ? 1 : 0.35, transition: "opacity 200ms" }}>
-            <rect x={LABEL_W} y={n.y} width={NODE_W} height={Math.max(2, n.h)} rx={3} style={{ fill: toneVar[n.tone] }} />
+            <rect x={LABEL_W} y={n.y} width={NODE_W} height={Math.max(2, n.h)} rx={4} style={{ fill: toneVar[n.tone] }} />
             <text x={LABEL_W - 10} y={n.y + n.h / 2 - 2} textAnchor="end" className="fill-ink" style={{ fontSize: 13, fontWeight: 500 }}>{n.label}</text>
             <text x={LABEL_W - 10} y={n.y + n.h / 2 + 14} textAnchor="end" className="fill-ink-muted" style={{ fontSize: 12 }}>{money(n.cents)}</text>
           </g>
         ))}
         {layout.right.map((n) => (
           <g key={n.key} onPointerEnter={() => setHot(n.key)} style={{ opacity: live(n.key) || layout.bands.some((b) => b.to === n.key && live(b.from)) ? 1 : 0.35, transition: "opacity 200ms" }}>
-            <rect x={W - LABEL_W - NODE_W} y={n.y} width={NODE_W} height={Math.max(2, n.h)} rx={3} style={{ fill: toneVar[n.tone] }} />
+            <rect x={W - LABEL_W - NODE_W} y={n.y} width={NODE_W} height={Math.max(2, n.h)} rx={4} style={{ fill: toneVar[n.tone] }} />
             <text x={W - LABEL_W + 10} y={n.y + n.h / 2 - 2} className="fill-ink" style={{ fontSize: 13, fontWeight: 500 }}>{n.label}</text>
             <text x={W - LABEL_W + 10} y={n.y + n.h / 2 + 14} className={cn(n.tone === "profit" ? "fill-success" : "fill-ink-muted")} style={{ fontSize: 12 }}>{money(n.cents)}</text>
           </g>
         ))}
       </g>
-    </svg>
+    </svg></div>
   );
 }

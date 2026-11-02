@@ -5,11 +5,10 @@
  *   npm run build
  *   npm run e2e:vault            (E2E_SHOTS_DIR=/some/dir saves screenshots)
  *
- * Covers: Vault is the default direction; the replay deck (play, speed, drag, back to today) morphs the
- * numbers, the pace and the growth card; the 3D channel chart rotates, switches shape and lights a slice;
- * the revenue flow is owner/admin only; the 3D background loads only on a capable desktop in Vault (not on
- * a phone, under reduced motion, in another direction, or on crew screens); frame rate while idle, playing,
- * hovering and dragging; and, for every direction x theme at 1440px and 390px, no overflow, the right theme
+ * Covers: Vault is the default direction; the slim replay strip (play, speed, drag, back to today) moves the
+ * numbers, the pace and the growth card; the channel ribbons isolate a channel on hover and switch range;
+ * the revenue flow is owner/admin only; nothing 3D, canvas or tilt anywhere; frame rate while idle, playing
+ * and hovering; and, for every direction x theme at 1440px and 390px, no overflow, the right theme
  * and text contrast (computed colors; glass backdrops are covered by src/config/brand.test.ts).
  */
 import { spawn } from "node:child_process";
@@ -161,29 +160,26 @@ try {
   check("the replay deck starts on today, live", (await dp.getByTestId("replay-deck").getAttribute("data-replay-live")) === "true");
   const lastIndex = Number(await dp.getByTestId("replay-deck").getAttribute("data-replay-index"));
   check("30 days of frames", lastIndex === 29, `last index ${lastIndex}`);
-  await sleep(2500);
-  const scene = dp.getByTestId("vault-scene");
-  check("the 3D background mounts on a capable desktop in Vault", (await scene.count()) === 1);
-  const sceneState = await scene.getAttribute("data-state");
-  check("the 3D background is running or has thinned itself, not stopped", sceneState === "running" || sceneState === "thinned", sceneState);
+  await sleep(2000);
+  check("no canvas or 3D scene anywhere", (await dp.getByTestId("vault-scene").count()) === 0 && (await dp.locator("canvas").count()) === 0);
+  check("no tilt wrapper on tiles", (await dp.locator(".kc-tilt").count()) === 0);
   metrics.fpsIdle = await fpsOver(dp, 3000);
-  metrics.sceneFps = Number(await scene.getAttribute("data-fps"));
 
   // replay: drag to the middle, numbers and pace change, growth card follows
   const mtdLive = await dp.getByTestId("replay-mtd").innerText();
   const paceLive = await dp.getByTestId("replay-pace").innerText();
-  const box = await dp.locator('[data-testid="replay-deck"] svg[role="img"]').boundingBox();
+  const box = await dp.locator('[data-testid="replay-deck"] svg[preserveAspectRatio]').first().boundingBox();
   await dp.mouse.move(box.x + box.width * 0.9, box.y + box.height / 2);
   await dp.mouse.down();
   await dp.mouse.move(box.x + box.width * 0.4, box.y + box.height / 2, { steps: 12 });
   await dp.mouse.up();
   const idx = Number(await dp.getByTestId("replay-deck").getAttribute("data-replay-index"));
   check("dragging the timeline moves the playhead", idx > 5 && idx < 22, `index ${idx}`);
-  check("the deck says 'As of' on a past day", /as of/i.test(await dp.getByTestId("replay-date").innerText()));
+  check("the strip shows the past day, not Today", !/today/i.test(await dp.getByTestId("replay-date").innerText()));
   await sleep(900);
-  check("the replayed month figure differs from today's (or day-0 is equal and pace shown)", (await dp.getByTestId("replay-mtd").innerText()) !== mtdLive || (await dp.getByTestId("replay-pace").innerText()) !== paceLive, `${mtdLive} / ${await dp.getByTestId("replay-mtd").innerText()}`);
+  check("the replayed month figure or pace differs from today's", (await dp.getByTestId("replay-mtd").innerText()) !== mtdLive || (await dp.getByTestId("replay-pace").innerText()) !== paceLive, `${mtdLive} / ${await dp.getByTestId("replay-mtd").innerText()}`);
   check("the growth card follows the replay day", (await dp.getByTestId("growth-revenue").getAttribute("data-replaying")) === "true");
-  check("the Jobs tile says which day it shows", /that day|so far/.test(await dp.locator("main").innerText()));
+  check("the tiles say which day they show", /that day|so far/.test(await dp.locator("main").innerText()));
   await dp.getByTestId("replay-range").focus();
   await dp.keyboard.press("ArrowLeft");
   check("the range slider is keyboard operable", Number(await dp.getByTestId("replay-deck").getAttribute("data-replay-index")) === idx - 1);
@@ -202,47 +198,25 @@ try {
   await sleep(900);
   check("playback runs to today and stops", (await dp.getByTestId("replay-play").getAttribute("aria-label")) === "Play replay");
 
-  // tilt on a tile
-  const tile = dp.locator(".kc-tilt").first();
-  const tb = await tile.boundingBox();
-  await dp.mouse.move(tb.x + tb.width * 0.85, tb.y + tb.height * 0.2, { steps: 6 });
-  await sleep(500);
-  const tr = await tile.evaluate((el) => el.style.transform);
-  check("a tile tilts toward the cursor", /rotateX\(-?[\d.]*[1-9]/.test(tr) || /rotateY\(-?[\d.]*[1-9]/.test(tr), tr);
-  metrics.fpsTilt = await fpsOver(dp, 1500);
-  await dp.mouse.move(5, 5);
-  await sleep(700);
-  check("and settles flat again", /rotateX\(-?0(\.0\d*)?deg\) rotateY\(-?0(\.0\d*)?deg\)/.test(await tile.evaluate((el) => el.style.transform)), await tile.evaluate((el) => el.style.transform));
+  metrics.fpsHover = await fpsOver(dp, 1500);
 
-  // 3D chart
-  const chart = dp.getByTestId("chart-3d");
-  await chart.scrollIntoViewIfNeeded();
-  await sleep(2500);
-  const svg = dp.getByTestId("chart-3d-svg");
-  const yaw0 = Number(await svg.getAttribute("data-yaw"));
-  const cb = await svg.boundingBox();
-  await dp.mouse.move(cb.x + cb.width * 0.5, cb.y + cb.height * 0.5);
-  await dp.mouse.down();
-  await dp.mouse.move(cb.x + cb.width * 0.5 + 160, cb.y + cb.height * 0.5, { steps: 10 });
-  metrics.fpsDragging = await fpsOver(dp, 1200);
-  await dp.mouse.up();
-  await sleep(900);
-  check("dragging rotates the 3D chart", Math.abs(Number(await svg.getAttribute("data-yaw")) - yaw0) > 0.5, `${yaw0} -> ${await svg.getAttribute("data-yaw")}`);
-  await svg.focus();
-  const yaw1 = Number(await svg.getAttribute("data-yaw"));
-  await dp.keyboard.press("ArrowRight");
-  await sleep(900);
-  check("arrow keys nudge the 3D chart", Math.abs(Number(await svg.getAttribute("data-yaw")) - yaw1) > 0.1);
-  const legend = dp.getByTestId("chart-3d-legend").locator("button");
-  if ((await legend.count()) > 0) {
-    await legend.first().hover();
-    check("hovering a legend row shows its tooltip", /\$/.test(await chart.innerText()));
-  }
-  check("the legend lists the channels with dollar amounts", (await dp.getByTestId("chart-3d-legend").innerText()).includes("$"));
-  await dp.getByTestId("chart3d-donut").click();
-  await sleep(1500);
-  check("the chart switches to a donut", (await chart.getAttribute("data-mode")) === "donut");
-  await dp.getByTestId("chart3d-bars").click();
+  // channel ribbons
+  const stream = dp.getByTestId("channel-stream");
+  await stream.scrollIntoViewIfNeeded();
+  await sleep(2000);
+  check("the channel ribbons draw one ribbon per channel", (await stream.locator("[data-ribbon]").count()) >= 2, `${await stream.locator("[data-ribbon]").count()}`);
+  const legendBtn = dp.getByTestId("stream-legend").locator("button").first();
+  await legendBtn.hover();
+  await sleep(600);
+  check("hovering a legend row isolates that channel and the readout names it", (await stream.getAttribute("data-hot")) !== "" && (await dp.getByTestId("stream-readout").innerText()).includes("·"), await dp.getByTestId("stream-readout").innerText());
+  const dim = await stream.locator("[data-ribbon]").evaluateAll((els) => els.map((e) => Number(getComputedStyle(e).opacity)));
+  check("the other ribbons fade back", dim.filter((o) => o < 0.3).length === dim.length - 1, dim.join());
+  await dp.mouse.move(5, 5);
+  await sleep(600);
+  await dp.getByTestId("stream-range-4").click();
+  check("the range switch changes the readout to 4 weeks", /4 weeks/.test(await dp.getByTestId("stream-readout").innerText()));
+  await dp.getByTestId("stream-range-13").click();
+  check("no drag-to-rotate controls remain", (await dp.getByText("Drag to rotate").count()) === 0 && (await dp.getByTestId("chart3d-donut").count()) === 0);
   await shot(dp, "vault-command-dark-desktop", 1440, 900);
 
   // mid-replay screenshot
@@ -255,7 +229,7 @@ try {
 
   // ============================================================ growth page
   await dp.goto(`${base}/growth`, { waitUntil: "networkidle" });
-  check("Growth: replay deck, 3D chart and the revenue flow for the owner", (await dp.getByTestId("replay-deck").count()) === 1 && (await dp.getByTestId("chart-3d").count()) === 1 && (await dp.getByTestId("money-flow").count()) === 1);
+  check("Growth: replay strip, channel ribbons and the revenue flow for the owner", (await dp.getByTestId("replay-deck").count()) === 1 && (await dp.getByTestId("channel-stream").count()) === 1 && (await dp.getByTestId("money-flow").count()) === 1);
   check("Growth: the flow is a real diagram", (await dp.getByTestId("sankey").locator("rect").count()) >= 2);
   await dp.getByTestId("sankey").scrollIntoViewIfNeeded();
   await sleep(1200);
@@ -273,7 +247,7 @@ try {
   const sctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const sp = await signIn(sctx, staff, /command-center|leads|schedule/);
   await sp.goto(`${base}/growth`, { waitUntil: "networkidle" });
-  check("staff see the replay and the channel chart but not the money flow", (await sp.getByTestId("replay-deck").count()) === 1 && (await sp.getByTestId("chart-3d").count()) === 1 && (await sp.getByTestId("money-flow").count()) === 0);
+  check("staff see the replay and the channel chart but not the money flow", (await sp.getByTestId("replay-deck").count()) === 1 && (await sp.getByTestId("channel-stream").count()) === 1 && (await sp.getByTestId("money-flow").count()) === 0);
   await sctx.close();
 
   // ============================================================ cleaner: solid, no 3D
@@ -292,7 +266,6 @@ try {
   check("phone: no 3D canvas, CSS background only", (await pp.getByTestId("vault-scene").count()) === 0);
   check("phone: no horizontal overflow", !(await overflow(pp)));
   check("phone: the replay deck is there", (await pp.getByTestId("replay-deck").count()) === 1);
-  check("phone: no tilt transform on tiles", !(await pp.locator(".kc-tilt").first().evaluate((el) => el.style.transform)));
   await shot(pp, "vault-command-dark-phone", 390, 844);
   await pp.goto(`${base}/growth`, { waitUntil: "networkidle" });
   check("phone: Growth has no horizontal overflow", !(await overflow(pp)));
@@ -323,7 +296,7 @@ try {
         const a = await page.evaluate(() => ({ d: document.documentElement.dataset.direction, dark: document.documentElement.classList.contains("dark") }));
         const c = await page.evaluate(contrastInPage);
         const canvas = await page.getByTestId("vault-scene").count();
-        const wantCanvas = label === "desktop" && p.direction === "vault" ? 1 : 0;
+        const wantCanvas = 0;
         const bad = (await overflow(page)) ? "overflow" : a.d !== p.direction || a.dark !== (p.theme === "dark") ? `wrong theme ${JSON.stringify(a)}` : canvas !== wantCanvas ? `canvas ${canvas}` : c.bad.length ? `contrast: ${c.bad.slice(0, 4).join("; ")}` : c.checked < 20 ? "too little text checked" : "";
         check(`${path} ${label} ${p.direction} ${p.theme}`, bad === "", bad);
         if (shots && p.direction === "vault" && path === "command-center" && p.theme === "light") await shot(page, `vault-command-light-${label}`, width, height);

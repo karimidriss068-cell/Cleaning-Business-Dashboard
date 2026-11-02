@@ -21,7 +21,7 @@ import { StatTile } from "@/components/system/stat-tile";
 import { ReplayDeck, ReplayProvider } from "@/components/vault/replay";
 import { ReplayStatTile } from "@/components/vault/replay-tiles";
 import { RevenueByChannelPanel } from "@/components/vault/money-panels";
-import { loadReplay, loadRevenueByChannel } from "@/lib/vault/replay-data";
+import { loadReplay, loadChannelStream } from "@/lib/vault/replay-data";
 import { StatusPill } from "@/components/system/status-pill";
 import { EmptyState } from "@/components/system/empty-state";
 import { DataTable } from "@/components/system/data-table";
@@ -120,7 +120,7 @@ export default async function CommandCenterPage() {
     supabase.from("leads").select("next_follow_up_on").in("stage", ["new", "contacted", "quoted"]).lt("next_follow_up_on", today).order("next_follow_up_on"),
     loadFinanceMonths(supabase, 6),
     loadGrowthSnapshot(supabase),
-    loadRevenueByChannel(supabase),
+    loadChannelStream(supabase, today),
   ]);
 
   const failed = [jobsRes, lastMonthRes, leadsRes, openLeadsRes, waitingRes, invoicesRes, goalsRes, contractsRes, coiRes, followUpsRes].find((r) => r.error);
@@ -213,7 +213,7 @@ export default async function CommandCenterPage() {
         description={`${todaysLive.length} visit${todaysLive.length === 1 ? "" : "s"} today · ${waiting.length} lead${waiting.length === 1 ? "" : "s"} waiting · ${overdue.length} overdue invoice${overdue.length === 1 ? "" : "s"}`}
       />
 
-      <ReplayDeck description="Drag across the last 30 days to replay the dashboard: revenue, visits, leads and pace change with the day." />
+      <ReplayDeck />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <ReplayStatTile

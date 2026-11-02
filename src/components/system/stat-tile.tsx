@@ -3,7 +3,6 @@ import { ArrowDownRight, ArrowRight, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AnimatedNumber, type NumberKind } from "./animated-number";
 import { Sparkline } from "./sparkline";
-import { TiltFrame } from "@/components/vault/tilt-frame";
 
 export type Delta = {
   /** Already formatted with its sign, e.g. "+12%" or "−3". */
@@ -44,14 +43,12 @@ export function StatTile({
   const DeltaIcon = delta?.direction === "up" ? ArrowUpRight : delta?.direction === "down" ? ArrowDownRight : ArrowRight;
   const body = (
     <>
-      <span aria-hidden className="pointer-events-none absolute inset-x-6 top-0 h-px bg-linear-to-r from-transparent via-brand/60 to-transparent" />
-      <span className="text-[11px] font-semibold tracking-[0.12em] text-ink-muted uppercase">{label}</span>
+      <span aria-hidden className="kc-tile-edge pointer-events-none absolute inset-x-6 top-0 h-px bg-linear-to-r from-transparent via-brand/60 to-transparent" />
+      <span className="kc-eyebrow text-[11px] font-semibold tracking-[0.12em] text-ink-muted uppercase">{label}</span>
       <div className="flex items-end justify-between gap-4">
-        <span className="kc-depth font-heading text-[40px] leading-[44px] font-medium tracking-[-0.02em] text-ink tabular text-glow" style={{ "--depth": 5 } as React.CSSProperties}>{figure ? <AnimatedNumber value={figure.value} kind={figure.kind} hideZeroCents={figure.hideZeroCents} /> : value}</span>
+        <span className="font-heading text-[40px] leading-[44px] font-medium tracking-[-0.02em] text-ink tabular text-glow">{figure ? <AnimatedNumber value={figure.value} kind={figure.kind} hideZeroCents={figure.hideZeroCents} /> : value}</span>
         {spark && spark.length > 1 && (
-          <span className="kc-depth mb-1.5" style={{ "--depth": 9 } as React.CSSProperties}>
-            <Sparkline values={spark} delayMs={150 + index * 55} />
-          </span>
+          <Sparkline values={spark} delayMs={150 + index * 55} className="mb-1.5" />
         )}
       </div>
       <div className="flex min-h-6 flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-ink-muted">
@@ -80,17 +77,13 @@ export function StatTile({
     className,
   );
   const style = { "--i": index } as React.CSSProperties;
-  return (
-    <TiltFrame className="h-full">
-      {href ? (
-        <Link href={href} className={frame} style={style}>
-          {body}
-        </Link>
-      ) : (
-        <div className={frame} style={style}>
-          {body}
-        </div>
-      )}
-    </TiltFrame>
-  );
+  return href ? (
+      <Link href={href} className={frame} style={style}>
+        {body}
+      </Link>
+    ) : (
+      <div className={frame} style={style}>
+        {body}
+      </div>
+    );
 }

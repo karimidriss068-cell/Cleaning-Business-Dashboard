@@ -10,7 +10,6 @@ import { buildReplay, type ReplayFrame } from "./replay";
 type Db = SupabaseClient<Database>;
 
 const dailySchema = z.array(z.object({ day: z.string(), cents: z.number().int() }));
-const channelSchema = z.array(z.object({ channel: z.string(), cents: z.number().int(), invoices: z.number().int() }));
 
 export const REPLAY_FRAMES = 30;
 
@@ -49,20 +48,30 @@ export async function loadReplay(db: Db, today: string, milestones: Milestone[])
   });
 }
 
-export type ChannelRevenue = { key: string; label: string; cents: number; invoices: number };
+export type ChannelStreamData = { weeks: string[]; series: { key: string; label: string; values: number[] }[] };
 
-/** Revenue (before tax, after discount) of invoices issued in the last 90 days, by the channel of the contact's newest lead. */
-export async function loadRevenueByChannel(db: Db): Promise<ChannelRevenue[]> {
-  const { data, error } = await db.rpc("revenue_by_channel", { p_days: 90 });
+const weeklySchema = z.array(z.object({ week: z.string(), channel: z.string(), cents: z.number().int() }));
+const mondayOf = (date: string) => {
+  const dow = new Date(`${date}T00:00:00Z`).getUTCDay(); // 0 = Sunday
+  return addDays(date, -((dow + 6) % 7));
+};
+
+/** Revenue (before tax, after discount) of invoices issued in the last 13 weeks, per week and per channel (the channel of the contact's newest lead). */
+export async function loadChannelStream(db: Db, today: string): Promise<ChannelStreamData> {
+  const { data, error } = await db.rpc("revenue_by_channel_weekly", { p_days: 91 });
   if (error) throw new Error(`Loading revenue by channel failed: ${error.message}`);
-  const parsed = channelSchema.safeParse(data);
+  const parsed = weeklySchema.safeParse(data);
   if (!parsed.success) throw new Error("Revenue by channel had an unexpected shape");
-  return parsed.data
-    .filter((r) => r.cents > 0)
-    .map((r) => ({
-      key: r.channel,
-      label: (CHANNELS as readonly string[]).includes(r.channel) ? channelLabel[r.channel as Channel] : "Other",
-      cents: r.cents,
-      invoices: r.invoices,
-    }));
+  const weeks: string[] = [];
+  for (let w = mondayOf(addDays(today, -90)); w <= today; w = addDays(w, 7)) weeks.push(w);
+  const byChannel = new Map<string, number[]>();
+  for (const r of parsed.data) {
+    const key = (CHANNELS as readonly string[]).includes(r.channel) ? r.channel : "other";
+    const i = weeks.indexOf(r.week);
+    if (i < 0 || r.cents <= 0) continue;
+    const arr = byChannel.get(key) ?? weeks.map(() => 0);
+    arr[i] += r.cents;
+    byChannel.set(key, arr);
+  }
+  return { weeks, series: [...byChannel].map(([key, values]) => ({ key, label: channelLabel[key as Channel], values })) };
 }

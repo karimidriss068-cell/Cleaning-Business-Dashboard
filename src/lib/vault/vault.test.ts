@@ -1,39 +1,43 @@
 import { describe, expect, it } from "vitest";
-import { boxFaces, drawFaces, project, ringSegmentFaces, rotate, shadeShare, type View } from "./engine3d";
+import { insideOut, layoutStream, ribbonPath, smoothPath } from "./stream";
 import { bandPath, flowNodes, layoutSankey } from "./sankey";
 import { buildReplay } from "./replay";
-import { settled, stepSpring } from "./spring";
 
-const view: View = { yaw: 0.6, pitch: 0.5, scale: 100, cx: 300, cy: 200, distance: 9 };
-
-describe("engine3d", () => {
-  it("rotating by zero changes nothing and a full turn returns home", () => {
-    expect(rotate([1, 2, 3], 0, 0)).toEqual([1, 2, 3]);
-    const r = rotate([1, 2, 3], Math.PI * 2, 0);
-    expect(r[0]).toBeCloseTo(1);
-    expect(r[2]).toBeCloseTo(3);
+describe("stream", () => {
+  const series = [
+    { key: "a", label: "A", values: [1, 2, 3, 4] },
+    { key: "b", label: "B", values: [4, 3, 2, 1] },
+    { key: "c", label: "C", values: [0, 1, 0, 1] },
+  ];
+  it("puts the biggest ribbon in the middle", () => {
+    const o = insideOut([{ total: 1 }, { total: 9 }, { total: 5 }, { total: 3 }]);
+    expect(o.map((x) => x.total)).toEqual([1, 5, 9, 3]);
   });
-  it("projects the origin to the view centre", () => {
-    const [x, y] = project([0, 0, 0], view);
-    expect(x).toBeCloseTo(300);
-    expect(y).toBeCloseTo(200);
+  it("stacks ribbons edge to edge, centred, with heights in proportion", () => {
+    const { layers, max } = layoutStream(series, 600, 200, 0);
+    expect(max).toBe(6);
+    for (let i = 0; i < 4; i++) {
+      const sorted = [...layers].sort((p, q) => p.top[i][1] - q.top[i][1]);
+      for (let k = 0; k < sorted.length - 1; k++) expect(sorted[k].bottom[i][1]).toBeCloseTo(sorted[k + 1].top[i][1], 5);
+      const top = sorted[0].top[i][1];
+      const bottom = sorted[sorted.length - 1].bottom[i][1];
+      expect((top + bottom) / 2).toBeCloseTo(100, 5);
+    }
+    const a = layers.find((l) => l.key === "a")!;
+    expect(a.bottom[3][1] - a.top[3][1]).toBeCloseTo((4 / 6) * 200, 5);
   });
-  it("a box seen from above shows at most 3 faces and sorts far to near", () => {
-    const faces = drawFaces(boxFaces(0, 0, 1, 1, 1, "a"), view);
-    expect(faces.length).toBeLessThanOrEqual(3);
-    expect(faces.length).toBeGreaterThanOrEqual(2);
-    for (let i = 1; i < faces.length; i++) expect(faces[i].depth).toBeGreaterThanOrEqual(faces[i - 1].depth);
+  it("handles empty data and a single week", () => {
+    expect(layoutStream([], 600, 200).layers).toEqual([]);
+    expect(layoutStream([{ key: "a", label: "A", values: [0, 0] }], 600, 200).layers).toEqual([]);
+    expect(layoutStream([{ key: "a", label: "A", values: [3] }], 600, 200).layers[0].top).toHaveLength(2);
   });
-  it("a ring segment has a top, walls and two caps, and renders paths", () => {
-    const faces = ringSegmentFaces(0, Math.PI / 2, 0.5, 1, 0.3, "x");
-    expect(faces.length).toBeGreaterThan(5);
-    const drawn = drawFaces(faces, view);
-    expect(drawn.length).toBeGreaterThan(0);
-    for (const f of drawn) expect(f.d).toMatch(/^M[\d.,\-L]+Z$/);
-  });
-  it("shade stays between a floor and 1", () => {
-    expect(shadeShare(0)).toBeGreaterThan(0.4);
-    expect(shadeShare(5)).toBeCloseTo(1);
+  it("smooth paths never overshoot their points and ribbons close", () => {
+    const d = smoothPath([[0, 0], [10, 10], [20, 10], [30, 0]]);
+    const ys = [...d.matchAll(/(-?\d+\.\d),(-?\d+\.\d)/g)].map((m) => Number(m[2]));
+    expect(Math.min(...ys)).toBeGreaterThanOrEqual(0);
+    expect(Math.max(...ys)).toBeLessThanOrEqual(10);
+    const { layers } = layoutStream(series, 600, 200);
+    expect(ribbonPath(layers[0])).toMatch(/^M.*Z$/);
   });
 });
 
@@ -76,15 +80,5 @@ describe("replay", () => {
     const f = buildReplay({ daily, visitsByDay: {}, leadsByDay: {}, milestones, frames: 2 });
     expect(f.map((x) => x.date)).toEqual(["2026-11-01", "2026-11-02"]);
     expect(f[1].monthToDateCents).toBe(700_00);
-  });
-});
-
-describe("spring", () => {
-  it("settles on the target and never explodes on a long frame", () => {
-    let s = { x: 0, v: 0 };
-    for (let i = 0; i < 240; i++) s = stepSpring(s, 1, 1 / 60);
-    expect(settled(s, 1)).toBe(true);
-    const big = stepSpring({ x: 0, v: 0 }, 1, 5);
-    expect(Math.abs(big.x)).toBeLessThan(5);
   });
 });

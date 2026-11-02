@@ -24,20 +24,20 @@ begin
   direct := private.growth_revenue_cents(month, today + 1);
   r := r || case when summed = direct then 'DAYS_ADD_UP ok; ' else 'DAYS_ADD_UP ALLOWED(BAD) ' || summed || '/' || direct || '; ' end;
   execute 'set local role authenticated';
-  r := r || case when jsonb_typeof(public.revenue_by_channel(90)) = 'array' then 'CHANNELS ok; ' else 'CHANNELS ALLOWED(BAD); ' end;
+  r := r || case when jsonb_typeof(public.revenue_by_channel_weekly(91)) = 'array' then 'CHANNELS ok; ' else 'CHANNELS ALLOWED(BAD); ' end;
 
   -- cleaner
   perform set_config('request.jwt.claims', json_build_object('sub', cleaner, 'role', 'authenticated')::text, true);
   begin perform public.daily_revenue(10); r := r || 'CLEANER_DAILY ALLOWED(BAD); ';
   exception when sqlstate 'KC004' then r := r || 'CLEANER_DAILY refused; '; end;
-  begin perform public.revenue_by_channel(10); r := r || 'CLEANER_CHANNELS ALLOWED(BAD); ';
+  begin perform public.revenue_by_channel_weekly(10); r := r || 'CLEANER_CHANNELS ALLOWED(BAD); ';
   exception when sqlstate 'KC004' then r := r || 'CLEANER_CHANNELS refused; '; end;
 
   execute 'reset role';
   execute 'set local role anon';
   begin perform public.daily_revenue(10); r := r || 'ANON_DAILY ALLOWED(BAD); ';
   exception when others then r := r || 'ANON_DAILY refused; '; end;
-  begin perform public.revenue_by_channel(10); r := r || 'ANON_CHANNELS ALLOWED(BAD); ';
+  begin perform public.revenue_by_channel_weekly(10); r := r || 'ANON_CHANNELS ALLOWED(BAD); ';
   exception when others then r := r || 'ANON_CHANNELS refused; '; end;
 
   raise exception 'RESULTS: %', r;

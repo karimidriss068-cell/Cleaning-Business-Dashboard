@@ -3693,7 +3693,7 @@ export type Database = {
       remove_subcontractor_document: { Args: { p_id: string }; Returns: string }
       reopen_payout: { Args: { p_payout_id: string }; Returns: undefined }
       retry_ghl_sync: { Args: { p_id: string }; Returns: undefined }
-      revenue_by_channel: { Args: { p_days?: number }; Returns: Json }
+      revenue_by_channel_weekly: { Args: { p_days?: number }; Returns: Json }
       save_ai_budget: {
         Args: {
           p_daily?: number
