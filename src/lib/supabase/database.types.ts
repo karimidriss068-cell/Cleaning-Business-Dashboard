@@ -384,6 +384,75 @@ export type Database = {
           },
         ]
       }
+      board_sessions: {
+        Row: {
+          advisor_outputs: Json
+          advisors: string[]
+          cost_micros: number
+          created_at: string
+          created_by: string | null
+          est_micros: number
+          id: string
+          input_hash: string
+          logged_decision_id: string | null
+          question: string
+          rounds: number
+          run_id: string | null
+          status: string
+          synthesis: Json | null
+          use_context: boolean
+        }
+        Insert: {
+          advisor_outputs?: Json
+          advisors: string[]
+          cost_micros: number
+          created_at?: string
+          created_by?: string | null
+          est_micros: number
+          id?: string
+          input_hash: string
+          logged_decision_id?: string | null
+          question: string
+          rounds: number
+          run_id?: string | null
+          status: string
+          synthesis?: Json | null
+          use_context?: boolean
+        }
+        Update: {
+          advisor_outputs?: Json
+          advisors?: string[]
+          cost_micros?: number
+          created_at?: string
+          created_by?: string | null
+          est_micros?: number
+          id?: string
+          input_hash?: string
+          logged_decision_id?: string | null
+          question?: string
+          rounds?: number
+          run_id?: string | null
+          status?: string
+          synthesis?: Json | null
+          use_context?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_sessions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "board_sessions_logged_decision_id_fkey"
+            columns: ["logged_decision_id"]
+            isOneToOne: false
+            referencedRelation: "growth_decisions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_settings: {
         Row: {
           created_at: string
@@ -3290,6 +3359,7 @@ export type Database = {
         Args: { p_key: string; p_scope: string }
         Returns: undefined
       }
+      delete_board_session: { Args: { p_id: string }; Returns: undefined }
       delete_expense: { Args: { p_id: string }; Returns: undefined }
       delete_growth_decision: { Args: { p_id: string }; Returns: undefined }
       delete_invoice_draft: {
@@ -3498,6 +3568,10 @@ export type Database = {
           source: string
         }[]
       }
+      log_board_decision: {
+        Args: { p_action_index: number; p_session_id: string }
+        Returns: string
+      }
       mark_invoice_collected: {
         Args: { p_invoice_id: string; p_note: string }
         Returns: undefined
@@ -3627,6 +3701,22 @@ export type Database = {
           p_scope: string
         }
         Returns: undefined
+      }
+      save_board_session: {
+        Args: {
+          p_advisor_outputs: Json
+          p_advisors: string[]
+          p_cost_micros: number
+          p_est_micros: number
+          p_input_hash: string
+          p_question: string
+          p_rounds: number
+          p_run_id?: string
+          p_status: string
+          p_synthesis: Json
+          p_use_context: boolean
+        }
+        Returns: string
       }
       save_cash_settings: {
         Args: {
