@@ -15,7 +15,7 @@ Build components from this spec, then apply them. The dev-only `/design` page re
 5. **Depth with intent.** Page content sits on layered surfaces. Glass is only for chrome that floats over the ambient background (sidebar, top bar, palette, drawer, modal, toasts). Radius and elevation differ by role.
 6. **Restraint.** Glow appears only on the accent (primary action, active nav indicator, sparkline and chart end points, the brand mark) and on KPI numerals. Motion is short and plays once.
 
-**Not allowed:** gold, brass, champagne or yellow anywhere except the warning status; neon green on black; purple gradients; emoji as icons; one radius and shadow on every card; color-only status; looping animation; leftover copy from the previous product.
+**Not allowed:** gold, brass, champagne or yellow anywhere except the warning status; neon green on black; purple gradients; emoji as icons; one radius and shadow on every card; color-only status; looping animation (the one deliberate exception is the advisors' idle breathing and blinking in the `/board` boardroom scene, which the owner asked for; it is tiny and stops under prefers-reduced-motion); leftover copy from the previous product.
 
 ## 2. Visual directions (permanent, per user)
 
