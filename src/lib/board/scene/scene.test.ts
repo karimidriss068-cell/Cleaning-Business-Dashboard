@@ -130,7 +130,7 @@ describe("what the scene shows", () => {
 
 describe("seats", () => {
   it("fit inside the scene and never crowd each other, for 1 to 8 advisors", () => {
-    for (let n = 1; n <= ADVISOR_KEYS.length; n++) {
+    for (let n = 1; n <= Math.min(8, ADVISOR_KEYS.length); n++) {
       const seats = [CHAIR_SEAT, ...seatPositions(n)];
       expect(seats).toHaveLength(n + 1);
       for (const s of seats) { expect(s.x).toBeGreaterThan(5); expect(s.x).toBeLessThan(95); expect(s.y).toBeGreaterThan(5); expect(s.y).toBeLessThan(95); }

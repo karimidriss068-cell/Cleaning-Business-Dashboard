@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { AnimatedNumber } from "@/components/system/animated-number";
 import { GlassPanel } from "@/components/system/glass-panel";
 import { StatusPill } from "@/components/system/status-pill";
+import { Bust } from "@/components/board/scene/bust";
 import { fieldErrors } from "@/components/invoices/use-finance-action";
 
 const ROUNDS = [
@@ -81,6 +82,7 @@ export function BoardForm() {
           {ADVISORS.map((a) => (
             <GlassPanel key={a.key} level="flat" as="label" className="flex cursor-pointer items-start gap-3 p-3 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring">
               <Checkbox checked={picked.includes(a.key)} onCheckedChange={(c) => toggle(a.key, c === true)} aria-label={a.name} className="mt-0.5" />
+              <Bust who={a.key} state={picked.includes(a.key) ? "thinking" : "idle"} className="size-12 shrink-0" alt="" />
               <span className="min-w-0">
                 <span className="flex flex-wrap items-center gap-2 text-sm font-medium text-ink">{a.name}{DEFAULT_ADVISORS.includes(a.key) && <StatusPill tone="info">Default</StatusPill>}</span>
                 <span className="block text-[12px] text-ink-muted">{a.question}</span>

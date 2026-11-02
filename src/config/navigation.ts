@@ -1,4 +1,5 @@
 import {
+  Bot,
   CalendarDays,
   ClipboardCheck,
   Database,
@@ -44,6 +45,7 @@ export const officeNav: NavItem[] = [
   { href: "/board", label: "Roast Room", short: "Board", icon: MessagesSquare, section: "Business", adminOnly: true, keywords: "board advisors decision roast critique ai council" },
   { href: "/marketing", label: "Marketing", short: "Marketing", icon: Megaphone, section: "Business", keywords: "campaigns ads" },
   { href: "/automations", label: "Automations", short: "Automations", icon: Workflow, section: "Business", keywords: "workflows texts reminders" },
+  { href: "/agents", label: "Agent room", short: "Agents", icon: Bot, section: "Business", keywords: "agents vault floor atlas bots ops approvals" },
   { href: "/data-room", label: "Agent data room", short: "Data room", icon: Database, section: "Business", keywords: "agents feeds roi ai data" },
   { href: "/settings", label: "Settings", short: "Settings", icon: Settings, section: "Business", keywords: "account team integrations" },
 ];

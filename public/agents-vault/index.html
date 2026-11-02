@@ -1,0 +1,286 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Keystone Clean · Agents · Vault</title>
+<style>
+:root{--bg0:#0B0A09;--bg1:#151311;--bg2:#2B211B;--umber:#3a2a20;--cream:#F3E9DC;--cream2:#cdbfae;--muted:#a89a8a;--tan:#A67B5B;--tan2:#c79b78;--warn:#d9a441;--bad:#c9705a;--ok:#9fb58a;
+--glass:rgba(43,33,27,.55);--line:rgba(243,233,220,.10);--r:18px;--s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px;--s7:48px;
+--ease:cubic-bezier(.22,1,.36,1);--top:#4a382c;--left:#2a1f18;--right:#36281f;--floor:#5a4536}
+body.light{--bg0:#efe5d8;--bg1:#f7f0e6;--bg2:#e6d8c6;--umber:#dccab4;--cream:#2B211B;--cream2:#4a3a2e;--muted:#6b5b4d;--glass:rgba(255,250,243,.62);--line:rgba(43,33,27,.12);--top:#e9dccb;--left:#b9a38b;--right:#cdb8a0;--floor:#d9c7b1}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{font:15px/1.5 ui-sans-serif,-apple-system,"Segoe UI",Inter,sans-serif;color:var(--cream);background:radial-gradient(1200px 800px at 50% 35%,var(--umber),var(--bg1) 55%,var(--bg0));overflow:hidden;transition:background .8s var(--ease)}
+.glass{background:var(--glass);backdrop-filter:blur(18px) saturate(1.2);-webkit-backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 20px 60px rgba(0,0,0,.25)}
+#stage{position:fixed;top:96px;bottom:8px;left:340px;right:380px}#stage svg{width:100%;height:100%;display:block}
+header{position:fixed;top:20px;left:24px;right:24px;display:flex;gap:16px;align-items:center;z-index:5}
+.brand{padding:12px 18px;font-weight:600;letter-spacing:.02em}.brand small{display:block;color:var(--muted);font-weight:400;font-size:12px}
+.metrics{display:flex;gap:28px;padding:12px 24px}.m b{display:block;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.01em}.m span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.ctrls{margin-left:auto;display:flex;gap:8px;padding:8px}
+button{font:inherit;font-size:13px;color:var(--cream);background:transparent;border:1px solid var(--line);border-radius:12px;padding:8px 14px;cursor:pointer;transition:.3s var(--ease)}
+button:hover{border-color:var(--tan);background:rgba(166,123,91,.15)}button.pri{background:var(--tan);color:#0B0A09;border-color:var(--tan)}button.kill{color:var(--bad);border-color:rgba(201,112,90,.4)}
+button:focus-visible{outline:2px solid var(--tan2);outline-offset:2px}
+#tray{position:fixed;right:24px;top:110px;width:340px;max-height:calc(100% - 330px);overflow:auto;padding:20px;z-index:5}
+h3{margin:0 0 14px;font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:500;display:flex;justify-content:space-between}
+.card{padding:14px;border-radius:14px;background:rgba(11,10,9,.25);border:1px solid var(--line);margin-bottom:12px;transition:.5s var(--ease)}body.light .card{background:rgba(255,255,255,.5)}
+.card .k{font-size:11px;color:var(--tan2);text-transform:uppercase;letter-spacing:.08em}.card p{margin:6px 0 10px;font-size:14px}.card .row{display:flex;gap:6px}.card button{padding:6px 10px;font-size:12px}
+.card.gone{opacity:0;transform:translateX(30px);height:0;padding:0;margin:0;overflow:hidden}
+#chat{position:fixed;right:24px;bottom:24px;width:340px;padding:16px;z-index:5}
+#chat .msgs{max-height:110px;overflow:auto;font-size:13px}#chat .msgs div{margin-bottom:6px}#chat .msgs .me{color:var(--tan2)}
+#chat form{display:flex;gap:6px;margin-top:8px}#chat input{flex:1;background:transparent;border:1px solid var(--line);border-radius:10px;color:var(--cream);padding:8px 10px;font:inherit;font-size:13px}
+#feed{position:fixed;left:24px;bottom:24px;width:380px;padding:16px 18px;z-index:5}#feed ul{list-style:none;margin:0;padding:0;font-size:13px}
+#feed li{padding:5px 0;color:var(--cream2);animation:slide .8s var(--ease)}#feed li b{color:var(--cream);font-weight:600}
+#brief{position:fixed;left:24px;top:110px;width:300px;padding:18px;z-index:5}#brief ol{margin:6px 0 0;padding-left:18px;font-size:13px}
+.pace{height:6px;border-radius:6px;background:var(--line);margin:8px 0 4px;overflow:hidden}.pace i{display:block;height:100%;width:0;background:var(--tan);border-radius:6px;transition:width .9s var(--ease)}
+@keyframes slide{from{opacity:0;transform:translateY(8px)}}
+/* svg anims */
+.pulse{animation:pulse 2.4s ease-in-out infinite}.breathe{animation:pulse 5s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+.bob{animation:bob 3s ease-in-out infinite}@keyframes bob{50%{transform:translateY(-3px)}}
+.holo{animation:holo 4s ease-in-out infinite}@keyframes holo{50%{opacity:.75}}
+.flow{stroke-dasharray:6 14;animation:flow 3s linear infinite}@keyframes flow{to{stroke-dashoffset:-40}}
+.dim{opacity:.25;transition:opacity .8s var(--ease)}g.wing{transition:opacity .8s var(--ease);cursor:pointer}
+dialog{background:var(--bg1);color:var(--cream);border:1px solid var(--line);border-radius:18px;padding:24px;max-width:380px}dialog::backdrop{background:rgba(0,0,0,.5)}
+body.killed #stage{filter:grayscale(.8) brightness(.7)}
+/* phone */
+body.phone{overflow:auto}
+body.phone .frame{width:390px;margin:16px auto;}
+body.phone #stage{position:relative;height:420px;inset:auto;border-radius:24px;overflow:hidden;margin:12px auto;width:390px}
+body.phone header,body.phone #tray,body.phone #chat,body.phone #feed,body.phone #brief{position:static;width:390px;margin:12px auto;max-height:none}
+body.phone header{flex-wrap:wrap;padding:0}body.phone .metrics{gap:16px;width:100%}body.phone .ctrls{margin:0;flex-wrap:wrap}
+body.phone .phonewrap{display:flex;flex-direction:column}
+body.phone #tray{order:1}body.phone #brief{order:2}body.phone #chat{order:3}body.phone #stage{order:4}body.phone #feed{order:5}body.phone header{order:0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.pkt{display:none}}
+
+#stage{top:180px}
+#loop{position:fixed;top:100px;left:340px;right:380px;height:64px;padding:10px 18px;z-index:4;display:flex;align-items:center;gap:6px}
+#loop .n{flex:0 0 auto;text-align:center;min-width:86px}#loop .n b{display:block;font-size:18px;font-variant-numeric:tabular-nums}#loop .n span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+#loop .g{flex:1;position:relative;height:30px;display:flex;align-items:center;justify-content:center}
+#loop .g:before{content:"";position:absolute;left:0;right:0;top:50%;border-top:1px dashed var(--tan)}
+#loop .g i{position:absolute;top:calc(50% - 3px);left:0;width:6px;height:6px;border-radius:50%;background:var(--tan2);animation:run 4s var(--ease) infinite}
+#loop .g em{position:relative;font-style:normal;font-size:10.5px;padding:2px 8px;border-radius:9px;background:var(--bg2);color:var(--cream2);border:1px solid var(--line);white-space:nowrap}
+#loop .g em.leak{color:var(--warn);border-color:rgba(217,164,65,.4)}
+@keyframes run{to{left:calc(100% - 6px)}}
+#brief{top:180px}#tray{top:110px}
+.cost{font-size:11px;color:var(--muted);margin-left:auto;align-self:center}
+.hrs{height:4px;border-radius:4px;background:var(--line);margin:-6px 0 14px;overflow:hidden}.hrs i{display:block;height:100%;background:var(--tan);width:41%}
+.badge{display:inline-block;min-width:18px;padding:0 5px;border-radius:9px;background:var(--bad);color:#0B0A09;font-size:11px;font-weight:700;margin-left:4px;text-align:center}
+#ops{position:fixed;top:96px;bottom:24px;left:24px;width:600px;z-index:8;padding:22px 26px;display:flex;flex-direction:column;transform:translateX(-640px);opacity:0;transition:transform .7s var(--ease),opacity .5s var(--ease)}
+#ops.open{transform:none;opacity:1}#ops{background:rgba(21,19,17,.96)}body.light #ops{background:rgba(247,240,230,.97)}
+#ops nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}#ops nav button{font-size:12px;padding:6px 11px}#ops nav button[aria-selected=true]{background:var(--tan);color:#0B0A09;border-color:var(--tan)}
+#ops .pane{display:none;overflow:auto;flex:1;animation:slide .6s var(--ease)}#ops .pane.on{display:block}
+#ops h4{margin:0 0 4px;font-size:22px;font-weight:600}#ops .sub{color:var(--muted);font-size:13px;margin-bottom:18px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}.big{font-size:26px;font-weight:600;font-variant-numeric:tabular-nums}.lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.bar{height:8px;border-radius:6px;background:var(--line);overflow:hidden;margin:6px 0 2px}.bar i{display:block;height:100%;background:var(--tan);border-radius:6px;transition:width 1.2s var(--ease)}.bar i.w{background:var(--warn)}.bar i.b{background:var(--bad)}
+.gr{display:grid;grid-template-columns:90px 1fr 1fr 1fr;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);font-size:12px}
+.trip{color:var(--warn);font-weight:600}.chip{display:inline-block;font-size:11px;padding:2px 8px;border-radius:9px;border:1px solid var(--line);color:var(--cream2);margin:2px 4px 2px 0}
+.ok{color:var(--ok)}.warnc{color:var(--warn)}.badc{color:var(--bad)}
+.tog{display:flex;gap:4px;margin-bottom:14px}.tog button[aria-pressed=true]{background:var(--tan);color:#0B0A09}
+.ring{width:120px;height:120px}
+.sop{border-left:3px solid var(--tan)}
+table.cl{width:100%;border-collapse:collapse;font-size:13px}table.cl td{padding:9px 4px;border-bottom:1px solid var(--line)}
+.hb{display:inline-block;width:46px;height:6px;border-radius:4px;background:var(--line);vertical-align:middle;overflow:hidden}.hb i{display:block;height:100%}
+body.phone #loop{position:static;width:390px;margin:12px auto;height:auto;flex-wrap:wrap;order:1}body.phone #loop .g{min-width:40px}body.phone #loop .g em{display:none}
+body.phone #ops{position:static;width:390px;margin:12px auto;transform:none;opacity:1;order:2;max-height:none}body.phone #ops nav{flex-wrap:nowrap;overflow:auto}
+body.phone #tray{order:1}
+@media (prefers-reduced-motion:reduce){#loop .g i{display:none}#ops{transition:none}}
+
+/* spacing pass v5: floor first */
+#loop{overflow:hidden;gap:4px}#loop .n{min-width:72px}#loop .n span{font-size:9.5px;white-space:nowrap}#loop .g em:not(.leak){display:none}#loop .g em{font-size:10px}
+header{flex-wrap:nowrap}header button{white-space:nowrap;padding:7px 11px;font-size:12.5px}.ctrls{gap:6px;flex:0 0 auto}.metrics{gap:22px;padding:10px 20px;white-space:nowrap}.m b{font-size:21px}.brand{white-space:nowrap}
+#loop{top:112px;left:360px;right:400px;height:58px;opacity:.92}
+#stage{top:206px;bottom:24px;left:360px;right:400px}
+#brief{top:206px;width:300px;max-height:calc(100% - 470px);overflow:auto}
+#feed{width:300px;padding:14px 16px}#feed li{font-size:12.5px;line-height:1.45}
+#tray{top:112px;width:340px;max-height:calc(100% - 300px);display:flex;flex-direction:column;overflow:hidden;padding:18px}
+#cards{overflow:auto;flex:1;min-height:0;padding-right:4px}#tray .card{padding:12px;margin-bottom:10px}#tray .card p{font-size:13px;margin:4px 0 8px}
+#lowrisk{flex:0 0 auto;margin-top:10px}
+#chat{padding:12px 16px;opacity:.9;transition:opacity .4s var(--ease)}#chat:hover,#chat:focus-within{opacity:1}
+#chat:not(.open) .msgs,#chat:not(.open) form{display:none}#chat h3{margin:0;cursor:pointer}#chat.open h3{margin-bottom:10px}
+#ops:not(.open){pointer-events:none;visibility:hidden;transition:transform .7s var(--ease),opacity .5s var(--ease),visibility 0s .7s}
+body.phone #chat .msgs,body.phone #chat form{display:block}
+</style></head><body>
+<div class="phonewrap">
+<header>
+ <div class="brand glass">Keystone Clean<small>Agents · Live floor</small></div>
+ <div class="metrics glass">
+  <div class="m"><b data-roll="31.5" data-suf=" h">0</b><span>Hours saved · wk</span></div>
+  <div class="m"><b data-roll="18.40" data-pre="$">0</b><span>Spend today / $40</span></div>
+  <div class="m"><b data-roll="412" data-pre="$">0</b><span>Month / $900</span></div>
+  <div class="m"><b data-roll="6.2" data-suf=" / 15h">0</b><span>Your hours · wk</span></div>
+  <div class="m"><b data-roll="94" data-suf="%">0</b><span>Pace to goal</span></div>
+ </div>
+ <div class="ctrls glass">
+  <button id="opsb" aria-label="Operations drawer" title="Operations (Ops)">☰</button><button id="alb" aria-label="Exception alerts">Alerts<span class="badge" id="alc">3</span></button><button id="ask">⌘K Ask Atlas</button><button id="focus">Focus: All</button><button id="replay">Replay</button>
+  <button id="theme">Light</button><button id="dev">Phone</button><button class="kill" id="kill">Kill all</button>
+ </div>
+</header>
+<section id="loop" class="glass" aria-label="Lead to payout loop">
+ <div class="n"><b>23</b><span>Leads · Meta/GHL</span></div><div class="g"><i></i><em>Vector · 2h reply</em></div>
+ <div class="n"><b>11</b><span>Booked cleans</span></div><div class="g"><i style="animation-delay:1s"></i><em>Quill · confirms</em></div>
+ <div class="n"><b>9</b><span>Done today</span></div><div class="g"><i style="animation-delay:2s"></i><em class="leak">Ledger · 2 unbilled</em></div>
+ <div class="n"><b>$3.9k</b><span>Invoiced</span></div><div class="g"><i style="animation-delay:3s"></i><em>Ledger · Fri run</em></div>
+ <div class="n"><b>$1.6k</b><span>Cleaner payout</span></div></section>
+<section id="stage" aria-label="Isometric live floor of agent teams"></section>
+<aside id="brief" class="glass"><h3>Atlas briefing <span>8:00 AM</span></h3>
+ <div style="font-size:28px;font-weight:600">$61.2k <span style="font-size:13px;color:var(--muted);font-weight:400">of $65k Nov goal</span></div>
+ <div class="pace"><i id="paceBar"></i></div><div style="font-size:12px;color:var(--muted)">94% of pace · 2 days ahead on bookings</div>
+ <ol><li>Launch UES move-out ad test</li><li>Close 3 office quotes in Midtown</li><li>Win back 14 lapsed clients</li></ol>
+ <div style="margin-top:10px;font-size:13px;color:var(--tan2)">2 decisions need you</div></aside>
+<aside id="tray" class="glass" aria-live="polite"><h3>Needs me now <span><span id="cnt">4</span> · <span id="mins">29</span>m of your time</span></h3><div class="hrs"><i id="hrsb"></i></div><div id="cards"></div>
+ <button class="pri" id="lowrisk" style="width:100%">Batch low-risk (2) · saves 6m</button></aside>
+<aside id="chat" class="glass"><h3 id="chath" role="button" tabindex="0" aria-expanded="false">Chat with Atlas <span>▴</span></h3><div class="msgs" id="msgs"><div>Atlas: Morning. Sales is waiting on your OK for the Hudson Yards quote.</div></div>
+ <form id="cf"><input id="ci" placeholder="Ask Atlas…" aria-label="Message Atlas"><button class="pri">Send</button></form></aside>
+<aside id="feed" class="glass"><h3>Live handoffs</h3><ul id="fl"></ul></aside>
+</div>
+<aside id="ops" class="glass" aria-label="Operations"><h3>Operations <button id="opsx" aria-label="Close">✕</button></h3>
+<nav role="tablist"><button data-p="cad" aria-selected="true">Cadence</button><button data-p="grd">Guardrails</button><button data-p="hrs">Hours</button><button data-p="sop">Playbook</button><button data-p="alr">Alerts</button><button data-p="cap">Capacity</button><button data-p="cli">Clients</button><button data-p="loopd">Lead→Payout</button></nav>
+<div class="pane on" id="p-cad"><div class="tog"><button aria-pressed="true" data-c="mon">Mon · Plan</button><button aria-pressed="false" data-c="fri">Fri · Review</button></div>
+ <div id="cmon"><h4>Week 45 plan</h4><div class="sub">Atlas built this at 6:00 AM from your goal, cash and open decisions.</div>
+  <div class="row2"><div class="card"><div class="lbl">Goal · Nov</div><div class="big">$65k</div><div class="bar"><i style="width:94%"></i></div><small>$61.2k booked · 94% pace</small></div>
+  <div class="card"><div class="lbl">Cash on hand</div><div class="big">$48.3k</div><small>9.4 weeks runway · payroll Fri $6.1k</small></div></div>
+  <div class="card"><div class="lbl">This week's commitments</div><p><span class="chip">Marketing</span>Ship UES move-out test, kill worst variant Wed<br><span class="chip">Sales</span>Close 3 Midtown office quotes ($6.2k MRR)<br><span class="chip">CRM</span>Win back 14 lapsed · fix 2 unbilled jobs</p></div>
+  <div class="card"><div class="lbl">Open decisions · 3</div><p>Hudson Yards quote · SMS cap +200 · Hire 1099 cleaner</p><button class="pri">Lock week plan</button></div></div>
+ <div id="cfri" hidden><h4>Week 44 review</h4><div class="sub">Friday 4:00 PM · auto-scored</div>
+  <div class="row2"><div class="card"><div class="lbl">Revenue</div><div class="big ok">$15.8k</div><small>+8% vs plan</small></div><div class="card"><div class="lbl">Your hours</div><div class="big">11.5h</div><small>of 15h budget</small></div></div>
+  <div class="card"><p><span class="ok">✓</span> Hormozi-style offer test won (+31% CTR)<br><span class="ok">✓</span> 2 office deals closed<br><span class="badc">✗</span> Win-back stalled — SMS cap hit Thu<br><span class="warnc">◐</span> Reviews: 6 of 10 asked</p></div>
+  <div class="card"><div class="lbl">Atlas carries forward</div><p>Raise SMS cap or switch win-back to email · promote offer test to SOP</p></div></div></div>
+<div class="pane" id="p-grd"><h4>Guardrails</h4><div class="sub">Hard caps per team. When a cap trips, the bot auto-pauses and only that item reaches you.</div>
+ <div class="gr lbl"><span>Team</span><span>Spend / day</span><span>SMS / day</span><span>Outbound / day</span></div>
+ <div class="gr"><b>Marketing</b><span>$11 / $20<div class="bar"><i style="width:55%"></i></div></span><span>—</span><span>40 / 120<div class="bar"><i style="width:33%"></i></div></span></div>
+ <div class="gr"><b>Sales</b><span>$4 / $10<div class="bar"><i style="width:40%"></i></div></span><span>62 / 150<div class="bar"><i style="width:41%"></i></div></span><span>88 / 100<div class="bar"><i class="w" style="width:88%"></i></div><small class="warnc">88% · Vector slows at 90%</small></span></div>
+ <div class="gr"><b>CRM</b><span>$3.4 / $10<div class="bar"><i style="width:34%"></i></div></span><span class="trip">500 / 500<div class="bar"><i class="w" style="width:100%"></i></div>TRIPPED</span><span>12 / 60<div class="bar"><i style="width:20%"></i></div></span></div>
+ <div class="card" style="margin-top:18px;border-color:rgba(217,164,65,.45)"><div class="k" style="color:var(--warn)">Cap tripped → auto-paused</div><p><b>Relay</b> hit 500 SMS at 10:42 AM. Relay paused itself; 14 win-back texts queued, nothing sent over cap.</p><div class="row"><button class="pri" data-g>Raise to 700 ($6)</button><button data-g>Switch to email</button><button data-g>Hold till tomorrow</button></div></div>
+ <div class="sub" style="margin-top:12px">Pattern: cap ≥ 90% → slow down · 100% → auto-pause + 1 alert · never exceeds cap without you.</div></div>
+<div class="pane" id="p-hrs"><h4>Your hours</h4><div class="sub">Budget 15h/week. Every approval shows what it costs you.</div>
+ <div style="display:flex;gap:28px;align-items:center;margin-bottom:18px"><svg class="ring" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="var(--line)" stroke-width="10"/><circle cx="60" cy="60" r="50" fill="none" stroke="var(--tan)" stroke-width="10" stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="184" transform="rotate(-90 60 60)"/><text x="60" y="58" text-anchor="middle" font-size="22" font-weight="600" fill="var(--cream)">6.2h</text><text x="60" y="76" text-anchor="middle" font-size="10" fill="var(--muted)">of 15h</text></svg>
+ <div><div class="lbl">Left this week</div><div class="big">8.8h</div><small>On track · Atlas saved you 31.5h</small></div></div>
+ <div class="card"><div class="lbl">Where your time went</div><p>Approvals 2.1h · Calls 2.4h · Atlas chat 0.9h · Review 0.8h</p></div>
+ <div class="card"><div class="lbl">Next batch window · Today 4:30 PM</div><p>9 low-risk items bundled · about 6 min · reviewed in one pass</p><button class="pri">Approve batch now</button></div></div>
+<div class="pane" id="p-sop"><h4>Experiment → Playbook</h4><div class="sub">Winning tests get promoted into SOPs that every bot reuses.</div>
+ <div class="card"><div class="k">Experiment · Marketing · done</div><p>UES move-out ad · Variant B “Deposit-back guarantee” — CTR 3.8% vs 2.1%, CPL $14 vs $27 (n=1,940)</p><div class="row"><button class="pri" data-sop>Promote to SOP</button><button>Run 1 more week</button></div></div>
+ <div class="card"><div class="k">Experiment · Sales · running</div><p>Callback-in-5-min script · 9 of 14 booked (64%) vs 41% baseline · 3 days left</p></div>
+ <div class="lbl" style="margin:18px 0 8px">Playbook · 6 SOPs</div><div id="sops">
+ <div class="card sop"><b>Office quote in 1 call</b><br><small>Reused 22× by Quill, Vector · +18% close</small></div>
+ <div class="card sop"><b>Win-back 3-touch</b><br><small>Reused 9× by Relay, Ledger · 21% return</small></div>
+ <div class="card sop"><b>Review ask after 2nd clean</b><br><small>Reused 41× by Ledger · 4.9★ avg</small></div></div></div>
+<div class="pane" id="p-alr"><h4>Exception alerts</h4><div class="tog"><button aria-pressed="true" id="quiet">Quiet mode on</button></div><div class="sub" id="qsub">Only blocked, overspend and churn risk reach you. 47 routine events silenced today.</div>
+ <div class="card" style="border-color:rgba(217,164,65,.45)"><div class="k" style="color:var(--warn)">Blocked · CRM</div><p>Relay paused at SMS cap. 14 texts waiting.</p></div>
+ <div class="card"><div class="k badc">Overspend forecast · Marketing</div><p>At current burn, Meta spend lands at 118% of month cap on Nov 26.</p></div>
+ <div class="card"><div class="k badc">Churn risk · Chelsea Lofts</div><p>2 complaints + skipped clean · $1,240/mo at risk. Ledger drafted an apology + free touch-up.</p></div>
+ <div id="noise" hidden><div class="card"><div class="k">Routine</div><p>Echo scheduled 4 posts · Ledger merged 31 duplicates · Vector logged 12 calls · +44 more</p></div></div></div>
+<div class="pane" id="p-cap"><h4>Capacity</h4><div class="sub">Pipeline vs delivery, next 3 weeks.</div>
+ <div class="row2"><div class="card"><div class="lbl">Booked + likely</div><div class="big">412h</div><div class="bar"><i class="w" style="width:100%"></i></div></div><div class="card"><div class="lbl">Crew can deliver</div><div class="big">356h</div><div class="bar"><i style="width:86%"></i></div></div></div>
+ <div class="card" style="border-color:var(--tan)"><div class="k">Atlas proposes · Hire</div><p><b>1099 cleaner, 30h/wk</b> starting Nov 16<br>Cost 30h × $24 = <b>$720/wk</b> · Covers 30h of 56h gap → $1,560/wk revenue · <b class="ok">+$840/wk margin</b><br><small>Rest of gap: overtime for Maria & Dee (26h, $780).</small></p><div class="row"><button class="pri">Start hiring</button><button>Not yet</button></div></div>
+ <div class="card"><div class="k">Next trigger</div><p>Coordinator hire at 600h/wk or 8+ cleaners (~Feb). Est. $3.8k/mo, frees 5h/wk of your time.</p></div>
+ <div class="card"><div class="k">Fire / cut signal</div><p>None. Lowest crew rating 4.6★. Flag if callbacks &gt; 3/mo.</p></div></div>
+<div class="pane" id="p-cli"><h4>Client health</h4><div class="sub">412 clients · 4 at risk · 14 in win-back. Owned by Ledger & Relay.</div>
+ <table class="cl"><tr><td><b>Chelsea Lofts</b><br><small>Office · $1,240/mo</small></td><td><span class="hb"><i style="width:28%;background:var(--bad)"></i></span> 28</td><td><small>2 complaints</small></td><td><button data-wb>Ledger: fix</button></td></tr>
+ <tr><td><b>R. Patel</b><br><small>Weekly · $520/mo</small></td><td><span class="hb"><i style="width:41%;background:var(--warn)"></i></span> 41</td><td><small>Skipped 2</small></td><td><button data-wb>Check-in</button></td></tr>
+ <tr><td><b>Gramercy Dental</b><br><small>3×/wk · $1,900/mo</small></td><td><span class="hb"><i style="width:48%;background:var(--warn)"></i></span> 48</td><td><small>Late invoice</small></td><td><button data-wb>Ledger: call</button></td></tr>
+ <tr><td><b>S. Moreno</b><br><small>Biweekly · $280/mo</small></td><td><span class="hb"><i style="width:52%;background:var(--warn)"></i></span> 52</td><td><small>No reply 3 wks</small></td><td><button data-wb>Check-in</button></td></tr></table>
+ <div class="card" style="margin-top:16px"><div class="k">Win-back queue · Relay (paused at cap)</div><p>14 lapsed clients · $3,960/mo potential · 3-touch SOP ready</p><div class="row"><button class="pri" data-wb>Send via email instead</button></div></div></div>
+<div class="pane" id="p-loopd"><h4>Lead → job → payout</h4><div class="sub">Every gap has an owning bot. Leaks show in tan-gold.</div>
+ <table class="cl"><tr><td>Lead → reply</td><td>Vector</td><td class="ok">avg 2h · 23 open</td></tr><tr><td>Reply → booked</td><td>Quill</td><td>48% · 11 booked</td></tr><tr><td>Booked → done</td><td>Crew + Atlas</td><td class="ok">9 done · 0 no-shows</td></tr><tr><td>Done → invoice</td><td>Ledger</td><td class="warnc">2 unbilled ($410)</td></tr><tr><td>Invoice → payout</td><td>Ledger</td><td>Fri run · $1.6k to 5 cleaners</td></tr></table></div>
+</aside>
+<dialog id="dlg"><h3 style="color:var(--bad)">Pause every agent?</h3><p>All 10 agents stop mid-task. Nothing is lost; you can resume.</p><div style="display:flex;gap:8px;justify-content:flex-end"><button id="no">Cancel</button><button class="kill" id="yes">Pause all</button></div></dialog>
+<script>
+const NS="http://www.w3.org/2000/svg";const S=26;const CX=800,CY=250;
+const P=(x,y,z=0)=>[CX+(x-y)*S*0.866,CY+(x+y)*S*0.5-z*S];
+const pts=a=>a.map(p=>P(...p).join(",")).join(" ");
+let svg='';
+function box(x,y,z,w,d,h,id,glow){const t=z+h;
+ return `<g>
+ <polygon points="${pts([[x,y+d,z],[x+w,y+d,z],[x+w,y+d,t],[x,y+d,t]])}" fill="var(--left)"/>
+ <polygon points="${pts([[x+w,y,z],[x+w,y+d,z],[x+w,y+d,t],[x+w,y,t]])}" fill="var(--right)"/>
+ <polygon points="${pts([[x,y,t],[x+w,y,t],[x+w,y+d,t],[x,y+d,t]])}" fill="var(--top)" stroke="rgba(166,123,91,.35)"/>
+ ${glow?`<polyline points="${pts([[x,y+d,t],[x+w,y+d,t],[x+w,y,t]])}" fill="none" stroke="var(--tan2)" stroke-width="1.5" opacity=".7" class="breathe"/>`:''}</g>`}
+function grid(x,y,z,w,d){let g='';for(let i=1;i<w;i+=2)g+=`<line x1="${P(x+i,y,z)[0]}" y1="${P(x+i,y,z)[1]}" x2="${P(x+i,y+d,z)[0]}" y2="${P(x+i,y+d,z)[1]}"/>`;for(let j=1;j<d;j+=2)g+=`<line x1="${P(x,y+j,z)[0]}" y1="${P(x,y+j,z)[1]}" x2="${P(x+w,y+j,z)[0]}" y2="${P(x+w,y+j,z)[1]}"/>`;return `<g stroke="rgba(166,123,91,.12)">${g}</g>`}
+const STATE={working:'#c79b78',waiting:'#e8d6b8',blocked:'#d9a441',idle:'#8f8274',paused:'#5d544c'};
+function bot(x,y,z,state,name,task,scale=1){const [px,py]=P(x,y,z);const c=STATE[state];const k=scale;
+ const cls=state==='working'?'pulse':state==='waiting'?'breathe':'';
+ return `<g class="bot" transform="translate(${px},${py}) scale(${k})" data-name="${name}">
+ <ellipse cx="0" cy="0" rx="14" ry="6" fill="${c}" opacity=".35" class="${cls}"/>
+ <g class="bob">
+ <rect x="-5" y="-14" width="4" height="12" rx="2" fill="#d8cdbf"/><rect x="1" y="-14" width="4" height="12" rx="2" fill="#cbbfb0"/>
+ <path d="M-9 -32 Q-10 -14 0 -13 Q10 -14 9 -32 Q0 -37 -9 -32Z" fill="#efe6da"/>
+ <path d="M3 -32 Q9 -30 9 -22 Q8 -15 1 -13Z" fill="#d6c9b8"/>
+ <rect x="-13" y="-30" width="4" height="13" rx="2" fill="#e2d7c9" transform="rotate(${state==='working'?-25:8} -11 -30)"/>
+ <rect x="9" y="-30" width="4" height="13" rx="2" fill="#d2c5b4" transform="rotate(${state==='working'?-40:-8} 11 -30)"/>
+ <ellipse cx="0" cy="-45" rx="10" ry="9.5" fill="#f5eee4"/>
+ <path d="M-7 -47 Q0 -51 7 -47 L6 -42 Q0 -40 -6 -42Z" fill="#1a1411"/>
+ <circle cx="-3" cy="-45" r="1.4" fill="${c}" class="${cls}"/><circle cx="3" cy="-45" r="1.4" fill="${c}" class="${cls}"/>
+ <circle cx="0" cy="-56" r="1.8" fill="${c}" class="${cls}"/>
+ </g>
+ <g transform="translate(0,${-74/k})" font-size="${11/k}" text-anchor="middle"><text fill="var(--cream)" font-weight="600">${name}</text></g>
+ <title>${name} · ${state} · ${task}</title></g>`}
+function holo(x,y,z,w,h,kind,label){const [px,py]=P(x,y,z);let inner='';
+ if(kind==='bars')inner=[18,30,22,40,34].map((v,i)=>`<rect x="${8+i*14}" y="${h-10-v}" width="9" height="${v}" rx="2" fill="var(--tan2)" opacity="${.5+i*.1}"/>`).join('');
+ if(kind==='funnel')inner=[0,1,2,3].map(i=>`<rect x="${10+i*8}" y="${14+i*12}" width="${w-20-i*16}" height="8" rx="3" fill="var(--tan2)" opacity="${.9-i*.15}"/>`).join('');
+ if(kind==='ad')inner=`<rect x="8" y="12" width="${w-16}" height="${h*.45}" rx="4" fill="rgba(199,155,120,.35)"/><circle cx="${w*.3}" cy="${12+h*.22}" r="7" fill="var(--cream2)" opacity=".7"/><rect x="8" y="${h*.65}" width="${w*.7}" height="4" rx="2" fill="var(--cream2)"/><rect x="8" y="${h*.75}" width="${w*.45}" height="4" rx="2" fill="var(--cream2)" opacity=".6"/>`;
+ if(kind==='quote')inner=`${[0,1,2,3].map(i=>`<rect x="10" y="${14+i*11}" width="${w*.5}" height="4" rx="2" fill="var(--cream2)" opacity=".7"/><rect x="${w-30}" y="${14+i*11}" width="20" height="4" rx="2" fill="var(--tan2)"/>`).join('')}<text x="${w-10}" y="${h-8}" text-anchor="end" font-size="11" fill="var(--cream)" font-weight="600">$2,480</text>`;
+ if(kind==='kanban')inner=[0,1,2].map(c=>[0,1,2].slice(0,3-c%2).map(r=>`<rect x="${8+c*((w-16)/3)}" y="${12+r*14}" width="${(w-28)/3}" height="10" rx="2" fill="var(--tan2)" opacity="${.4+r*.15}"/>`).join('')).join('');
+ if(kind==='globe')inner=`<circle cx="${w/2}" cy="${h/2}" r="${h*.36}" fill="none" stroke="var(--tan2)"/><ellipse cx="${w/2}" cy="${h/2}" rx="${h*.15}" ry="${h*.36}" fill="none" stroke="var(--tan2)" opacity=".6"/><line x1="${w/2-h*.36}" y1="${h/2}" x2="${w/2+h*.36}" y2="${h/2}" stroke="var(--tan2)" opacity=".6"/><text x="${w/2}" y="${h-4}" font-size="10" text-anchor="middle" fill="var(--cream)">94% pace</text>`;
+ return `<g class="holo" transform="translate(${px-w/2},${py-h})"><path d="M${w/2-10} ${h} L${w/2} ${h+30} L${w/2+10} ${h}Z" fill="url(#beam)"/>
+ <rect width="${w}" height="${h}" rx="8" fill="rgba(199,155,120,.10)" stroke="rgba(232,214,184,.45)"/>${inner}
+ <text x="8" y="-6" font-size="10" fill="var(--muted)" letter-spacing=".08em">${label}</text></g>`}
+function desk(x,y,z){return box(x,y,z,1.6,.8,.5)+`<polygon points="${pts([[x+.3,y+.1,z+.5],[x+1.2,y+.1,z+.5],[x+1.2,y+.1,z+1.1],[x+.3,y+.1,z+1.1]])}" fill="rgba(199,155,120,.4)" stroke="var(--tan2)" stroke-width=".6"/>`}
+function plant(x,y,z){const [px,py]=P(x,y,z);return `<g transform="translate(${px},${py})"><path d="M-6 0 L6 0 L4 -10 L-4 -10Z" fill="#6b4f3c"/><ellipse cx="0" cy="-16" rx="9" ry="8" fill="#6f7a55"/><ellipse cx="-5" cy="-22" rx="5" ry="6" fill="#86906a"/></g>`}
+function lamp(x,y,z){const [px,py]=P(x,y,z);return `<g transform="translate(${px},${py})"><line y2="-34" stroke="#8a7766" stroke-width="2"/><circle cy="-36" r="5" fill="#f0d7b3"/><circle cy="-36" r="18" fill="url(#warm)" class="breathe"/></g>`}
+function capTag(x,y,z){const [px,py]=P(x,y,z);return `<g transform="translate(${px+26},${py-8})" style="cursor:pointer" onclick="openOps('grd')"><rect x="0" y="-14" width="128" height="34" rx="9" fill="rgba(11,10,9,.7)" stroke="#d9a441" stroke-opacity=".6"/><path d="M10 -6 l7 -3 l7 3 v6 c0 5 -4 8 -7 9 c-3 -1 -7 -4 -7 -9z" fill="none" stroke="#d9a441" stroke-width="1.4"/><text x="30" y="-1" font-size="10" fill="#d9a441" font-weight="600">CAP HIT · 500 SMS</text><text x="30" y="12" font-size="9.5" fill="#cdbfae">auto-paused · 1 alert</text></g>`}
+function label(x,y,z,t,sub){const [px,py]=P(x,y,z);return `<g transform="translate(${px},${py})"><text font-size="13" font-weight="600" fill="var(--cream)" letter-spacing=".12em" text-anchor="middle">${t}</text><text y="16" font-size="11" fill="var(--muted)" text-anchor="middle">${sub}</text></g>`}
+function path(id,a){return `<path id="${id}" d="M${a.map(p=>P(...p).join(' ')).join(' L')}" fill="none" stroke="var(--tan2)" stroke-width="2" opacity=".55" class="flow"/>`}
+function pkt(id,dur,delay){return `<g class="pkt"><rect x="-6" y="-12" width="12" height="9" rx="2" fill="#f0d7b3" stroke="var(--tan)"/><animateMotion dur="${dur}s" begin="${delay}s" repeatCount="indefinite" rotate="0"><mpath href="#${id}"/></animateMotion></g>`}
+// layout (iso units)
+const W={ceo:{x:-4,y:-4,z:5,w:8,d:8},mkt:{x:-7,y:12,z:0,w:9,d:8},sal:{x:8,y:9,z:0,w:9,d:8},crm:{x:13,y:-7,z:0,w:8,d:9}};
+svg+=`<defs><linearGradient id="beam" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#c79b78" stop-opacity=".0"/><stop offset="1" stop-color="#c79b78" stop-opacity=".5"/></linearGradient><radialGradient id="warm"><stop offset="0" stop-color="#f0d7b3" stop-opacity=".45"/><stop offset="1" stop-color="#f0d7b3" stop-opacity="0"/></radialGradient></defs>`;
+// particles
+for(let i=0;i<40;i++){const x=Math.random()*1600,y=Math.random()*1000;svg+=`<circle cx="${x}" cy="${y}" r="${Math.random()*1.6+.4}" fill="#e8d6b8" opacity=".25"><animate attributeName="cy" values="${y};${y-40};${y}" dur="${10+Math.random()*10}s" repeatCount="indefinite"/></circle>`}
+// pillars + bridges
+svg+=`<g opacity=".9">${box(3.2,3.2,0,.8,.8,5)}</g>`;
+svg+=path('p1',[[-2,4,5],[-2,9,2],[-1,12,0.6]])+path('p2',[[2,4,5],[6,8,2],[9,9,0.6]])+path('p3',[[4,0,5],[9,-1,2],[13,-2,0.6]])+path('p4',[[2,17,0.6],[8,14,0.6]])+path('p5',[[13,9,0.6],[16,2,0.6]]);
+const wings=[
+ ['ceo',W.ceo,'ATLAS · CEO','Orchestrating 3 teams'],
+ ['mkt',W.mkt,'MARKETING','Lead: Lumen · 2 members'],
+ ['sal',W.sal,'SALES','Lead: Quill · 2 members'],
+ ['crm',W.crm,'CRM','Lead: Ledger · 2 members']];
+const content={
+ ceo:w=>desk(w.x+3,w.y+3,w.z+.5)+holo(w.x+4,w.y+2,w.z+3.6,110,80,'globe','REVENUE PACE')+bot(w.x+4,w.y+5,w.z+.5,'working','Atlas','Synthesizing daily brief',1.25)+lamp(w.x+1,w.y+1,w.z+.5)+plant(w.x+7,w.y+1,w.z+.5),
+ mkt:w=>desk(w.x+1,w.y+2,w.z+.5)+desk(w.x+5,w.y+5,w.z+.5)+holo(w.x+2,w.y+1.5,w.z+3,110,74,'ad','AD CREATIVE · UES MOVE-OUT')+holo(w.x+7,w.y+1,w.z+3,96,60,'bars','CTR · 3 VARIANTS')+bot(w.x+2,w.y+4,w.z+.5,'working','Lumen','Drafting 3 ad variants')+bot(w.x+6,w.y+7,w.z+.5,'waiting','Prism','Waiting: approve test')+bot(w.x+8,w.y+5,w.z+.5,'idle','Echo','Scheduling posts')+plant(w.x+.5,w.y+7,w.z+.5),
+ sal:w=>desk(w.x+1,w.y+2,w.z+.5)+desk(w.x+5,w.y+4,w.z+.5)+holo(w.x+2,w.y+1.5,w.z+3,104,70,'quote','QUOTE · HUDSON YARDS')+holo(w.x+7.2,w.y+.8,w.z+3,96,66,'funnel','PIPELINE · 23 LEADS')+bot(w.x+2,w.y+4.5,w.z+.5,'waiting','Quill','Quote awaits you',1.1)+bot(w.x+6,w.y+6.5,w.z+.5,'working','Vector','Building call list')+lamp(w.x+8,w.y+7,w.z+.5),
+ crm:w=>desk(w.x+1,w.y+2,w.z+.5)+holo(w.x+2,w.y+1.5,w.z+3,110,66,'kanban','CLIENT BOARD · 412')+holo(w.x+7,w.y+1.2,w.z+3,90,60,'bars','WIN-BACK REPLIES')+bot(w.x+2,w.y+5,w.z+.5,'working','Ledger','Cleaning 412 records')+bot(w.x+6.5,w.y+6,w.z+.5,'blocked','Relay','Auto-paused: SMS cap 500/500')+capTag(w.x+6.5,w.y+6,w.z+.5)+plant(w.x+1,w.y+8,w.z+.5)};
+for(const [k,w,t,s] of wings){svg+=`<g class="wing" data-team="${k}">${box(w.x,w.y,w.z-.6,w.w,w.d,.6,null,true)}${box(w.x+.2,w.y+.2,w.z,w.w-.4,w.d-.4,.5)}${grid(w.x+.2,w.y+.2,w.z+.5,w.w-.4,w.d-.4)}${content[k](w)}${label(w.x+w.w/2,w.y+w.d+1.4,w.z-.6,t,s)}</g>`}
+svg+=pkt('p1',6,0)+pkt('p2',5,1.5)+pkt('p3',7,3)+pkt('p4',4,.5)+pkt('p5',4.5,2);
+document.getElementById('stage').innerHTML=`<svg viewBox="80 40 1440 900" preserveAspectRatio="xMidYMid meet" role="img"><title>Agent teams floor</title>${svg}</svg>`;
+{const sv=document.querySelector('#stage svg'),b=sv.querySelector('g.wing').parentNode.getBBox();let x=1e9,y=1e9,X=-1e9,Y=-1e9;sv.querySelectorAll('g.wing').forEach(g=>{const r=g.getBBox();x=Math.min(x,r.x);y=Math.min(y,r.y);X=Math.max(X,r.x+r.width);Y=Math.max(Y,r.y+r.height)});sv.setAttribute('viewBox',`${x-40} ${y-40} ${X-x+80} ${Y-y+80}`)}
+// numbers roll
+document.querySelectorAll('[data-roll]').forEach(el=>{const t=+el.dataset.roll,d=t%1?2:0,st=performance.now();(function f(n){const p=Math.min(1,(n-st)/700),e=1-Math.pow(1-p,4);el.textContent=(el.dataset.pre||'')+(t*e).toFixed(d)+(el.dataset.suf||'');if(p<1)requestAnimationFrame(f)})(st)});
+setTimeout(()=>paceBar.style.width='94%',200);
+// approvals
+const A=[['Quote · Sales','Hudson Yards office, 3×/wk deep clean — $2,480/mo','hi',12],['Experiment · Marketing','UES move-out ad test, 3 variants, $60 cap','lo',3],['Call list · Sales','14 Midtown property managers, today 2–5 PM','lo',3],['Guardrail · CRM','Relay auto-paused at SMS cap 500 — raise to 700 ($6) or switch to email?','hi',11]];
+cards.innerHTML=A.map((a,i)=>`<div class="card" data-m="${a[3]}" data-risk="${a[2]}"><div class="k">${a[0]} ${a[2]==='hi'?'· review':''}</div><p>${a[1]}</p><div class="row"><button class="pri" data-a>Approve</button><button>Edit</button><button data-a>Reject</button><span class="cost">costs you ${a[3]}m</span></div></div>`).join('');
+const upd=()=>{const l=[...cards.querySelectorAll('.card:not(.gone)')];cnt.textContent=l.length;mins.textContent=l.reduce((s,c)=>s+ +c.dataset.m,0)};
+cards.onclick=e=>{if(e.target.hasAttribute('data-a')){const c=e.target.closest('.card');c.classList.add('gone');addFeed('You',(e.target.textContent==='Approve'?'approved ':'rejected ')+c.querySelector('.k').textContent);upd()}};
+lowrisk.onclick=()=>{document.querySelectorAll('.card[data-risk=lo]').forEach(c=>c.classList.add('gone'));addFeed('You','approved 2 low-risk actions');upd()};
+// feed
+const F=[['Atlas','asked Lumen for 3 UES move-out ad variants'],['Lumen','handed variant B to Prism for review'],['Vector','pulled 14 Midtown leads from Ledger'],['Quill','escalated Hudson Yards quote to you'],['Relay','blocked — SMS quota reached'],['Ledger','merged 31 duplicate clients']];
+function addFeed(w,t){const li=document.createElement('li');li.innerHTML=`<b>${w}</b> ${t}`;fl.prepend(li);while(fl.children.length>4)fl.lastChild.remove()}
+F.slice(0,4).reverse().forEach(f=>addFeed(...f));let fi=4;setInterval(()=>{if(!document.body.classList.contains('killed'))addFeed(...F[fi++%F.length])},5000);
+// controls
+theme.onclick=()=>{document.body.classList.toggle('light');theme.textContent=document.body.classList.contains('light')?'Dark':'Light'};
+dev.onclick=()=>{document.body.classList.toggle('phone');dev.textContent=document.body.classList.contains('phone')?'Desktop':'Phone'};
+const order=['all','mkt','sal','crm'];let fo=0;focus.onclick=()=>{const t=order[++fo%4];focus.textContent='Focus: '+({all:'All',mkt:'Marketing',sal:'Sales',crm:'CRM'})[t];document.querySelectorAll('g.wing').forEach(g=>g.classList.toggle('dim',t!=='all'&&g.dataset.team!==t&&g.dataset.team!=='ceo'))};
+replay.onclick=()=>{fl.innerHTML='';F.forEach((f,i)=>setTimeout(()=>addFeed(...f),i*500))};
+kill.onclick=()=>dlg.showModal();no.onclick=()=>dlg.close();yes.onclick=()=>{document.body.classList.toggle('killed');kill.textContent=document.body.classList.contains('killed')?'Resume all':'Kill all';dlg.close();addFeed('You',document.body.classList.contains('killed')?'paused all agents':'resumed all agents')};
+const tgChat=o=>{chat.classList.toggle('open',o);chath.setAttribute('aria-expanded',chat.classList.contains('open'))};chath.onclick=()=>tgChat();chath.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();tgChat()}};const askF=()=>{tgChat(true);ci.focus()};ask.onclick=askF;addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();askF()}});
+cf.onsubmit=e=>{e.preventDefault();if(!ci.value)return;msgs.innerHTML+=`<div class="me">You: ${ci.value.replace(/</g,'&lt;')}</div>`;ci.value='';setTimeout(()=>{msgs.innerHTML+=`<div>Atlas: On it — I'll route that to the right team and report back.</div>`;msgs.scrollTop=1e4},700)};
+const q=new URLSearchParams(location.search);if(q.get('light'))theme.click();if(q.get('phone'))dev.click();
+
+// ops drawer
+const openOps=p=>{ops.classList.add('open');if(p)ops.querySelector(`nav [data-p=${p}]`).click()};
+opsb.onclick=()=>ops.classList.contains('open')?ops.classList.remove('open'):openOps();opsx.onclick=()=>ops.classList.remove('open');
+alb.onclick=()=>openOps('alr');
+ops.querySelector('nav').onclick=e=>{const b=e.target.closest('[data-p]');if(!b)return;ops.querySelectorAll('nav button').forEach(x=>x.setAttribute('aria-selected',x===b));ops.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id==='p-'+b.dataset.p))};
+document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-c]').forEach(x=>x.setAttribute('aria-pressed',x===b));cmon.hidden=b.dataset.c!=='mon';cfri.hidden=b.dataset.c!=='fri'});
+quiet.onclick=()=>{const on=quiet.getAttribute('aria-pressed')!=='true';quiet.setAttribute('aria-pressed',on);quiet.textContent='Quiet mode '+(on?'on':'off');noise.hidden=on;alc.textContent=on?3:50;qsub.textContent=on?'Only blocked, overspend and churn risk reach you. 47 routine events silenced today.':'Showing everything (50 today).'};
+document.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{addFeed('You','Guardrail: '+b.textContent+' → Relay');b.closest('.card').querySelector('p').innerHTML='<b>Resolved.</b> '+b.textContent+'. Relay resumes on next cycle.'});
+document.querySelectorAll('[data-sop]').forEach(b=>b.onclick=()=>{const d=document.createElement('div');d.className='card sop';d.style.animation='slide .8s var(--ease)';d.innerHTML='<b>Deposit-back guarantee ad</b><br><small>New · Lumen, Prism will reuse in all move-out ads</small>';sops.prepend(d);b.disabled=true;b.textContent='Promoted ✓';addFeed('Atlas','promoted Variant B to playbook SOP')});
+document.querySelectorAll('[data-wb]').forEach(b=>b.onclick=()=>{b.textContent='Queued ✓';b.disabled=true;addFeed('Ledger','took client health action')});
+const q2=q.get('ops');if(q2){ops.style.transition='none';openOps(q2)}
+</script></body></html>

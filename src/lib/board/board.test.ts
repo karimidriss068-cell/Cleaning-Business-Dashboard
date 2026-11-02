@@ -54,9 +54,9 @@ function fakes(opts: { capMicros?: number; synthesisText?: string; failAdvisor?:
 }
 
 describe("the advisors", () => {
-  it("are eight original lenses, three on the default board, and never named as real people", () => {
-    expect(ADVISORS).toHaveLength(8);
-    expect(new Set(ADVISOR_KEYS).size).toBe(8);
+  it("are eleven original lenses, three on the default board, and never named as real people", () => {
+    expect(ADVISORS).toHaveLength(11);
+    expect(new Set(ADVISOR_KEYS).size).toBe(11);
     expect(DEFAULT_ADVISORS).toEqual(["cash_ruin", "offers_pricing", "operations"]);
     for (const a of ADVISORS) expect(`${a.name} ${a.persona}`).not.toMatch(/"|“|”|\bsaid\b|\bonce said\b/);
   });
@@ -67,7 +67,7 @@ describe("cost estimate", () => {
   it("counts one call per advisor per round plus the synthesis", () => {
     expect(estimateSession(base).calls).toBe(4);
     expect(estimateSession({ ...base, rounds: 2 }).calls).toBe(7);
-    expect(estimateSession({ ...base, advisors: ADVISOR_KEYS }).calls).toBe(9);
+    expect(estimateSession({ ...base, advisors: ADVISOR_KEYS }).calls).toBe(12);
   });
   it("grows with advisors, rounds, question length and the snapshot", () => {
     const e = (o: Partial<typeof base>) => estimateSession({ ...base, ...o }).micros;
