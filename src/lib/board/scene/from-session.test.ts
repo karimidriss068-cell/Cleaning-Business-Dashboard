@@ -75,3 +75,12 @@ describe("sceneFromSession", () => {
   });
 
 });
+
+describe("salvageRaw", () => {
+  it("reads the verdict and complete splits from a cut-off synthesis", async () => {
+    const { salvageRaw } = await import("@/lib/board/scene/from-session");
+    const raw = '{"verdict":"Keep backups \\"on call\\".","summary":"x","agreements":["a"],"disagreements":["d1","d2"],"actions":[{"title":"Wr';
+    expect(salvageRaw(raw)).toEqual({ verdict: 'Keep backups "on call".', dissent: ["d1", "d2"] });
+    expect(salvageRaw('{"summ')).toBeNull();
+  });
+});

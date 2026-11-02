@@ -114,7 +114,7 @@ describe("running a session", () => {
   it("sets max_tokens on every call and caches the persona prompt", async () => {
     const f = fakes();
     await runBoard(input(), null, USER, f.deps);
-    for (const b of f.bodies) { expect(b.max_tokens).toBeGreaterThan(0); expect(b.max_tokens).toBeLessThanOrEqual(1200); expect(b.cached).toBe(true); }
+    for (const b of f.bodies) { expect(b.max_tokens).toBeGreaterThan(0); expect(b.max_tokens).toBeLessThanOrEqual(2500); expect(b.cached).toBe(true); }
     expect(f.bodies.filter((b) => b.model === ADVISOR_MODEL).every((b) => b.max_tokens === 700)).toBe(true);
   });
   it("runs a second round where each advisor sees the others' round-1 answers", async () => {

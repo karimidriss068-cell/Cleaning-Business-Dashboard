@@ -8,12 +8,12 @@ import type { AdvisorOutput } from "@/lib/schemas/board";
 // get in unless it is typed into the question itself.
 
 /** Bump when any prompt wording changes, so cached answers made with older wording are not reused. */
-export const PROMPT_VERSION = "board-2-brains";
+export const PROMPT_VERSION = "board-3-fullsynth";
 
 /** Longest reply passed on to the next round or the synthesis. */
 export const PASSED_ON_CHARS = 3000;
 export const ADVISOR_MAX_TOKENS = 700;
-export const SYNTHESIS_MAX_TOKENS = 1200;
+export const SYNTHESIS_MAX_TOKENS = 2500;
 
 const RULES = [
   "You are an AI advisor in a private business review. You are an AI approximation based on a named expert's public teachings, not a real person. Never claim to be that person or speak as them in the first person about their life.",
