@@ -6,10 +6,15 @@ import { GlassPanel } from "@/components/system/glass-panel";
 import { StatTile } from "@/components/system/stat-tile";
 import { StatusPill } from "@/components/system/status-pill";
 import { SynthesisPanel } from "@/components/board/synthesis-panel";
+import { Boardroom } from "@/components/board/scene/boardroom";
+import { buildScript } from "@/lib/board/scene/script";
+import { sceneFromSession } from "@/lib/board/scene/from-session";
 
 /** One saved session: the question, what it cost, each advisor's answer by round, and the synthesis. */
 export function SessionView({ session }: { session: BoardSessionRow }) {
   const rounds = Array.from({ length: session.rounds }, (_, i) => i + 1);
+  // Replayed from what was saved: no model is called to watch it.
+  const scene = sceneFromSession(session);
   return (
     <div className="space-y-6" data-testid="board-session">
       <GlassPanel as="section" aria-labelledby="board-q" className="kc-enter space-y-2 p-5">
@@ -32,9 +37,19 @@ export function SessionView({ session }: { session: BoardSessionRow }) {
         </GlassPanel>
       )}
 
+      {scene && (
+        <section aria-labelledby="board-room" className="space-y-3" data-testid="board-room">
+          <div>
+            <h2 id="board-room" className="font-heading text-lg font-medium text-ink">The boardroom</h2>
+            <p className="text-[13px] text-ink-muted">Replayed from the saved answers; nothing is sent to an AI to watch it. Votes are read from each advisor&apos;s stance.</p>
+          </div>
+          <Boardroom script={buildScript(scene)} advisors={scene.advisors} style="b" />
+        </section>
+      )}
+
       {rounds.map((round) => (
         <section key={round} aria-labelledby={`board-round-${round}`} className="space-y-3" data-testid="board-round">
-          <h2 id={`board-round-${round}`} className="font-heading text-lg font-medium text-ink">{session.rounds === 1 ? "The advisors" : round === 1 ? "Round 1: first answers" : "Round 2: after hearing each other"}</h2>
+          <h2 id={`board-round-${round}`} className="font-heading text-lg font-medium text-ink">{session.rounds === 1 ? "Full answers" : round === 1 ? "Round 1: first answers" : "Round 2: after hearing each other"}</h2>
           <p className="text-[12px] text-ink-muted">{AI_LABEL}</p>
           <div className="grid gap-3 md:grid-cols-2">
             {session.advisor_outputs.filter((o) => o.round === round).map((o) => {

@@ -19,13 +19,12 @@ const R = 30;
 const BARS = 28;
 const voteStroke: Record<Vote, string> = { for: "stroke-success-fill", conditional: "stroke-brand", against: "stroke-danger-fill" };
 
-function Waveform({ r, bars = BARS }: { r: number; bars?: number }) {
+/** Speaking: two slow rings spreading from the node. Calm, no spikes. */
+function Waveform({ r }: { r: number; bars?: number }) {
   return (
     <g>
-      {Array.from({ length: bars }, (_, i) => (
-        <g key={i} transform={`rotate(${(i * 360) / bars})`}>
-          <rect x="-0.25" y={-(r + 5.2)} width="0.5" height="4.4" rx="0.25" className="kc-wave fill-(--char)" style={{ "--d": i } as React.CSSProperties} />
-        </g>
+      {[0, 1].map((i) => (
+        <circle key={i} r={r + 1} className="kc-ripple fill-none stroke-(--char)" strokeWidth="0.35" style={{ "--d": i * 2, animationDuration: "4.4s" } as React.CSSProperties} />
       ))}
     </g>
   );
@@ -38,11 +37,11 @@ function NodeGlyph({ who, state, vote, focused, receded }: { who: AvatarWho; sta
     <g className={cn("origin-center transition-[transform,opacity] duration-500 [transform-box:fill-box]", focused && "scale-[1.3]", receded && "opacity-60")}>
       <defs>
         <radialGradient id={gid}>
-          <stop offset="0" className="kc-stop-a" stopOpacity={state === "idle" ? 0.35 : 0.6} />
+          <stop offset="0" className="kc-stop-a" stopOpacity={state === "idle" ? 0.22 : 0.4} />
           <stop offset="1" className="kc-stop-a" stopOpacity="0" />
         </radialGradient>
       </defs>
-      <circle r={r * 2.8} fill={`url(#${gid})`} className="kc-halo" />
+      <circle r={r * 2.4} fill={`url(#${gid})`} className="kc-halo" />
       {state === "thinking" && <circle r={r + 1.8} className="kc-spin fill-none stroke-(--char)" strokeWidth="0.3" strokeDasharray="0.8 1.6" style={{ "--spin": "3s" } as React.CSSProperties} />}
       <circle r={r} className="fill-canvas stroke-(--char)" strokeWidth="0.5" />
       <circle r={r * 0.42} className="fill-(--char)" />
@@ -63,7 +62,7 @@ export function MiniB({ who, state }: { who: AvatarWho; state: NodeState }) {
       <circle r="6.5" className="fill-(--char)" opacity={state === "idle" ? 0.12 : 0.25} />
       <circle r="3.6" className="fill-canvas stroke-(--char)" strokeWidth="0.6" />
       <circle r="1.5" className="fill-(--char)" />
-      {state === "speaking" && <Waveform r={3.6} bars={14} />}
+      {state === "speaking" && <Waveform r={3.6} />}
     </svg>
   );
 }
@@ -89,9 +88,9 @@ export function StageB(props: StageProps) {
         <circle cx={CENTER.x} cy={CENTER.y} r={R} className="fill-none stroke-ink/15" strokeWidth="0.25" />
         <circle cx={CENTER.x} cy={CENTER.y} r={R - 7} className="fill-none stroke-ink/8" strokeWidth="0.2" strokeDasharray="0.6 2" />
         {focus && all.filter((a) => a.who !== focus).map((a) => (
-          <path key={a.who} d={trail(at(focus), a.pos)} className="kc-flow fill-none stroke-brand/30" strokeWidth="0.3" strokeDasharray="1.2 2.4" />
+          <path key={a.who} d={trail(at(focus), a.pos)} className="fill-none stroke-brand/25" strokeWidth="0.3" />
         ))}
-        {view.reaction && <path d={trail(at(view.reaction.target), at(view.reaction.actor))} className="kc-flow fill-none stroke-brand drop-shadow-[0_0_1.2px_var(--kc-glow)]" strokeWidth="0.6" strokeDasharray="1.4 2" />}
+        {view.reaction && <path d={trail(at(view.reaction.target), at(view.reaction.actor))} className="fill-none stroke-brand/60" strokeWidth="0.45" />}
         {all.map(({ who, pos }) => (
           <g key={who} transform={`translate(${pos.x} ${pos.y})`} className={TONE[who]}>
             <NodeGlyph who={who} state={stateOf(view, who)} vote={who === "chair" ? undefined : view.votes[who]} focused={focus === who} receded={focus !== null && focus !== who} />

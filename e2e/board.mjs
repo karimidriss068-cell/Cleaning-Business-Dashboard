@@ -173,6 +173,15 @@ try {
   check("three advisor cards, each marked AI", (await op.getByTestId("board-advisor-card").count()) === 3 && (await op.getByTestId("board-advisor-card").first().innerText()).includes("AI"));
   check("the synthesis shows the verdict and exactly three actions", (await op.getByTestId("board-verdict").innerText()) === SYN.verdict && (await op.getByTestId("board-action").count()) === 3);
   check("the cost is shown", (await op.getByTestId("board-cost").innerText()).includes("$"));
+  // the boardroom replays the saved answers (no model call)
+  check("the session page has the boardroom, in the signal-chamber style, with the chair and three advisors", (await op.getByTestId("board-room").count()) === 1 && (await op.getByTestId("boardroom").getAttribute("data-style")) === "b" && (await op.getByTestId("scene-stage").locator('[data-testid^="seat-"]').count()) === 4);
+  await op.getByTestId("scene-skip").click();
+  await op.getByTestId("scene-verdict").waitFor({ timeout: 10000 });
+  await op.getByTestId("scene-actions").locator("li").nth(2).waitFor({ timeout: 10000 });
+  check("skip to verdict shows the saved verdict and the three saved actions in order", (await op.getByTestId("scene-verdict").innerText()).includes(SYN.verdict) && (await op.getByTestId("scene-actions").locator("li").allInnerTexts()).every((t, i) => t.includes(SYN.actions[i].title)));
+  check("votes are read from the stances and all three are counted", (await Promise.all(["for", "conditional", "against"].map(async (v) => Number((await op.getByTestId(`score-${v}`).innerText()).match(/^\s*(\d+)/)?.[1] ?? 0)))).reduce((a, b) => a + b, 0) === 3);
+  check("the dissent shows the saved disagreement", (await op.getByTestId("scene-dissent").innerText()).includes(SYN.disagreements[0]));
+  check("watching it called no model", requests.length === 4);
   check("four model calls: three small-model advisors and one larger-model synthesis", requests.length === 4
     && requests.filter((r) => r.model === "claude-haiku-5-5").length === 3 && requests.filter((r) => r.model === "claude-sonnet-5-5").length === 1, JSON.stringify(requests.map((r) => r.model)));
   check("every call sets max_tokens (700 advisors, 1200 synthesis) and caches the persona prompt", requests.every((r) => r.cached) && requests.filter((r) => r.model.includes("haiku")).every((r) => r.max_tokens === 700) && requests.find((r) => r.model.includes("sonnet")).max_tokens === 1200);
