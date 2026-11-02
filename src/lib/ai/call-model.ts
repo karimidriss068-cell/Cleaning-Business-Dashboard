@@ -123,7 +123,9 @@ async function post(deps: AiDeps, url: string, headers: Record<string, string>, 
 async function sendAnthropic(deps: AiDeps, key: string, input: z.output<typeof callModelSchema>, maxTokens: number): Promise<Sent> {
   const system = input.system ? [{ type: "text", text: input.system, ...(input.cacheSystem ? { cache_control: { type: "ephemeral" } } : {}) }] : undefined;
   const json = await post(deps, `${baseUrl(deps.env.AI_ANTHROPIC_BASE, "https://api.anthropic.com")}/v1/messages`, { "x-api-key": key, "anthropic-version": "2023-06-01" }, {
-    model: input.model, max_tokens: maxTokens, system, messages: input.messages,
+    // Newer models think by default and that thinking spends max_tokens, which left replies empty.
+    // Every caller sizes max_tokens for the visible answer, so thinking is off.
+    model: input.model, max_tokens: maxTokens, thinking: { type: "disabled" }, system, messages: input.messages,
   });
   const p = anthropicReply.safeParse(json);
   if (!p.success) throw new AiProviderError(null);
