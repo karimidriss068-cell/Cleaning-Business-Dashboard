@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isOpenAccess } from "@/lib/open-access";
 
 /**
  * Refreshes the Supabase auth session on every request and guards routes.
@@ -56,6 +57,17 @@ export async function updateSession(request: NextRequest) {
     pathname === "/lead-form" || pathname.startsWith("/api/public/") || pathname === "/embed.js";
   // The dev-only design reference renders static samples, no data.
   const isDevDesign = process.env.NODE_ENV !== "production" && pathname.startsWith("/design");
+
+  const isOpenAccessRoute = pathname.startsWith("/api/open-access");
+  if (isOpenAccessRoute) return supabaseResponse;
+
+  // Open-access mode: auto-sign visitors in as the owner (no loop: login?open=failed is left alone).
+  if (!user && isOpenAccess() && !isPublicApi && !isDevDesign && request.nextUrl.searchParams.get("open") !== "failed") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/api/open-access";
+    url.search = isAuthRoute ? "" : `?next=${encodeURIComponent(pathname)}`;
+    return NextResponse.redirect(url);
+  }
 
   if (!user && !isAuthRoute && !isPublicApi && !isDevDesign) {
     const url = request.nextUrl.clone();
