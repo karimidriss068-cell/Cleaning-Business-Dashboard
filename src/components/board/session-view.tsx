@@ -10,12 +10,26 @@ import { Boardroom, StyleSwitcher } from "@/components/board/scene/boardroom";
 import type { SceneStyle } from "@/components/board/scene/styles";
 import { buildScript } from "@/lib/board/scene/script";
 import { sceneFromSession } from "@/lib/board/scene/from-session";
+import { DebateThread, type DebateEntry } from "@/components/board/debate-thread";
 
 /** One saved session: the question, what it cost, each advisor's answer by round, and the synthesis. */
 export function SessionView({ session, style = "a" }: { session: BoardSessionRow; style?: SceneStyle }) {
   const rounds = Array.from({ length: session.rounds }, (_, i) => i + 1);
   // Replayed from what was saved: no model is called to watch it.
   const scene = sceneFromSession(session);
+  const syn = session.synthesis as { verdict?: string; summary?: string; raw?: string; text?: string } | null;
+  const chairText = syn ? [syn.verdict, syn.summary].filter(Boolean).join("\n\n") || syn.raw || syn.text || "" : "";
+  const debate: DebateEntry[] = [
+    { id: "q", speaker: "You", lens: "", round: 0, text: session.question, kind: "question" },
+    ...[...session.advisor_outputs]
+      .sort((a, b) => a.round - b.round)
+      .filter((o) => o.text.trim())
+      .map((o) => {
+        const a = advisorByKey(o.advisor);
+        return { id: `${o.advisor}-${o.round}`, speaker: a.name, lens: a.question, round: o.round, text: o.text, kind: "advisor" as const };
+      }),
+    ...(chairText ? [{ id: "chair", speaker: "The Chair", lens: "Verdict", round: 0, text: chairText, kind: "chair" as const }] : []),
+  ];
   return (
     <div className="space-y-6" data-testid="board-session">
       <GlassPanel as="section" aria-labelledby="board-q" className="kc-enter space-y-2 p-5">
@@ -37,6 +51,8 @@ export function SessionView({ session, style = "a" }: { session: BoardSessionRow
           <Boardroom key={style} script={buildScript(scene)} advisors={scene.advisors} style={style} />
         </section>
       )}
+
+      <DebateThread entries={debate} />
 
       <div className="grid gap-3 sm:grid-cols-3" data-testid="board-cost">
         <StatTile index={1} label="Cost of this session" figure={{ value: microsToCents(session.cost_micros), kind: "cents" }} hint="Counted against the AI caps" />
