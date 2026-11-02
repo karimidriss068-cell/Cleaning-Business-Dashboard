@@ -11,6 +11,7 @@ import { StatTile } from "@/components/system/stat-tile";
 import { EmptyState } from "@/components/system/empty-state";
 import { InvoiceTable } from "@/components/invoices/invoice-table";
 import { ReadyToInvoice } from "@/components/invoices/ready-to-invoice";
+import { AnalyticsSection } from "@/components/analytics/analytics-section";
 
 export const metadata: Metadata = { title: "Invoices" };
 export const dynamic = "force-dynamic";
@@ -67,6 +68,7 @@ export default async function InvoicesPage() {
       <div className="kc-enter" style={{ "--i": 6 } as React.CSSProperties}>
         <InvoiceTable rows={rows} today={today} />
       </div>
+      <AnalyticsSection pack="invoices" />
     </div>
   );
 }

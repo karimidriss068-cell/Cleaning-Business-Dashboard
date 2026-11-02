@@ -192,11 +192,11 @@ export const directions = {
         surfaceRaised: "#1B222C",
         highlight: "#273241",
         text: "#E8EDF3",
-        textMuted: "#93A0B1",
+        textMuted: "#A0ADBE",
         crewTextMuted: "#9AA6B6",
         accent: "#8EC5FF",
         accentText: "#8EC5FF",
-        accent2: "#C4B8FF",
+        accent2: "#7FE3F0",
         primary: "#8EC5FF",
         primaryLabel: "#0C0F14",
         borderSubtle: "#282D35",
@@ -283,7 +283,7 @@ export const directions = {
         surfaceRaised: "#122A3C",
         highlight: "#16394B",
         text: "#E4F1F7",
-        textMuted: "#8AA5B5",
+        textMuted: "#97B2C2",
         crewTextMuted: "#92ABBB",
         accent: "#3CCFE0",
         accentText: "#3CCFE0",
@@ -458,7 +458,7 @@ export const directions = {
 
 export type DirectionId = keyof typeof directions;
 export const directionIds = Object.keys(directions) as DirectionId[];
-export const defaultDirection: DirectionId = "vault";
+export const defaultDirection: DirectionId = "titanium";
 
 /** DESIGN.md section 5. */
 export const radius = {
@@ -482,27 +482,27 @@ export type GlassLevel = "card" | "popover" | "modal" | "sidebar";
 export const glassLevels: GlassLevel[] = ["card", "popover", "modal", "sidebar"];
 export const glassSpec = {
   alpha: {
-    dark: { card: 0.46, popover: 0.8, modal: 0.85, sidebar: 0.5 },
-    light: { card: 0.46, popover: 0.84, modal: 0.9, sidebar: 0.52 },
+    dark: { card: 0.42, popover: 0.78, modal: 0.84, sidebar: 0.46 },
+    light: { card: 0.42, popover: 0.82, modal: 0.88, sidebar: 0.48 },
   } satisfies Record<ThemeName, Record<GlassLevel, number>>,
-  blur: { card: 14, popover: 22, modal: 26, sidebar: 20 } satisfies Record<GlassLevel, number>,
+  blur: { card: 18, popover: 24, modal: 28, sidebar: 24 } satisfies Record<GlassLevel, number>,
   /** Share of the text color mixed into the 1px glass border. */
   borderMix: { dark: 0.2, light: 0.13 } satisfies Record<ThemeName, number>,
   /** Soft light on a panel's top edge (inset). */
-  highlight: { dark: "rgb(255 255 255 / 0.26)", light: "rgb(255 255 255 / 0.95)" } satisfies Record<ThemeName, string>,
+  highlight: { dark: "rgb(255 255 255 / 0.34)", light: "rgb(255 255 255 / 0.95)" } satisfies Record<ThemeName, string>,
   /** Left-edge light and the brighter border shown on hover. */
-  highlightSide: { dark: "rgb(255 255 255 / 0.12)", light: "rgb(255 255 255 / 0.7)" } satisfies Record<ThemeName, string>,
+  highlightSide: { dark: "rgb(255 255 255 / 0.18)", light: "rgb(255 255 255 / 0.7)" } satisfies Record<ThemeName, string>,
   borderHoverMix: { dark: 0.3, light: 0.2 } satisfies Record<ThemeName, number>,
   /** Soft accent glow inside the panel edge, as opacity of the accent. */
-  innerGlow: { dark: 0.12, light: 0.07 } satisfies Record<ThemeName, number>,
+  innerGlow: { dark: 0.18, light: 0.1 } satisfies Record<ThemeName, number>,
   /** White glossy sheen laid over the panel's top-left corner, as opacity. */
-  sheen: { dark: 0.07, light: 0.5 } satisfies Record<ThemeName, number>,
+  sheen: { dark: 0.09, light: 0.5 } satisfies Record<ThemeName, number>,
   /** Flat tiles have no backdrop filter (they repeat in lists), so they are more opaque instead. */
   flatAlpha: { dark: 0.9, light: 0.88 } satisfies Record<ThemeName, number>,
   /** Backdrop brightness behind glass: dark glass is smoked (the aurora shows through dimmed), light glass is frosted (washed lighter). */
   brightness: { dark: 0.35, light: 1.2 } satisfies Record<ThemeName, number>,
   /** Peak opacity of the three aurora blobs (accent, accent2, accent) behind the glass. */
-  aurora: { dark: { a1: 0.2, a2: 0.16, a3: 0.12 }, light: { a1: 0.2, a2: 0.15, a3: 0.11 } } satisfies Record<ThemeName, { a1: number; a2: number; a3: number }>,
+  aurora: { dark: { a1: 0.22, a2: 0.18, a3: 0.13 }, light: { a1: 0.2, a2: 0.15, a3: 0.11 } } satisfies Record<ThemeName, { a1: number; a2: number; a3: number }>,
   /** Minimum surface opacity on phones / reduced effects (cheaper, more solid). */
   phoneFloor: 0.92,
   /** Blur multiplier on phones; reduced transparency uses solid surfaces and no blur. */

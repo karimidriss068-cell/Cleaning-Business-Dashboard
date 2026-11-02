@@ -80,7 +80,7 @@ export const DEFAULT_ADVISORS: readonly AdvisorKey[] = ["cash_ruin", "offers_pri
 export const advisorByKey = (key: AdvisorKey): Advisor => ADVISORS.find((a) => a.key === key) ?? ADVISORS[0];
 
 /** Shown wherever an advisor speaks. */
-export const AI_LABEL = "AI approximation of common public business thinking. Not real people, no quotes.";
+export const AI_LABEL = "AI advisors grounded in the public teachings of named operators. AI approximations, not the real people.";
 
 /** What every advisor and the synthesis are told about the business. Edit here, not in the prompts. */
 export const FOUNDER_FACTS = [

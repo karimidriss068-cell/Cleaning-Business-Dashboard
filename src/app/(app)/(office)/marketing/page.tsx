@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
-import { Megaphone } from "lucide-react";
-import { ComingSoon } from "@/components/shell/coming-soon";
+import { PageHeader } from "@/components/shell/page-header";
+import { AnalyticsSection } from "@/components/analytics/analytics-section";
 
 export const metadata: Metadata = { title: "Marketing" };
 
-export default function MarketingPage() {
+export default function Page() {
   return (
-    <ComingSoon title="Marketing" icon={Megaphone}>
-      Campaign spend, leads and cost per booked job by channel.
-    </ComingSoon>
+    <div className="mx-auto w-full max-w-[1400px] space-y-6 px-4 py-6 md:px-6">
+      <PageHeader eyebrow="Business" title="Marketing" description="Reach and cost, optimization and attribution across every channel." />
+      <AnalyticsSection pack="marketing" />
+    </div>
   );
 }

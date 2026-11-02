@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/shell/page-header";
 import { EmptyState } from "@/components/system/empty-state";
 import { LeadsClient } from "@/components/leads/leads-client";
 import { NewLeadButton } from "@/components/leads/quick-add-lead";
+import { AnalyticsSection } from "@/components/analytics/analytics-section";
 
 export const metadata: Metadata = { title: "Leads & Pipeline" };
 export const dynamic = "force-dynamic";
@@ -102,6 +103,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
           </div>
         )}
       </section>
+      <AnalyticsSection pack="leads" />
     </div>
   );
 }

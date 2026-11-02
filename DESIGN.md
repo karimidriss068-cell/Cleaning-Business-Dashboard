@@ -254,7 +254,7 @@ The crew view (`/my-jobs`, `/my-jobs/[id]`) uses crew mode everywhere:
 - Dates and times show in America/New_York via `src/lib/format.ts`, and money via `formatCents`.
 
 
-## Vault (default direction)
+## Vault (previous default; Titanium & Ice is now default)
 
 Mood: warm brown frosted glass. Palette in `brand.ts` (`directions.vault`): canvas #0B0A09, surface #1B1511, highlight #2F241C, cream text #F2EBDD, one muted tan accent #A67B5B, slate-blue second accent. Light variant: cream canvas, brown-black text. Warning is an olive yellow and danger a rose so both clear the 30 degree hue rule against the tan. Type: Mohave (display), DM Sans (body).
 

@@ -113,7 +113,7 @@ export function AppearancePicker() {
                 aria-checked={selected}
                 onClick={() => setTheme(value)}
                 className={cn(
-                  "flex items-center gap-3 rounded-md border bg-surface px-4 py-3 text-left transition-[border-color,box-shadow] duration-fast",
+                  "flex items-center gap-3 glass-flat rounded-md border px-4 py-3 text-left transition-[border-color,box-shadow] duration-fast",
                   selected ? "border-brand/70 shadow-[0_0_0_1px_var(--kc-accent)]" : "border-hairline hover:border-border-input",
                 )}
               >

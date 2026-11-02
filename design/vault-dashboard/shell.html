@@ -1,0 +1,230 @@
+<!doctype html><html lang="en" data-theme="dark" data-device="desktop"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Keystone Clean · Vault</title>
+<style>
+:root{--bg:#0B0A09;--bg2:#1a1410;--panel:rgba(43,33,27,.55);--panel-solid:#151311;--line:rgba(236,224,207,.10);--text:#F2E9DC;--muted:#B9AC9C;--accent:#A67B5B;--accent-soft:rgba(166,123,91,.16);--ok:#8FB59A;--warn:#D9B45A;--bad:#D08A7A;--r:20px;--s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px;--s7:48px;--s8:64px;--ease:cubic-bezier(.22,1,.36,1)}
+[data-theme=light]{--bg:#F5EEE4;--bg2:#EADFCF;--panel:rgba(255,251,245,.72);--panel-solid:#FFFBF5;--line:rgba(43,33,27,.12);--text:#231A14;--muted:#5E5046;--accent:#8A5F41;--accent-soft:rgba(138,95,65,.12);--ok:#3E7A52;--warn:#8A6A12;--bad:#9A4636}
+*{box-sizing:border-box;margin:0}
+body{font:15px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--text);background:radial-gradient(1200px 700px at 15% -10%,var(--bg2),var(--bg));min-height:100vh;transition:background .6s var(--ease),color .6s}
+.app{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+nav.side{padding:var(--s6) var(--s4);border-right:1px solid var(--line);display:flex;flex-direction:column;gap:var(--s1);position:sticky;top:0;height:100vh}
+.brand{display:flex;gap:var(--s3);align-items:center;padding:0 var(--s3) var(--s6)}
+.mark{width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,var(--accent),#5a3f2c);box-shadow:0 0 24px var(--accent-soft)}
+.brand b{font-size:16px;letter-spacing:.02em}.brand small{display:block;color:var(--muted);font-size:12px}
+nav a{display:flex;align-items:center;gap:var(--s3);padding:10px var(--s3);border-radius:12px;color:var(--muted);text-decoration:none;font-size:14px;transition:.3s var(--ease)}
+nav a:hover{background:var(--accent-soft);color:var(--text)}
+nav a.on{background:var(--panel);color:var(--text);box-shadow:inset 2px 0 0 var(--accent)}
+nav a i{width:18px;height:18px;border:1.5px solid currentColor;border-radius:6px;opacity:.8;flex:none}
+nav .sep{height:1px;background:var(--line);margin:var(--s4) var(--s3)}
+nav .badge{margin-left:auto;font-size:11px;background:var(--accent-soft);color:var(--text);padding:1px 8px;border-radius:99px}
+main{padding:var(--s6) var(--s7) var(--s8);max-width:1440px;width:100%}
+.top{display:flex;align-items:center;gap:var(--s4);margin-bottom:var(--s7)}
+.top h1{font-size:30px;font-weight:600;letter-spacing:-.01em}.top p{color:var(--muted);font-size:14px}
+.top .sp{flex:1}
+.btn{font:inherit;font-size:13px;color:var(--text);background:var(--panel);border:1px solid var(--line);padding:8px 14px;border-radius:12px;cursor:pointer;backdrop-filter:blur(14px);transition:.3s var(--ease)}
+.btn:hover{border-color:var(--accent)}.btn.pri{background:var(--accent);color:#FFF8EF;border-color:transparent}
+[data-theme=light] .btn.pri{color:#fff}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:12px;padding:3px;background:var(--panel)}
+.seg button{font:inherit;font-size:12px;border:0;background:none;color:var(--muted);padding:5px 10px;border-radius:9px;cursor:pointer}
+.seg button.on{background:var(--accent-soft);color:var(--text)}
+.grid{display:grid;gap:var(--s5)}
+.g4{grid-template-columns:repeat(4,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:1.6fr 1fr}.g11{grid-template-columns:1fr 1fr}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:var(--s5);backdrop-filter:blur(18px) saturate(120%);box-shadow:0 20px 50px rgba(0,0,0,.18)}
+.card h3{font-size:13px;font-weight:500;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:var(--s4);display:flex;align-items:center;gap:var(--s2)}
+.card h3 .sp{flex:1}.card h3 a{color:var(--accent);text-transform:none;letter-spacing:0;font-size:13px;text-decoration:none}
+.kpi .n{font-size:38px;font-weight:600;letter-spacing:-.02em;line-height:1.1;font-variant-numeric:tabular-nums}
+.kpi .d{font-size:13px;color:var(--muted);margin-top:var(--s2)}.up{color:var(--ok)}.dn{color:var(--bad)}
+.spark{height:36px;margin-top:var(--s3)}
+.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}.bar>span{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width 1.2s var(--ease)}
+.row{display:flex;align-items:center;gap:var(--s4);padding:var(--s3) 0;border-top:1px solid var(--line)}.row:first-of-type{border-top:0}
+.row .t{flex:1;min-width:0}.row .t b{font-weight:500;display:block}.row .t small{color:var(--muted)}
+.pill{font-size:12px;padding:3px 10px;border-radius:99px;background:var(--accent-soft);white-space:nowrap}
+.pill.ok{background:rgba(143,181,154,.16);color:var(--ok)}.pill.warn{background:rgba(217,180,90,.14);color:var(--warn)}.pill.bad{background:rgba(208,138,122,.16);color:var(--bad)}
+.av{width:36px;height:36px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 30%,#e9d4bd,var(--accent) 45%,#3a2a20);box-shadow:0 0 0 1px var(--line)}
+.sec{margin-top:var(--s7)}
+.view{display:none;animation:fade .6s var(--ease)}.view.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.brief{display:grid;grid-template-columns:1.2fr 1fr;gap:var(--s6);align-items:center}
+.ring{width:150px;height:150px}
+.kan{display:grid;grid-template-columns:repeat(5,1fr);gap:var(--s4)}
+.col{background:rgba(0,0,0,.12);border:1px solid var(--line);border-radius:var(--r);padding:var(--s4);min-height:420px}
+[data-theme=light] .col{background:rgba(255,255,255,.35)}
+.col h4{font-size:13px;font-weight:500;display:flex;justify-content:space-between;margin-bottom:var(--s4);color:var(--muted)}
+.lead{background:var(--panel-solid);border:1px solid var(--line);border-radius:14px;padding:var(--s3) var(--s4);margin-bottom:var(--s3);font-size:13px}
+.lead b{display:block;font-size:14px;font-weight:500}.lead .m{display:flex;justify-content:space-between;color:var(--muted);margin-top:6px}
+.cal{display:grid;grid-auto-rows:56px;grid-template-columns:64px repeat(6,1fr);gap:0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.cal div{border-top:1px solid var(--line);border-left:1px solid var(--line);min-height:56px;padding:4px;font-size:12px;position:relative}
+.cal .h{color:var(--muted);text-align:center;padding:var(--s3) 4px;min-height:0;font-weight:500}
+.cal .tm{color:var(--muted);text-align:right;padding-right:8px}
+.job{position:absolute;left:4px;right:4px;border-radius:10px;padding:6px 8px;font-size:12px;background:var(--accent-soft);border-left:3px solid var(--accent);z-index:1}
+.job.c2{border-color:var(--ok);background:rgba(143,181,154,.14)}.job.c3{border-color:#9C8FB5;background:rgba(156,143,181,.14)}
+.dens{display:flex;gap:6px;align-items:end;height:70px}.dens span{flex:1;background:var(--accent);opacity:.75;border-radius:6px 6px 2px 2px}
+table{width:100%;border-collapse:collapse;font-size:14px}th{text-align:left;font-weight:500;color:var(--muted);font-size:12px;letter-spacing:.05em;text-transform:uppercase;padding:var(--s3) var(--s2)}
+td{padding:var(--s4) var(--s2);border-top:1px solid var(--line)}td.num{font-variant-numeric:tabular-nums;text-align:right}th.num{text-align:right}
+.bots{display:flex;gap:var(--s6);justify-content:center;padding:var(--s6) 0}
+.bot{text-align:center;font-size:13px;color:var(--muted)}.bot .o{width:72px;height:72px;margin:0 auto var(--s3);border-radius:50%;background:radial-gradient(circle at 35% 30%,#f3e2cc,var(--accent) 50%,#2B211B);animation:breathe 4s var(--ease) infinite}
+.bot.w .o{animation-duration:2s}.bot.b .o{filter:saturate(.5) hue-rotate(-15deg);animation:none;opacity:.7}
+@keyframes breathe{50%{box-shadow:0 0 40px var(--accent);transform:scale(1.04)}}
+.toggle{width:40px;height:22px;border-radius:99px;background:var(--line);position:relative;flex:none}.toggle.on{background:var(--accent)}.toggle::after{content:"";position:absolute;width:16px;height:16px;border-radius:50%;background:var(--text);top:3px;left:3px;transition:.3s var(--ease)}.toggle.on::after{left:21px;background:#fff}
+.roast{display:grid;grid-template-columns:1fr 1fr;gap:var(--s6);align-items:center;padding:var(--s7)}
+.ph-bar{display:none}
+/* phone */
+[data-device=phone] body{background:#000}
+[data-device=phone] .app{width:390px;margin:24px auto;border-radius:40px;overflow:hidden;border:1px solid var(--line);grid-template-columns:1fr;background:radial-gradient(800px 500px at 15% -10%,var(--bg2),var(--bg));min-height:844px}
+[data-device=phone] nav.side{display:none}
+[data-device=phone] main{padding:var(--s5) var(--s4) 96px}
+[data-device=phone] .g4,[data-device=phone] .g3,[data-device=phone] .g2,[data-device=phone] .g11,[data-device=phone] .brief,[data-device=phone] .roast{grid-template-columns:1fr}
+[data-device=phone] .g4{grid-template-columns:1fr 1fr}
+[data-device=phone] .kpi .n{font-size:28px}
+[data-device=phone] .kan{grid-template-columns:repeat(5,78%);overflow-x:auto;scroll-snap-type:x mandatory}[data-device=phone] .col{scroll-snap-align:start;min-height:0}
+[data-device=phone] .top{flex-wrap:wrap;margin-bottom:var(--s5)}[data-device=phone] .top h1{font-size:24px}
+[data-device=phone] .hide-ph{display:none}
+[data-device=phone] .ph-bar{display:flex;position:sticky;bottom:0;justify-content:space-around;padding:var(--s3) 0 var(--s4);background:var(--panel-solid);border-top:1px solid var(--line)}
+.ph-bar a{font-size:11px;color:var(--muted);text-decoration:none;text-align:center}.ph-bar a.on{color:var(--accent)}
+.devbar{position:fixed;right:20px;bottom:20px;z-index:9;display:flex;gap:8px}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style></head><body>
+<div class="app">
+<nav class="side" aria-label="Main">
+ <div class="brand"><div class="mark"></div><div><b>Keystone Clean</b><small>Vault · Owner</small></div></div>
+ <a href="#command" data-v="command"><i></i>Command Center</a>
+ <a href="#leads" data-v="leads"><i></i>Leads &amp; Pipeline<span class="badge">7</span></a>
+ <a href="#schedule" data-v="schedule"><i></i>Schedule</a>
+ <a href="#crews" data-v="crews"><i></i>Crews</a>
+ <div class="sep"></div>
+ <a href="#invoices" data-v="invoices"><i></i>Invoices<span class="badge">3</span></a>
+ <a href="#payouts" data-v="payouts"><i></i>Payouts</a>
+ <div class="sep"></div>
+ <a href="#growth" data-v="growth"><i></i>Growth</a>
+ <a href="#marketing" data-v="marketing"><i></i>Marketing</a>
+ <a href="#agents" data-v="agents"><i></i>Agents<span class="badge">4</span></a>
+ <a href="#roast" data-v="roast"><i></i>Roast Room</a>
+ <div class="sep"></div>
+ <a href="#settings" data-v="settings"><i></i>Automations &amp; Settings</a>
+</nav>
+<main>
+<div class="top"><div><h1 id="ttl">Good morning, Karim</h1><p id="sub">Monday, Nov 2 · 4 things need you · ~22 min</p></div><div class="sp"></div>
+ <div class="seg hide-ph"><button class="on" data-r="d">Today</button><button data-r="w">Week</button><button data-r="m">Month</button></div>
+ <button class="btn hide-ph">⌘K Ask Atlas</button><button class="btn pri">+ New job</button></div>
+
+<!-- COMMAND -->
+<section class="view" id="v-command">
+ <div class="grid g4">
+  <div class="card kpi"><h3>Revenue · MTD</h3><div class="n" data-roll="18420">$0</div><div class="d"><span class="up">▲ 12%</span> vs Oct pace</div><svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none"><polyline fill="none" stroke="var(--accent)" stroke-width="2" points="0,24 15,20 30,22 45,14 60,16 75,9 100,5"/></svg></div>
+  <div class="card kpi"><h3>Jobs this week</h3><div class="n" data-roll="46">0</div><div class="d">38 residential · 8 commercial</div><div class="bar" style="margin-top:22px"><span style="width:77%"></span></div></div>
+  <div class="card kpi"><h3>Cash to collect</h3><div class="n" data-roll="4860">$0</div><div class="d"><span class="dn">3 overdue</span> · $1,240</div></div>
+  <div class="card kpi"><h3>New leads · 7d</h3><div class="n" data-roll="31">0</div><div class="d"><span class="up">▲ 6</span> · cost/lead $14</div></div>
+ </div>
+ <div class="grid g2 sec">
+  <div class="card"><h3>Daily briefing · Atlas</h3>
+   <div class="brief"><div>
+    <p style="font-size:20px;line-height:1.45;margin-bottom:var(--s5)">You're at <b>61%</b> of the $30k November goal with 9 working days used. Pace is <span class="up">ahead</span>.</p>
+    <div class="row"><div class="t"><b>1 · Fill Thursday gap</b><small>2 crews idle 1–5pm, 4 warm leads nearby</small></div></div>
+    <div class="row"><div class="t"><b>2 · Collect Hudson Lofts</b><small>$820, 9 days overdue</small></div></div>
+    <div class="row"><div class="t"><b>3 · Approve Meta winner</b><small>"Move-out in 1 day" CPL $9</small></div></div>
+   </div>
+   <svg class="ring" viewBox="0 0 120 120" style="justify-self:center"><circle cx="60" cy="60" r="50" fill="none" stroke="var(--line)" stroke-width="10"/><circle cx="60" cy="60" r="50" fill="none" stroke="var(--accent)" stroke-width="10" stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="122" transform="rotate(-90 60 60)"/><text x="60" y="58" text-anchor="middle" fill="var(--text)" font-size="24" font-weight="600">61%</text><text x="60" y="78" text-anchor="middle" fill="var(--muted)" font-size="10">of $30k</text></svg>
+  </div></div>
+  <div class="card"><h3>Needs you<span class="sp"></span><a href="#agents">All ›</a></h3>
+   <div class="row"><div class="t"><b>Quote · 2BR deep clean</b><small>$340 · Astoria · 2 min</small></div><button class="btn pri">Approve</button></div>
+   <div class="row"><div class="t"><b>Ad budget +$40/day</b><small>Marketing · 1 min</small></div><button class="btn pri">Approve</button></div>
+   <div class="row"><div class="t"><b>Win-back SMS · 12 clients</b><small>CRM · 3 min</small></div><button class="btn">Review</button></div>
+   <div class="row"><div class="t"><b>Payout batch · Fri</b><small>$3,910 · 6 cleaners</small></div><button class="btn">Review</button></div>
+  </div>
+ </div>
+ <div class="grid g3 sec">
+  <div class="card"><h3>Today's schedule<span class="sp"></span><a href="#schedule">Open ›</a></h3>
+   <div class="row"><div class="pill">8:00</div><div class="t"><b>Park Slope · Recurring</b><small>Crew A · 3h</small></div></div>
+   <div class="row"><div class="pill">10:30</div><div class="t"><b>Midtown office</b><small>Crew C · 4h</small></div></div>
+   <div class="row"><div class="pill">13:00</div><div class="t"><b>LIC move-out</b><small>Crew B · 5h</small></div></div>
+  </div>
+  <div class="card"><h3>Week density</h3><div class="dens"><span style="height:70%"></span><span style="height:90%"></span><span style="height:55%"></span><span style="height:35%;opacity:.35"></span><span style="height:85%"></span><span style="height:60%"></span></div>
+   <div style="display:flex;justify-content:space-between;color:var(--muted);font-size:12px;margin-top:8px"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div><p style="margin-top:var(--s4);font-size:13px;color:var(--muted)">Thursday is 35% booked — Atlas is pushing 4 leads.</p></div>
+  <div class="card"><h3>AI teams<span class="sp"></span><a href="#agents">Floor ›</a></h3>
+   <div class="row"><div class="av"></div><div class="t"><b>Marketing</b><small>Testing 3 ad hooks</small></div><span class="pill ok">working</span></div>
+   <div class="row"><div class="av"></div><div class="t"><b>Sales</b><small>Waiting on your quote</small></div><span class="pill warn">waiting</span></div>
+   <div class="row"><div class="av"></div><div class="t"><b>CRM</b><small>Sent 8 review asks</small></div><span class="pill">idle</span></div>
+  </div>
+ </div>
+</section>
+
+<!-- LEADS -->
+<section class="view" id="v-leads">
+ <div class="grid g4"><div class="card kpi"><h3>Pipeline value</h3><div class="n" data-roll="12750">$0</div></div><div class="card kpi"><h3>Close rate</h3><div class="n">38%</div></div><div class="card kpi"><h3>Speed to lead</h3><div class="n">4m</div><div class="d up">Sales bot</div></div><div class="card kpi"><h3>Best source</h3><div class="n" style="font-size:28px">Meta</div><div class="d">$9 CPL</div></div></div>
+ <div class="kan sec" id="kan"></div>
+</section>
+
+<!-- SCHEDULE -->
+<section class="view" id="v-schedule">
+ <div class="grid g2"><div class="card" style="padding:var(--s4)"><div class="cal" id="cal"></div></div>
+ <div class="grid" style="align-content:start"><div class="card"><h3>Capacity this week</h3><div class="kpi"><div class="n">74%</div><div class="d">52 of 70 crew-hours</div></div><div class="bar" style="margin-top:16px"><span style="width:74%"></span></div></div>
+ <div class="card"><h3>Open slots</h3><div class="row"><div class="t"><b>Thu 1–5pm</b><small>Crews A, B</small></div><button class="btn">Fill</button></div><div class="row"><div class="t"><b>Sat 9–12</b><small>Crew C</small></div><button class="btn">Fill</button></div></div></div></div>
+</section>
+
+<!-- CREWS -->
+<section class="view" id="v-crews"><div class="grid g3" id="crews"></div></section>
+
+<!-- INVOICES -->
+<section class="view" id="v-invoices">
+ <div class="grid g3"><div class="card kpi"><h3>Outstanding</h3><div class="n">$4,860</div></div><div class="card kpi"><h3>Overdue</h3><div class="n dn">$1,240</div></div><div class="card kpi"><h3>Paid · MTD</h3><div class="n">$13,560</div></div></div>
+ <div class="card sec"><h3>Invoices<span class="sp"></span><a>Send reminders ›</a></h3><table><thead><tr><th>Client</th><th class="hide-ph">Job</th><th>Status</th><th class="num">Amount</th></tr></thead><tbody id="inv"></tbody></table></div>
+</section>
+
+<!-- PAYOUTS -->
+<section class="view" id="v-payouts">
+ <div class="grid g2"><div class="card"><h3>Friday batch · Nov 6</h3><table><thead><tr><th>Cleaner</th><th class="num">Hours</th><th class="num">Payout</th></tr></thead><tbody id="pay"></tbody></table></div>
+ <div class="card kpi"><h3>Batch total</h3><div class="n">$3,910</div><div class="d">Labor 42% of revenue · target 45%</div><div class="bar" style="margin-top:16px"><span style="width:42%"></span></div><button class="btn pri" style="margin-top:var(--s6);width:100%">Approve batch</button></div></div>
+</section>
+
+<!-- GROWTH -->
+<section class="view" id="v-growth">
+ <div class="card"><h3>Revenue · last 12 months</h3><svg viewBox="0 0 600 180" style="width:100%;height:220px"><defs><linearGradient id="gf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".35"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs><path d="M0,150 C60,140 100,130 150,120 S250,110 300,90 S420,70 480,50 S560,30 600,25 L600,180 L0,180Z" fill="url(#gf)"/><path d="M0,150 C60,140 100,130 150,120 S250,110 300,90 S420,70 480,50 S560,30 600,25" fill="none" stroke="var(--accent)" stroke-width="2.5"/></svg></div>
+ <div class="grid g3 sec"><div class="card kpi"><h3>Recurring clients</h3><div class="n">84</div><div class="d up">▲ 9 this quarter</div></div><div class="card kpi"><h3>LTV</h3><div class="n">$1,920</div></div><div class="card kpi"><h3>Churn · 90d</h3><div class="n">6%</div><div class="d">5 at-risk accounts</div></div></div>
+</section>
+
+<!-- MARKETING -->
+<section class="view" id="v-marketing">
+ <div class="grid g4"><div class="card kpi"><h3>Spend · MTD</h3><div class="n">$1,120</div></div><div class="card kpi"><h3>CPL</h3><div class="n">$14</div></div><div class="card kpi"><h3>ROAS</h3><div class="n">5.2×</div></div><div class="card kpi"><h3>Reviews</h3><div class="n">4.9★</div><div class="d">212 Google</div></div></div>
+ <div class="card sec"><h3>Live experiments</h3><div id="exp"></div></div>
+</section>
+
+<!-- AGENTS -->
+<section class="view" id="v-agents">
+ <div class="card"><h3>AI floor · live<span class="sp"></span><a href="../agents-vault/agents.html">Open isometric floor ›</a></h3>
+ <div class="bots"><div class="bot w"><div class="o" style="width:96px;height:96px"></div>Atlas · CEO</div></div>
+ <div class="bots" style="padding-top:0"><div class="bot w"><div class="o"></div>Marketing<br><small>working</small></div><div class="bot"><div class="o"></div>Sales<br><small>waiting on you</small></div><div class="bot b"><div class="o"></div>CRM<br><small>blocked · SMS cap</small></div></div></div>
+ <div class="grid g3 sec"><div class="card kpi"><h3>Spend today</h3><div class="n">$6.40</div><div class="d">of $15 budget</div></div><div class="card kpi"><h3>Hours saved · wk</h3><div class="n">11.5</div></div><div class="card"><h3>Kill switch</h3><p style="color:var(--muted);font-size:13px;margin-bottom:16px">Pauses all agents. Confirms first.</p><button class="btn" style="border-color:var(--bad);color:var(--bad)">Pause all agents</button></div></div>
+</section>
+
+<!-- ROAST -->
+<section class="view" id="v-roast"><div class="card roast"><div><h3>Roast Room</h3><p style="font-size:26px;line-height:1.35;margin-bottom:var(--s4)">Pitch an idea. Get pressure-tested by an AI board.</p><p style="color:var(--muted);margin-bottom:var(--s6)">Chair: Bezos · Strategy: Graham · Offers: Hormozi · Cash: Buffett. AI approximations, not real people.</p><button class="btn pri">Enter the room ›</button></div>
+<div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center"><div class="av" style="width:84px;height:84px"></div><div class="av" style="width:84px;height:84px"></div><div class="av" style="width:84px;height:84px"></div><div class="av" style="width:84px;height:84px"></div><div class="av" style="width:84px;height:84px"></div><div class="av" style="width:84px;height:84px"></div></div></div>
+<div class="card sec"><h3>Recent verdicts</h3><div class="row"><div class="t"><b>Airbnb turnover package</b><small>Oct 28</small></div><span class="pill ok">Go</span></div><div class="row"><div class="t"><b>Raise base price 8%</b><small>Oct 21</small></div><span class="pill warn">Test first</span></div></div></section>
+
+<!-- SETTINGS -->
+<section class="view" id="v-settings"><div class="grid g11"><div class="card"><h3>Automations</h3><div id="auto"></div></div><div class="card"><h3>Guardrails</h3><div class="row"><div class="t"><b>Daily AI spend cap</b><small>$15</small></div></div><div class="row"><div class="t"><b>Outbound SMS / day</b><small>60</small></div></div><div class="row"><div class="t"><b>Ad spend change w/o approval</b><small>±$20</small></div></div><div class="row"><div class="t"><b>Quiet hours</b><small>9pm – 7am</small></div></div></div></div></section>
+
+<div class="ph-bar"><a href="#command" data-v="command">Home</a><a href="#leads" data-v="leads">Leads</a><a href="#schedule" data-v="schedule">Schedule</a><a href="#invoices" data-v="invoices">Money</a><a href="#agents" data-v="agents">Agents</a></div>
+</main></div>
+<div class="devbar"><div class="seg"><button id="dk" class="on">Dark</button><button id="lt">Light</button></div><div class="seg"><button id="dd" class="on">Desktop</button><button id="dp">Phone</button></div></div>
+<script>
+const $=s=>document.querySelector(s),H=document.documentElement;
+const T={command:["Good morning, Karim","Monday, Nov 2 · 4 things need you · ~22 min"],leads:["Leads & Pipeline","31 new this week · 7 need follow-up"],schedule:["Schedule","Week of Nov 2 · 3 crews"],crews:["Crews","6 cleaners · 3 crews"],invoices:["Invoices","3 overdue"],payouts:["Payouts","Next batch Friday"],growth:["Growth","Trailing 12 months"],marketing:["Marketing","Meta + Google · 3 experiments"],agents:["Agents","Atlas + 3 teams"],roast:["Roast Room","Pressure-test decisions"],settings:["Automations & Settings","Rules, guardrails, integrations"]};
+const P={New:[["Maya R.","Astoria · 2BR","$280"],["Bright Dental","Office · weekly","$1,200/mo"],["J. Okafor","Bushwick · move-out","$420"]],Contacted:[["L. Chen","UES · 3BR deep","$390"],["Nook Café","Commercial","$650/mo"]],Quoted:[["Hudson Lofts","Common areas","$820"],["A. Patel","LIC · 1BR","$190"]],Booked:[["S. Rivera","Park Slope · recurring","$160/wk"]],Won:[["Greenpoint Yoga","Weekly","$900/mo"],["K. Doyle","Move-in","$350"]]};
+$('#kan').innerHTML=Object.entries(P).map(([k,v])=>`<div class="col"><h4>${k}<span>${v.length}</span></h4>${v.map(l=>`<div class="lead"><b>${l[0]}</b>${l[1]}<div class="m"><span>${l[2]}</span><span>Meta</span></div></div>`).join('')}</div>`).join('');
+let c='<div class="h"></div>'+['Mon 2','Tue 3','Wed 4','Thu 5','Fri 6','Sat 7'].map(d=>`<div class="h">${d}</div>`).join('');
+const J={'0-0':['Park Slope','',2],'1-0':['Midtown office','c2',3],'2-2':['LIC move-out','c3',4],'4-1':['Astoria deep','',2],'0-3':['Bright Dental','c2',2],'1-4':['UES 3BR','c3',3],'4-4':['Hudson Lofts','',2],'5-0':['Greenpoint','c2',2],'2-0':['Bushwick','',2]};
+for(let h=0;h<8;h++){c+=`<div class="tm">${8+h}:00</div>`;for(let d=0;d<6;d++){const j=J[d+'-'+h];c+=`<div>${j?`<div class="job ${j[1]}" style="height:${j[2]*57-8}px">${j[0]}</div>`:''}</div>`}}
+$('#cal').innerHTML=c;
+$('#crews').innerHTML=[['Crew A','Ana & Rosa','On job · Park Slope',92],['Crew B','Marco & Lin','Driving · LIC',81],['Crew C','Dee & Sam','Available 1pm',64]].map(x=>`<div class="card"><div style="display:flex;gap:12px;align-items:center;margin-bottom:20px"><div class="av"></div><div class="av" style="margin-left:-20px"></div><div><b>${x[0]}</b><br><small style="color:var(--muted)">${x[1]}</small></div></div><span class="pill ok">${x[2]}</span><div style="margin-top:20px;font-size:13px;color:var(--muted)">Quality score ${x[3]}</div><div class="bar" style="margin-top:8px"><span style="width:${x[3]}%"></span></div></div>`).join('');
+$('#inv').innerHTML=[['Hudson Lofts','Common areas','bad','9d overdue','$820'],['Nook Café','Weekly','bad','3d overdue','$420'],['L. Chen','Deep clean','warn','Due Fri','$390'],['Bright Dental','Monthly','','Sent','$1,200'],['K. Doyle','Move-in','ok','Paid','$350']].map(r=>`<tr><td>${r[0]}</td><td class="hide-ph">${r[1]}</td><td><span class="pill ${r[2]}">${r[3]}</span></td><td class="num">${r[4]}</td></tr>`).join('');
+$('#pay').innerHTML=[['Ana',32,'$768'],['Rosa',30,'$720'],['Marco',28,'$672'],['Lin',26,'$624'],['Dee',24,'$576'],['Sam',23,'$550']].map(r=>`<tr><td>${r[0]}</td><td class="num">${r[1]}</td><td class="num">${r[2]}</td></tr>`).join('');
+$('#exp').innerHTML=[['"Move-out in 1 day" hook','CPL $9 vs $14','ok','Winning'],['Before/after carousel','CPL $16','warn','Running'],['Google LSA Queens','12 leads','','Learning']].map(e=>`<div class="row"><div class="t"><b>${e[0]}</b><small>${e[1]}</small></div><span class="pill ${e[2]}">${e[3]}</span></div>`).join('');
+$('#auto').innerHTML=['Instant lead reply (SMS)','Review ask after job','Overdue invoice reminders','Weekly Fri payout draft','Mon plan / Fri review'].map((a,i)=>`<div class="row"><div class="t"><b>${a}</b></div><div class="toggle ${i!=3?'on':''}"></div></div>`).join('');
+function roll(){document.querySelectorAll('.view.on [data-roll]').forEach(el=>{const t=+el.dataset.roll,$p=el.textContent.startsWith('$'),r=matchMedia('(prefers-reduced-motion:reduce)').matches||/Headless/.test(navigator.userAgent);let s=null;const f=n=>{const v=$p?'$'+Math.round(n).toLocaleString():Math.round(n);el.textContent=v};if(r)return f(t);requestAnimationFrame(function st(ts){s??=ts;const p=Math.min((ts-s)/1200,1);f(t*(1-Math.pow(1-p,4)));if(p<1)requestAnimationFrame(st)})})}
+function go(){const v=(location.hash||'#command').slice(1);document.querySelectorAll('.view').forEach(e=>e.classList.toggle('on',e.id=='v-'+v));document.querySelectorAll('[data-v]').forEach(a=>a.classList.toggle('on',a.dataset.v==v));const t=T[v]||T.command;$('#ttl').textContent=t[0];$('#sub').textContent=t[1];roll()}
+addEventListener('hashchange',go);go();
+const q=new URLSearchParams(location.search);if(q.get('theme'))H.dataset.theme=q.get('theme');if(q.get('device'))H.dataset.device=q.get('device');
+$('#dk').onclick=()=>{H.dataset.theme='dark';dk.classList.add('on');lt.classList.remove('on')};$('#lt').onclick=()=>{H.dataset.theme='light';lt.classList.add('on');dk.classList.remove('on')};
+$('#dd').onclick=()=>{H.dataset.device='desktop';dd.classList.add('on');dp.classList.remove('on')};$('#dp').onclick=()=>{H.dataset.device='phone';dp.classList.add('on');dd.classList.remove('on')};
+</script></body></html>

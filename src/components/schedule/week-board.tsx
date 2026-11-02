@@ -119,7 +119,7 @@ export function WeekAgenda({ days, today, visits, mode, onOpen }: { days: string
               <span className="text-[13px] text-ink-muted tabular">{list.length}</span>
             </h2>
             {list.length === 0 ? (
-              <p className="rounded-md border border-hairline bg-surface px-4 py-3 text-sm text-ink-muted">No visits.</p>
+              <p className="glass-card rounded-md border px-4 py-3 text-sm text-ink-muted">No visits.</p>
             ) : (
               <ul className="space-y-2">
                 {list.map((v) => (

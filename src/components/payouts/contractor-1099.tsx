@@ -123,7 +123,7 @@ export function Contractors1099({ rows, year, thresholdCents, warnBps }: { rows:
                   <span className="font-medium text-ink tabular" data-testid="paid-ytd">{formatCents(r.paidCents)}</span>
                   <span className="text-[12px] text-ink-muted tabular">{c === "over" ? "over by" : "to threshold"} {formatCents(c === "over" ? r.paidCents - thresholdCents : remainingToThresholdCents(r.paidCents, thresholdCents), { hideZeroCents: true })}</span>
                 </div>
-                <div role="progressbar" aria-label={`${r.displayName} toward the 1099 threshold`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-raised">
+                <div role="progressbar" aria-label={`${r.displayName} toward the 1099 threshold`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[color-mix(in_oklab,var(--kc-surface-raised)_55%,transparent)] ring-1 ring-hairline">
                   <div className={c === "over" ? "h-full rounded-full bg-danger-fill" : c === "approaching" ? "h-full rounded-full bg-warning-fill" : "h-full rounded-full bg-brand"} style={{ width: `${pct}%` }} />
                 </div>
                 {r.approvedCents > 0 && <p className="mt-1 text-[12px] text-ink-muted tabular">+ {formatCents(r.approvedCents)} approved, not yet paid</p>}

@@ -25,7 +25,7 @@ function Column({ stage, count, children }: { stage: LeadStage; count: number; c
       data-stage={stage}
       aria-label={`${stageLabel[stage]}, ${count} lead${count === 1 ? "" : "s"}`}
       className={cn(
-        "flex min-h-[320px] min-w-0 flex-col rounded-md border border-hairline bg-surface/60 transition-colors duration-fast",
+        "flex min-h-[320px] min-w-0 flex-col rounded-md border glass-flat transition-colors duration-fast",
         isOver && "bg-brand/[0.06] shadow-[inset_0_0_0_1px_var(--kc-accent)]",
       )}
     >
@@ -135,7 +135,7 @@ export function LeadsClient({ initialLeads, team, today, now, openId }: { initia
               {(byStage.get(s) ?? []).map((l) => (
                 <li key={l.id}>{card(l, false)}</li>
               ))}
-              {(byStage.get(s)?.length ?? 0) === 0 && <li className="rounded-md border border-hairline bg-surface px-4 py-3 text-sm text-ink-muted">Nothing here.</li>}
+              {(byStage.get(s)?.length ?? 0) === 0 && <li className="glass-card rounded-md border px-4 py-3 text-sm text-ink-muted">Nothing here.</li>}
             </ul>
           </section>
         ))}

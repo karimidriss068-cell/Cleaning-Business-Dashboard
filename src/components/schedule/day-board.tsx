@@ -202,7 +202,7 @@ export function VisitList({ lanes, mode, onOpen }: { lanes: Lane[]; mode: "crew"
             <span className="text-[13px] text-ink-muted tabular">{lane.visits.length}</span>
           </h2>
           {lane.visits.length === 0 ? (
-            <p className="rounded-md border border-hairline bg-surface px-4 py-3 text-sm text-ink-muted">Nothing unassigned.</p>
+            <p className="glass-card rounded-md border px-4 py-3 text-sm text-ink-muted">Nothing unassigned.</p>
           ) : (
             <ul className="space-y-2">
               {lane.visits.map((v) => (

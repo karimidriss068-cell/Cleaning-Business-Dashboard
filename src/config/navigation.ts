@@ -1,7 +1,9 @@
 import {
   CalendarDays,
   ClipboardCheck,
+  Database,
   Gauge,
+  Handshake,
   KanbanSquare,
   Megaphone,
   MessagesSquare,
@@ -35,12 +37,14 @@ export const officeNav: NavItem[] = [
   { href: "/leads", label: "Leads & Pipeline", short: "Leads", icon: KanbanSquare, tab: true, section: "Operate", keywords: "pipeline quotes prospects" },
   { href: "/schedule", label: "Schedule", short: "Schedule", icon: CalendarDays, tab: true, section: "Operate", keywords: "calendar jobs dispatch" },
   { href: "/crews", label: "Crews", short: "Crews", icon: Users, section: "Operate", keywords: "subcontractors team cleaners" },
+  { href: "/sales", label: "Sales", short: "Sales", icon: Handshake, section: "Operate", keywords: "dials sms close rate reps bots pipeline forecast" },
   { href: "/invoices", label: "Invoices", short: "Invoices", icon: Receipt, tab: true, section: "Business", keywords: "invoices payments billing stripe collect" },
   { href: "/payouts", label: "Payouts", short: "Payouts", icon: Wallet, section: "Business", adminOnly: true, keywords: "payouts pay subcontractors 1099 w-9 zelle" },
   { href: "/growth", label: "Growth", short: "Growth", icon: TrendingUp, section: "Business", keywords: "goal pace milestones ad spend meta cac capacity cash runway scale" },
   { href: "/board", label: "Roast Room", short: "Board", icon: MessagesSquare, section: "Business", adminOnly: true, keywords: "board advisors decision roast critique ai council" },
   { href: "/marketing", label: "Marketing", short: "Marketing", icon: Megaphone, section: "Business", keywords: "campaigns ads" },
   { href: "/automations", label: "Automations", short: "Automations", icon: Workflow, section: "Business", keywords: "workflows texts reminders" },
+  { href: "/data-room", label: "Agent data room", short: "Data room", icon: Database, section: "Business", keywords: "agents feeds roi ai data" },
   { href: "/settings", label: "Settings", short: "Settings", icon: Settings, section: "Business", keywords: "account team integrations" },
 ];
 

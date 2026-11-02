@@ -39,7 +39,7 @@ export function Sidebar({ role, userName, roleLabel }: { role: MemberRole | null
           title={item.label}
           className={cn(
             "relative flex h-10 items-center gap-3 rounded-sm px-2.5 text-sm font-medium transition-colors duration-fast",
-            active ? "bg-surface-raised/80 text-ink" : "text-ink-muted hover:bg-surface-raised/50 hover:text-ink",
+            active ? "glass-flat text-ink shadow-[0_0_18px_-6px_var(--kc-accent)] ring-1 ring-brand/30" : "text-ink-muted hover:bg-surface-raised/50 hover:text-ink",
           )}
         >
           {active && <span aria-hidden className="absolute inset-y-2 -left-3 w-[3px] rounded-r-full bg-brand shadow-[0_0_10px_var(--kc-glow)]" />}

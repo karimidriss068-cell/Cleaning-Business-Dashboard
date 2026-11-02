@@ -85,7 +85,7 @@ function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="card-footer"
       className={cn(
-        "flex items-center rounded-b-md border-t bg-surface-raised p-(--card-spacing)",
+        "flex items-center rounded-b-md border-t bg-[color-mix(in_oklab,var(--kc-surface-raised)_45%,transparent)] border-hairline p-(--card-spacing)",
         className
       )}
       {...props}

@@ -1,0 +1,32 @@
+# Components & states
+- IsoStage (svg; fitted viewBox) — normal / focused(team) / killed
+- Platform (box + inner floor + grid + glow edge) — normal / dimmed
+- Bot (name, state, task, scale) — working / waiting / blocked / idle / paused; tooltip
+- Hologram (kind: ad, bars, funnel, quote, kanban, globe; label) — shimmer / static
+- Desk, Plant, Lamp (ambient), Particles
+- HandoffPath + Packet — flowing / paused / hidden(reduced motion)
+- WingLabel (team, lead, member count)
+- MetricsBar: Metric (rolling number) ×4 — loading/rolling/settled
+- ControlBar: Ask Atlas (⌘K), Focus cycle (All/Marketing/Sales/CRM), Replay, Theme, Device, Kill/Resume
+- KillDialog — closed / open; confirm → killed state
+- BriefingCard: revenue figure, PaceBar (animated), Top-3 list, decisions count
+- ApprovalTray: count badge, ApprovalCard (type, risk lo/hi, text, Approve/Edit/Reject) — pending / dismissed(slide out); Approve-all-low-risk
+- ChatDock: message list (atlas/me), input, send — idle / sending / reply
+- ActivityFeed: FeedItem (actor, action) — entering / settled; max 4 visible; replay mode
+- Themes: dark / light. Layouts: desktop / phone.
+
+## v4 additions
+- LoopStrip: StageNode ×5, GapConnector (owner bot, leak flag, flowing dot) — normal / leak / reduced-motion
+- CapTag (on-floor shield) — tripped; click → Guardrails
+- AlertsButton + badge — quiet(3) / all(50)
+- MetricsBar: OwnerHours metric
+- ApprovalCard: cost chip (minutes); Tray header minutes total + HoursBar; Batch button (minutes saved)
+- OpsDrawer — closed / open; Tabs: Cadence, Guardrails, Hours, Playbook, Alerts, Capacity, Clients, Lead→Payout
+- CadenceToggle — mon / fri; WeekPlanCard, ReviewCard, CommitmentsCard, DecisionsCard (Lock plan)
+- GuardrailRow (spend/SMS/outbound bars) — ok / warn(≥90%) / tripped(100%); TripCard — pending / resolved (Raise / Switch to email / Hold)
+- HoursRing, TimeBreakdown, BatchWindowCard
+- ExperimentCard — running / done; PromoteButton — idle / promoted; SOPCard (reuse count, bots) — new / settled
+- QuietToggle; AlertCard — blocked / overspend / churn; RoutineCollapse — hidden / shown
+- CapacityCompare (pipeline vs delivery), HireProposalCard (Start hiring / Not yet), TriggerCard, CutSignalCard
+- ClientHealthRow (score bar bad/warn, reason, action) — open / queued; WinBackQueueCard
+- LoopDetailTable

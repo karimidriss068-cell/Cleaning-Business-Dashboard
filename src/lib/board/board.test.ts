@@ -242,8 +242,19 @@ describe("prompt assembly", () => {
   it("makes the synthesis end with exactly 3 prioritized actions for the next 7 days", () => {
     expect(synthesisSystem()).toMatch(/exactly 3 prioritized actions for the next 7 days/);
   });
-  it("labels the advisors as AI approximations and forbids quotes and impersonation", () => {
-    for (const k of ADVISOR_KEYS) expect(advisorSystem(k)).toMatch(/AI advisor[\s\S]*not a real person[\s\S]*never quote/);
+  it("labels the advisors as AI approximations and limits quotes to the hot sheet", () => {
+    for (const k of ADVISOR_KEYS) {
+      const sys = advisorSystem(k);
+      expect(sys).toMatch(/AI approximation[\s\S]*not a real person[\s\S]*Never invent new quotes/);
+      expect(sys).toMatch(/<hot_sheet>[\s\S]*seat[\s\S]*\(S\d{3}/);
+    }
+  });
+
+  it("loads the right hot sheet per seat", () => {
+    expect(advisorSystem("cash_ruin")).toContain("Warren Buffett seat");
+    expect(advisorSystem("offers_pricing")).toMatch(/Hormozi/);
+    expect(advisorSystem("strategy")).toMatch(/Graham/);
+    expect(synthesisSystem()).toMatch(/Bezos/);
   });
   it("builds a numbers-only snapshot with no contact data, secrets or free text from the growth data", () => {
     expect(ctx.length).toBeLessThanOrEqual(MAX_CONTEXT_CHARS);

@@ -45,7 +45,7 @@ function MoveForm({ state, onClose, onSubmit }: { state: NonNullable<MoveState>;
             onClick={() => setStage(s)}
             className={cn(
               "flex h-11 items-center justify-between rounded-sm border px-3 text-left text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              stage === s ? "border-brand bg-highlight text-ink" : "border-hairline bg-surface text-ink",
+              stage === s ? "border-brand bg-highlight text-ink" : "glass-field border-hairline text-ink",
             )}
           >
             <span>{stageLabel[s]}</span>

@@ -30,6 +30,7 @@ import { BarChart } from "@/components/system/bar-chart";
 import { GlassPanel } from "@/components/system/glass-panel";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { Database } from "@/lib/supabase/database.types";
+import { AnalyticsSection } from "@/components/analytics/analytics-section";
 
 export const metadata: Metadata = { title: "Command Center" };
 export const dynamic = "force-dynamic";
@@ -62,7 +63,7 @@ export default async function CommandCenterPage() {
   if (!profile) {
     return (
       <div className="mx-auto w-full max-w-[1400px] px-4 py-6 md:px-6">
-        <div className="rounded-md border border-border bg-surface">
+        <div className="glass-card rounded-md border">
           <EmptyState icon={UserX} title="Your login isn't on the team yet">
             You&apos;re signed in, but no team profile is linked to this account, so there&apos;s nothing to show. Ask the owner to add you.
           </EmptyState>
@@ -458,7 +459,7 @@ export default async function CommandCenterPage() {
                         aria-valuemin={0}
                         aria-valuemax={100}
                         aria-valuenow={pct}
-                        className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-raised"
+                        className="mt-2 h-1.5 overflow-hidden rounded-full bg-[color-mix(in_oklab,var(--kc-surface-raised)_55%,transparent)] ring-1 ring-hairline"
                       >
                         <div
                           className={pct >= 100 ? "h-full rounded-full bg-success-fill" : "h-full rounded-full bg-linear-to-r from-brand/60 to-brand shadow-[0_0_12px_var(--kc-glow)]"}
@@ -473,6 +474,7 @@ export default async function CommandCenterPage() {
           </section>
         </div>
       </div>
+      <AnalyticsSection pack="command" />
     </div>
     </ReplayProvider>
   );

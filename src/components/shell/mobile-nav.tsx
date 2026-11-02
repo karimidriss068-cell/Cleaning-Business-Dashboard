@@ -92,7 +92,7 @@ export function MobileTabBar({ role, userName, roleLabel }: { role: MemberRole |
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex h-12 items-center gap-3 rounded-sm px-3 text-[15px] font-medium",
-                    active ? "bg-surface-raised text-brand-text" : "text-ink hover:bg-surface-raised",
+                    active ? "glass-flat text-brand-text ring-1 ring-brand/30 shadow-[0_0_18px_-6px_var(--kc-accent)]" : "text-ink hover:bg-surface-raised/50",
                   )}
                 >
                   <Icon className="size-5 text-ink-muted" aria-hidden />
@@ -107,7 +107,7 @@ export function MobileTabBar({ role, userName, roleLabel }: { role: MemberRole |
           <ThemeToggle persist />
         </div>
         <form action={signOut} className="mt-4">
-          <button type="submit" className="flex h-12 w-full items-center gap-3 rounded-sm px-1 text-[15px] font-medium text-ink hover:bg-surface-raised">
+          <button type="submit" className="flex h-12 w-full items-center gap-3 rounded-sm px-1 text-[15px] font-medium text-ink hover:bg-surface-raised/50">
             <LogOut className="size-5 text-ink-muted" aria-hidden />
             Sign out
           </button>
