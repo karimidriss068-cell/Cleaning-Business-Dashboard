@@ -15,6 +15,9 @@ import { AnimatedNumber } from "@/components/system/animated-number";
 import { Meter } from "@/components/system/meter";
 import { StatusPill } from "@/components/system/status-pill";
 import { GrowthCard } from "@/components/growth/growth-card";
+import { ReplayDeck, ReplayProvider } from "@/components/vault/replay";
+import { MoneyFlowPanel, RevenueByChannelPanel } from "@/components/vault/money-panels";
+import { loadReplay, loadRevenueByChannel } from "@/lib/vault/replay-data";
 import { TiersPanel } from "@/components/growth/tiers-panel";
 import { ProfitPanel } from "@/components/growth/profit-panel";
 import { ForecastPanel } from "@/components/growth/forecast-panel";
@@ -58,6 +61,7 @@ export default async function GrowthPage() {
     );
   }
   const snapshot = await loadGrowthSnapshot(ctx.supabase);
+  const [replay, byChannel] = await Promise.all([loadReplay(ctx.supabase, snapshot.today, snapshot.goal.milestones), loadRevenueByChannel(ctx.supabase)]);
   const { data: settingsRow, error } = await ctx.supabase.from("growth_settings").select("*").single();
   if (error) throw new Error(`Loading growth settings failed: ${error.message}`);
   const settings = growthSettingsSchema.parse({
@@ -84,6 +88,7 @@ export default async function GrowthPage() {
   const cents = (c: number | null) => (c === null ? "—" : formatCents(c, { hideZeroCents: true }));
 
   return (
+    <ReplayProvider frames={replay} includesDemo={snapshot.includesDemo}>
     <div className="mx-auto w-full max-w-[1400px] space-y-8 px-4 py-6 md:px-6">
       <PageHeader
         eyebrow="Business"
@@ -92,7 +97,14 @@ export default async function GrowthPage() {
         actions={snapshot.includesDemo ? <DemoDataPill /> : undefined}
       />
 
+      <ReplayDeck description="Drag across the last 30 days to watch revenue, leads and the pace status change with the day." />
+
       <GrowthCard snapshot={snapshot} index={1} />
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        <RevenueByChannelPanel data={byChannel} index={2} />
+        {snapshot.profit?.thisMonth ? <MoneyFlowPanel month={snapshot.profit.thisMonth} index={2} /> : null}
+      </div>
 
       <Section id="north-star" title="North star: 12 months" description={`Pace against the ${snapshot.tiers.selected === "north_star" ? "north star" : snapshot.tiers.selected} tier, with the others beside it. Month ${snapshot.tiers.planMonth === 0 ? "1 hasn't started" : `${snapshot.tiers.planMonth} of 12`}.`} index={2}>
         <TiersPanel snapshot={snapshot} />
@@ -229,5 +241,6 @@ export default async function GrowthPage() {
         </Section>
       )}
     </div>
+    </ReplayProvider>
   );
 }

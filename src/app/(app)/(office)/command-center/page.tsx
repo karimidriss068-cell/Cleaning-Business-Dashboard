@@ -18,6 +18,10 @@ import { marginBps, monthShort } from "@/lib/payouts";
 import { PageHeader } from "@/components/shell/page-header";
 import { AnimatedNumber } from "@/components/system/animated-number";
 import { StatTile } from "@/components/system/stat-tile";
+import { ReplayDeck, ReplayProvider } from "@/components/vault/replay";
+import { ReplayStatTile } from "@/components/vault/replay-tiles";
+import { RevenueByChannelPanel } from "@/components/vault/money-panels";
+import { loadReplay, loadRevenueByChannel } from "@/lib/vault/replay-data";
 import { StatusPill } from "@/components/system/status-pill";
 import { EmptyState } from "@/components/system/empty-state";
 import { DataTable } from "@/components/system/data-table";
@@ -83,7 +87,7 @@ export default async function CommandCenterPage() {
   const aiSummary = profile.role === "owner" ? await loadAiSummary(supabase) : null;
   const ghlStatus = profile.role === "owner" || profile.role === "admin" ? await loadSyncStatus(supabase).catch(() => null) : null;
 
-  const [jobsRes, lastMonthRes, leadsRes, openLeadsRes, waitingRes, invoicesRes, goalsRes, contractsRes, coiRes, followUpsRes, months, growth] = await Promise.all([
+  const [jobsRes, lastMonthRes, leadsRes, openLeadsRes, waitingRes, invoicesRes, goalsRes, contractsRes, coiRes, followUpsRes, months, growth, byChannel] = await Promise.all([
     supabase
       .from("jobs")
       .select(
@@ -116,11 +120,13 @@ export default async function CommandCenterPage() {
     supabase.from("leads").select("next_follow_up_on").in("stage", ["new", "contacted", "quoted"]).lt("next_follow_up_on", today).order("next_follow_up_on"),
     loadFinanceMonths(supabase, 6),
     loadGrowthSnapshot(supabase),
+    loadRevenueByChannel(supabase),
   ]);
 
   const failed = [jobsRes, lastMonthRes, leadsRes, openLeadsRes, waitingRes, invoicesRes, goalsRes, contractsRes, coiRes, followUpsRes].find((r) => r.error);
   if (failed?.error) throw new Error(`Command Center query failed: ${failed.error.message}`);
 
+  const replay = await loadReplay(supabase, today, growth.goal.milestones);
   const jobs = jobsRes.data ?? [];
   const live = jobs.filter((j) => j.status !== "cancelled");
   const sparkDays = dayRange(sparkStart, today);
@@ -199,6 +205,7 @@ export default async function CommandCenterPage() {
   ].filter((a) => a.show);
 
   return (
+    <ReplayProvider frames={replay} includesDemo={growth.includesDemo}>
     <div className="mx-auto w-full max-w-[1400px] space-y-6 px-4 py-6 md:px-6">
       <PageHeader
         eyebrow={`Operations · ${formatNyDate(now, "weekday")}`}
@@ -206,8 +213,11 @@ export default async function CommandCenterPage() {
         description={`${todaysLive.length} visit${todaysLive.length === 1 ? "" : "s"} today · ${waiting.length} lead${waiting.length === 1 ? "" : "s"} waiting · ${overdue.length} overdue invoice${overdue.length === 1 ? "" : "s"}`}
       />
 
+      <ReplayDeck description="Drag across the last 30 days to replay the dashboard: revenue, visits, leads and pace change with the day." />
+
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatTile
+        <ReplayStatTile
+          metric="visits"
           label="Jobs today"
           figure={{ value: todaysLive.length, kind: "count" }}
           hint={`${done} done · ${todaysLive.length - done} to go`}
@@ -216,7 +226,8 @@ export default async function CommandCenterPage() {
           href="/schedule"
           index={1}
         />
-        <StatTile
+        <ReplayStatTile
+          metric="monthToDate"
           label="Revenue this month"
           figure={{ value: Math.round(revenue / 100) * 100, kind: "cents", hideZeroCents: true }}
           hint="completed jobs"
@@ -245,6 +256,8 @@ export default async function CommandCenterPage() {
       </div>
 
       <GrowthCard snapshot={growth} index={4} />
+
+      <RevenueByChannelPanel data={byChannel} index={5} />
 
       {aiSummary && <AiBudgetBanner summary={aiSummary} />}
 
@@ -461,5 +474,6 @@ export default async function CommandCenterPage() {
         </div>
       </div>
     </div>
+    </ReplayProvider>
   );
 }

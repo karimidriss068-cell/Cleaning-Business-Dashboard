@@ -7,7 +7,8 @@ import { GlassPanel } from "@/components/system/glass-panel";
 import { Meter } from "@/components/system/meter";
 import { StatusPill } from "@/components/system/status-pill";
 import { DemoDataPill } from "./demo-pill";
-import { longDate, money, monthLabel, paceSentence } from "./format";
+import { PacePill, RevenueColumn, type LivePace } from "./replay-pace";
+import { longDate, money } from "./format";
 
 /**
  * The Command Center's growth card: this month's revenue against the plan's
@@ -18,8 +19,19 @@ import { longDate, money, monthLabel, paceSentence } from "./format";
 export function GrowthCard({ snapshot, index = 0 }: { snapshot: GrowthSnapshot; index?: number }) {
   const { pace, clients, leads, goal } = snapshot;
   const before = pace.phase === "before";
-  const share = pace.milestoneCents > 0 ? pace.revenueCents / pace.milestoneCents : 0;
-  const expectedShare = pace.milestoneCents > 0 ? pace.expectedToDateCents / pace.milestoneCents : 0;
+  const livePace: LivePace = {
+    before,
+    phase: pace.phase,
+    status: pace.status,
+    daysAhead: pace.daysAhead,
+    monthStart: pace.monthStart,
+    revenueCents: pace.revenueCents,
+    milestoneCents: pace.milestoneCents,
+    expectedToDateCents: pace.expectedToDateCents,
+    daysUntilStart: pace.daysUntilStart,
+    startDate: goal.startDate,
+    goalReached: pace.goalReached,
+  };
   const leadsShare = leads.perWeekNeeded > 0 ? leads.perWeekActual / leads.perWeekNeeded : 0;
   return (
     <GlassPanel as="section" aria-labelledby="growth" className="kc-enter p-5 md:p-6" style={{ "--i": index } as React.CSSProperties} data-testid="growth-card">
@@ -33,31 +45,12 @@ export function GrowthCard({ snapshot, index = 0 }: { snapshot: GrowthSnapshot; 
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {snapshot.includesDemo && <DemoDataPill />}
-          {before ? (
-            <StatusPill tone="neutral">Starts {longDate(goal.startDate)}</StatusPill>
-          ) : (
-            <StatusPill tone={paceTone[pace.status]}>{paceLabel[pace.status]}</StatusPill>
-          )}
+          <PacePill pace={livePace} />
         </div>
       </div>
 
       <div className="mt-5 grid gap-6 md:grid-cols-3">
-        <div className="min-w-0 space-y-2" data-testid="growth-revenue">
-          <p className="text-[11px] font-semibold tracking-[0.12em] text-ink-muted uppercase">Revenue, {monthLabel(pace.monthStart)}</p>
-          <p className="font-heading text-[32px] leading-9 font-medium tracking-[-0.02em] text-ink tabular">
-            <AnimatedNumber value={Math.round(pace.revenueCents / 100) * 100} kind="cents" hideZeroCents />
-          </p>
-          <Meter value={share} marker={before ? undefined : expectedShare} tone={before ? "neutral" : paceTone[pace.status]} label="Revenue against this month's milestone" />
-          <p className="text-[13px] text-ink-muted tabular">
-            {before ? `Month 1 asks for ${money(pace.milestoneCents)}. ${pace.daysUntilStart} days to go.` : `of ${money(pace.milestoneCents)} milestone · ${paceSentence(pace.daysAhead)}`}
-          </p>
-          {pace.goalReached && (
-            <p className="text-[13px] font-medium text-success">
-              Full goal reached in {monthLabel(pace.goalReached.monthStart)}
-              {pace.goalReached.monthsEarly > 0 ? `, ${pace.goalReached.monthsEarly} month${pace.goalReached.monthsEarly === 1 ? "" : "s"} early` : ""}.
-            </p>
-          )}
-        </div>
+        <RevenueColumn pace={livePace} />
 
         <div className="min-w-0 space-y-3" data-testid="growth-clients">
           <p className="text-[11px] font-semibold tracking-[0.12em] text-ink-muted uppercase">Clients won vs needed</p>

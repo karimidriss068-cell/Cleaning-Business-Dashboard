@@ -252,3 +252,10 @@ The crew view (`/my-jobs`, `/my-jobs/[id]`) uses crew mode everywhere:
 - Icon-only buttons have an `aria-label` and a tooltip; status is never color alone; charts have text summaries.
 - Respects `prefers-reduced-motion` (no motion at all). The theme defaults to dark, with a manual light/dark/system switch.
 - Dates and times show in America/New_York via `src/lib/format.ts`, and money via `formatCents`.
+
+
+## Vault (default direction)
+
+Mood: a dark vault with warm light. Palette in `brand.ts` (`directions.vault`): canvas #0B0A09, surface #151311, highlight #2B211B, cream text #F2EBDD, one muted tan accent #A67B5B, slate-blue second accent. Light variant: cream canvas, brown-black text. Warning is an olive yellow and danger a rose so both clear the 30 degree hue rule against the tan. Type: Mohave (display), DM Sans (body).
+
+Depth and motion (all CSS/canvas 2D, no library): lazy depth-field background with cursor parallax (desktop, fine pointer, no reduced motion/transparency, not low-memory or save-data; thins itself or stops if frames exceed 22 ms), light cone and vignette (CSS, always), tilt toward the cursor with a moving reflection (`TiltFrame`), springy press (`kc-press`), replay scrubber, orbitable 3D chart, revenue flow. Phones, reduced motion and crew screens get none of the 3D, tilt or parallax.

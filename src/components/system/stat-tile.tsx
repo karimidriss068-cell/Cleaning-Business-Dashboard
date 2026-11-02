@@ -3,6 +3,7 @@ import { ArrowDownRight, ArrowRight, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AnimatedNumber, type NumberKind } from "./animated-number";
 import { Sparkline } from "./sparkline";
+import { TiltFrame } from "@/components/vault/tilt-frame";
 
 export type Delta = {
   /** Already formatted with its sign, e.g. "+12%" or "−3". */
@@ -46,8 +47,12 @@ export function StatTile({
       <span aria-hidden className="pointer-events-none absolute inset-x-6 top-0 h-px bg-linear-to-r from-transparent via-brand/60 to-transparent" />
       <span className="text-[11px] font-semibold tracking-[0.12em] text-ink-muted uppercase">{label}</span>
       <div className="flex items-end justify-between gap-4">
-        <span className="font-heading text-[40px] leading-[44px] font-medium tracking-[-0.02em] text-ink tabular text-glow">{figure ? <AnimatedNumber value={figure.value} kind={figure.kind} hideZeroCents={figure.hideZeroCents} /> : value}</span>
-        {spark && spark.length > 1 && <Sparkline values={spark} delayMs={150 + index * 55} className="mb-1.5" />}
+        <span className="kc-depth font-heading text-[40px] leading-[44px] font-medium tracking-[-0.02em] text-ink tabular text-glow" style={{ "--depth": 5 } as React.CSSProperties}>{figure ? <AnimatedNumber value={figure.value} kind={figure.kind} hideZeroCents={figure.hideZeroCents} /> : value}</span>
+        {spark && spark.length > 1 && (
+          <span className="kc-depth mb-1.5" style={{ "--depth": 9 } as React.CSSProperties}>
+            <Sparkline values={spark} delayMs={150 + index * 55} />
+          </span>
+        )}
       </div>
       <div className="flex min-h-6 flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-ink-muted">
         {delta && (
@@ -70,18 +75,22 @@ export function StatTile({
     </>
   );
   const frame = cn(
-    "kc-enter relative flex flex-col gap-3 overflow-hidden rounded-md border glass-card p-5",
+    "kc-enter relative flex h-full flex-col gap-3 overflow-hidden rounded-md border glass-card p-5",
     href && "hover-lift hover:border-brand/40",
     className,
   );
   const style = { "--i": index } as React.CSSProperties;
-  return href ? (
-    <Link href={href} className={frame} style={style}>
-      {body}
-    </Link>
-  ) : (
-    <div className={frame} style={style}>
-      {body}
-    </div>
+  return (
+    <TiltFrame className="h-full">
+      {href ? (
+        <Link href={href} className={frame} style={style}>
+          {body}
+        </Link>
+      ) : (
+        <div className={frame} style={style}>
+          {body}
+        </div>
+      )}
+    </TiltFrame>
   );
 }

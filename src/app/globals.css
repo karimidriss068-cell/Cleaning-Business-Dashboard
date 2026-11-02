@@ -566,3 +566,173 @@
 @keyframes kc-drift { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(5px, -3px); } 50% { transform: translate(0, -6px); } 75% { transform: translate(-5px, -3px); } }
 @utility kc-orbit-drift { animation: kc-drift 12s ease-in-out infinite; animation-delay: calc(var(--i, 0) * -2.3s); }
 .kc-stop-a { stop-color: var(--char); }
+
+/* ---- Vault direction: depth, light and spring motion (DESIGN.md "Vault") ---- */
+:root {
+  --kc-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.kc-vault-light,
+.kc-vault-vignette {
+  display: none;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+[data-direction="vault"] {
+  --kc-vignette: color-mix(in oklab, var(--kc-text) 9%, transparent);
+}
+[data-direction="vault"].dark {
+  --kc-vignette: rgb(0 0 0 / 0.6);
+}
+/* A warm key light from the top left and a faint beam from the right, over the aurora. */
+[data-direction="vault"] .kc-vault-light {
+  display: block;
+  background:
+    radial-gradient(70vmax 46vmax at 14% -10%, color-mix(in oklab, var(--kc-accent) 17%, transparent), transparent 64%),
+    conic-gradient(from 196deg at 84% -14%, transparent 0deg, color-mix(in oklab, var(--kc-text) 5%, transparent) 18deg, transparent 36deg);
+}
+[data-direction="vault"] .kc-vault-vignette {
+  display: block;
+  background: radial-gradient(130% 100% at 50% 38%, transparent 58%, var(--kc-vignette) 100%);
+}
+.kc-vault-canvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  animation: kc-vault-in 1.6s var(--kc-ease-enter) 0.15s forwards;
+}
+@keyframes kc-vault-in {
+  to {
+    opacity: 1;
+  }
+}
+
+/* Tilt toward the cursor with a moving reflection (components/vault/tilt-frame.tsx sets the variables). */
+.kc-tilt {
+  position: relative;
+  border-radius: var(--kc-radius-md);
+  transform-origin: center;
+}
+.kc-tilt::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--kc-duration-base) var(--kc-ease-standard);
+}
+[data-direction="vault"] .kc-tilt::after {
+  opacity: var(--glare, 0);
+  background: radial-gradient(300px circle at var(--mx, 50%) var(--my, 0%), rgb(255 255 255 / 0.13), transparent 62%);
+}
+[data-direction="vault"]:not(.dark) .kc-tilt::after {
+  background: radial-gradient(300px circle at var(--mx, 50%) var(--my, 0%), rgb(255 255 255 / 0.6), transparent 62%);
+}
+[data-direction="vault"] .kc-depth {
+  transform: translate3d(calc(var(--px, 0) * var(--depth, 0) * 1px), calc(var(--py, 0) * var(--depth, 0) * 1px), 0);
+}
+
+/* Springy press for controls that opt in. Un-layered on purpose: it must beat the utility transitions. */
+.kc-press {
+  transition:
+    transform 340ms var(--kc-ease-spring),
+    color var(--kc-duration-fast) var(--kc-ease-standard),
+    background-color var(--kc-duration-fast) var(--kc-ease-standard),
+    border-color var(--kc-duration-fast) var(--kc-ease-standard),
+    box-shadow var(--kc-duration-fast) var(--kc-ease-standard),
+    opacity var(--kc-duration-fast) var(--kc-ease-standard);
+}
+[data-direction="vault"] .kc-press:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+[data-direction="vault"] .kc-press:not(:disabled):active {
+  transform: scale(0.96);
+}
+
+/* Replay scrubber */
+.kc-range {
+  appearance: none;
+  height: 20px;
+  background: transparent;
+  cursor: pointer;
+}
+.kc-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--kc-text) 16%, transparent);
+}
+.kc-range::-moz-range-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--kc-text) 16%, transparent);
+}
+.kc-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -7px;
+  border-radius: 9999px;
+  border: 2px solid var(--kc-surface);
+  background: var(--kc-accent);
+  box-shadow: 0 0 12px var(--kc-glow);
+  transition: transform 260ms var(--kc-ease-spring);
+}
+.kc-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  border: 2px solid var(--kc-surface);
+  background: var(--kc-accent);
+  box-shadow: 0 0 12px var(--kc-glow);
+  transition: transform 260ms var(--kc-ease-spring);
+}
+.kc-range:hover::-webkit-slider-thumb,
+.kc-range:active::-webkit-slider-thumb {
+  transform: scale(1.25);
+}
+.kc-range:focus-visible {
+  outline: 2px solid var(--kc-focus);
+  outline-offset: 3px;
+  border-radius: 9999px;
+}
+
+.kc-sankey-band {
+  animation: kc-sankey-in 900ms var(--kc-ease-enter) both;
+}
+@keyframes kc-sankey-in {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* Phones and reduced effects: no tilt, no parallax, no canvas; the CSS background stays. */
+@media (prefers-reduced-motion: reduce) {
+  .kc-tilt {
+    transform: none !important;
+  }
+  .kc-tilt::after {
+    display: none;
+  }
+  [data-direction="vault"] .kc-depth {
+    transform: none;
+  }
+  .kc-sankey-band {
+    animation: none;
+  }
+  .kc-vault-canvas {
+    animation: none;
+    opacity: 1;
+  }
+  .kc-press {
+    transition-duration: 0ms;
+  }
+  [data-direction="vault"] .kc-press:not(:disabled):hover,
+  [data-direction="vault"] .kc-press:not(:disabled):active {
+    transform: none;
+  }
+}

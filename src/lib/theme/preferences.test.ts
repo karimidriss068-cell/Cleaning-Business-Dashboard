@@ -2,16 +2,16 @@ import { describe, expect, it } from "vitest";
 import { defaultPreferences, preferencesSchema, preferencesUpdateSchema, resolveDirection } from "./preferences";
 
 describe("appearance preferences", () => {
-  it("defaults to Titanium & Ice in dark mode", () => {
-    expect(defaultPreferences).toEqual({ direction: "titanium", theme: "dark" });
+  it("defaults to Vault in dark mode", () => {
+    expect(defaultPreferences).toEqual({ direction: "vault", theme: "dark" });
   });
 
   it("resolves saved > cookie > localStorage > default, skipping invalid values", () => {
     expect(resolveDirection({ saved: "ocean", cookie: "midnight", local: "titanium" })).toBe("ocean");
     expect(resolveDirection({ saved: undefined, cookie: "midnight", local: "ocean" })).toBe("midnight");
     expect(resolveDirection({ cookie: "gold", local: "ocean" })).toBe("ocean");
-    expect(resolveDirection({ saved: null, cookie: "", local: "neon" })).toBe("titanium");
-    expect(resolveDirection({})).toBe("titanium");
+    expect(resolveDirection({ saved: null, cookie: "", local: "neon" })).toBe("vault");
+    expect(resolveDirection({})).toBe("vault");
   });
 
   it("validates full and partial preferences", () => {

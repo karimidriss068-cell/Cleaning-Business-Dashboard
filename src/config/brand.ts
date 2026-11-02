@@ -3,7 +3,7 @@
  * color, font pairing, effect, radius, elevation, motion and density value in
  * DESIGN.md.
  *
- * Three visual directions are defined while the owner chooses one. Each has a
+ * Four visual directions are defined (Vault is the default; the three older ones stay selectable). Each has a
  * dark palette (primary) and a light palette (secondary). The active direction
  * is a data-direction attribute on <html> (see src/lib/theme/direction.ts).
  *
@@ -79,7 +79,7 @@ export type Effects = {
 };
 
 /** Google Fonts loaded in src/app/layout.tsx; keys map to next/font instances. */
-export type FontKey = "sora" | "manrope" | "unbounded" | "figtree" | "syne" | "plexSans";
+export type FontKey = "sora" | "manrope" | "unbounded" | "figtree" | "syne" | "plexSans" | "mohave" | "dmSans";
 
 export type Direction = {
   label: string;
@@ -90,6 +90,97 @@ export type Direction = {
 };
 
 export const directions = {
+  vault: {
+    label: "Vault",
+    mood: "Near-black rooms, espresso panels, cream light and one muted tan.",
+    fonts: { display: "mohave", body: "dmSans" },
+    palettes: {
+      dark: {
+        canvas: "#0B0A09",
+        surface: "#151311",
+        surfaceRaised: "#1E1A17",
+        highlight: "#2B211B",
+        text: "#F2EBDD",
+        textMuted: "#A59E95",
+        crewTextMuted: "#B0A9A0",
+        accent: "#A67B5B",
+        accentText: "#C39A7B",
+        accent2: "#8DA0B8",
+        primary: "#A67B5B",
+        primaryLabel: "#0B0A09",
+        borderSubtle: "#2A2725",
+        borderInput: "#78726B",
+        focus: "#C39A7B",
+        infoSoft: "#2A221C",
+        successText: "#5FBF8C",
+        successSoft: "#1B2A22",
+        successFill: "#5FBF8C",
+        successLabel: "#0B0A09",
+        warningText: "#CFCB4F",
+        warningSoft: "#2C2B18",
+        warningFill: "#CFCB4F",
+        warningLabel: "#0B0A09",
+        dangerText: "#EE6B7E",
+        dangerSoft: "#2D1B1F",
+        dangerFill: "#EE6B7E",
+        dangerLabel: "#0B0A09",
+        sidebar: "#0F0D0C",
+        sidebarText: "#F2EBDD",
+        sidebarTextMuted: "#A59E95",
+        sidebarActiveBg: "#2B211B",
+        sidebarActiveText: "#D3AB8C",
+        chart1: "#A67B5B",
+        chart2: "#8DA0B8",
+        chart3: "#7C766F",
+        chart4: "#5FBF8C",
+        chart5: "#CFCB4F",
+      },
+      light: {
+        canvas: "#F2EBDD",
+        surface: "#FAF6EC",
+        surfaceRaised: "#F6F1E5",
+        highlight: "#EDE5D8",
+        text: "#1A1411",
+        textMuted: "#5E554C",
+        crewTextMuted: "#52493F",
+        accent: "#9A6F4F",
+        accentText: "#6B4630",
+        accent2: "#5A7089",
+        primary: "#6B4630",
+        primaryLabel: "#FAF6EC",
+        borderSubtle: "#DDD5C7",
+        borderInput: "#8A8177",
+        focus: "#8A603F",
+        infoSoft: "#F0E8DC",
+        successText: "#256C48",
+        successSoft: "#E4EFE6",
+        successFill: "#256C48",
+        successLabel: "#FAF6EC",
+        warningText: "#6A680D",
+        warningSoft: "#F1EFD3",
+        warningFill: "#6A680D",
+        warningLabel: "#FAF6EC",
+        dangerText: "#A8304A",
+        dangerSoft: "#F6E3E4",
+        dangerFill: "#A8304A",
+        dangerLabel: "#FAF6EC",
+        sidebar: "#FAF6EC",
+        sidebarText: "#1A1411",
+        sidebarTextMuted: "#645B52",
+        sidebarActiveBg: "#EDE5D8",
+        sidebarActiveText: "#6E4A33",
+        chart1: "#9A6F4F",
+        chart2: "#5A7089",
+        chart3: "#857D73",
+        chart4: "#256C48",
+        chart5: "#6A680D",
+      },
+    },
+    effects: {
+      dark: { glow: "rgb(166 123 91 / 0.30)", ambient: "rgb(166 123 91 / 0.09)", grid: "rgb(242 235 221 / 0.03)", glassAlpha: 0.72 },
+      light: { glow: "rgb(154 111 79 / 0.22)", ambient: "rgb(154 111 79 / 0.06)", grid: "rgb(26 20 17 / 0.04)", glassAlpha: 0.78 },
+    },
+  },
   titanium: {
     label: "Titanium & Ice",
     mood: "Machined steel surfaces, ice-blue signal.",
@@ -367,7 +458,7 @@ export const directions = {
 
 export type DirectionId = keyof typeof directions;
 export const directionIds = Object.keys(directions) as DirectionId[];
-export const defaultDirection: DirectionId = "titanium";
+export const defaultDirection: DirectionId = "vault";
 
 /** DESIGN.md section 5. */
 export const radius = {

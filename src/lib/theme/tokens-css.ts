@@ -27,6 +27,8 @@ export const fontVar: Record<FontKey, string> = {
   figtree: "--font-figtree",
   syne: "--font-syne",
   plexSans: "--font-plex-sans",
+  mohave: "--font-mohave",
+  dmSans: "--font-dm-sans",
 };
 
 const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(" ");

@@ -17,6 +17,7 @@
     "e2e:intake": "node e2e/intake.mjs",
     "e2e:ai": "node e2e/ai.mjs",
     "e2e:board": "node e2e/board.mjs",
+    "e2e:vault": "node e2e/vault.mjs",
     "e2e:board-preview": "node e2e/board-preview.mjs"
   },
   "dependencies": {
