@@ -4,7 +4,7 @@ do $$
 declare
   staff uuid := gen_random_uuid(); cleaner uuid := gen_random_uuid(); a1 uuid;
   r text := ''; res jsonb; l1 uuid; l2 uuid; c1 uuid; ts timestamptz; ts2 timestamptz;
-  n int; s public.lead_stage; q record; v text; cu timestamptz;
+  n int; g0 bigint; b0 bigint; s public.lead_stage; q record; v text; cu timestamptz;
 begin
   insert into auth.users (id, email, aud, role) values
     (staff, 's@test.invalid', 'authenticated', 'authenticated'), (cleaner, 'c@test.invalid', 'authenticated', 'authenticated');
@@ -13,6 +13,9 @@ begin
 
   perform set_config('request.jwt.claims', json_build_object('sub', staff, 'role', 'authenticated')::text, true);
   execute 'set local role authenticated';
+
+  -- baseline for the source report: the project may already hold google leads
+  select coalesce(sum(leads), 0), coalesce(sum(booked), 0) into g0, b0 from public.lead_conversion_by_source(current_date - 1, current_date + 1) where source = 'google';
 
   -- create: phone normalized, owner + follow-up defaulted, timeline entry written
   res := public.create_lead('Dana', 'Reyes', '(718) 555-0142', 'Dana@Example.com', 'residential', 'google', 'brooklyn', '5 Court St', '11201');
@@ -120,7 +123,7 @@ begin
   r := r || case when n = 1 then 'COMMERCIAL_ACCOUNT ok; ' else 'COMMERCIAL_ACCOUNT ALLOWED(BAD); ' end;
 
   -- conversion report by source
-  select count(*) into n from public.lead_conversion_by_source(current_date - 1, current_date + 1) where source = 'google' and leads = 1 and booked = 1;
+  select count(*) into n from public.lead_conversion_by_source(current_date - 1, current_date + 1) where source = 'google' and leads = g0 + 1 and booked = b0 + 1;
   r := r || case when n = 1 then 'REPORT ok; ' else 'REPORT ALLOWED(BAD); ' end;
 
   -- cleaner: sees nothing, can call nothing
