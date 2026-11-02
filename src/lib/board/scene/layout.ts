@@ -16,3 +16,15 @@ export function seatPositions(advisorCount: number): Seat[] {
 }
 
 const round = (n: number) => Math.round(n * 100) / 100;
+
+/**
+ * Seats on an ellipse, clockwise from the chair at the top, in the unit of the given centre and radii
+ * (percent of the scene, or SVG units). Used by the ring and orbit styles.
+ */
+export function ringPositions(advisorCount: number, center: Seat, radius: Seat): Seat[] {
+  const total = advisorCount + 1;
+  return Array.from({ length: advisorCount }, (_, i) => {
+    const angle = -Math.PI / 2 + ((i + 1) * 2 * Math.PI) / total;
+    return { x: round(center.x + radius.x * Math.cos(angle)), y: round(center.y + radius.y * Math.sin(angle)) };
+  });
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MOCK_SCENE } from "@/lib/board/scene/mock";
-import { CHAIR_SEAT, seatPositions } from "@/lib/board/scene/layout";
+import { CHAIR_SEAT, ringPositions, seatPositions } from "@/lib/board/scene/layout";
 import { CHAR_MS, beatMs, deriveView, initialPlayer, momentOf, pause, play, replay, seek, setSpeed, skipToVerdict, tick, verdictIndex } from "@/lib/board/scene/player";
 import { buildScript, type Beat } from "@/lib/board/scene/script";
 import { ADVISOR_KEYS } from "@/lib/board/advisors";
@@ -34,8 +34,8 @@ describe("the script", () => {
       expect(r.actor).not.toBe(r.target);
     }
   });
-  it("says in the chair's opening that the advisors are AI approximations", () => {
-    expect(script[0]).toMatchObject({ text: expect.stringMatching(/AI approximation, not a real person/) });
+  it("says in the chair's opening that the advisors are AI approximations, not real people", () => {
+    expect(script[0]).toMatchObject({ text: expect.stringMatching(/approximations, not real people/) });
   });
   it("skips reactions and votes when there are none, and one round gives no round-2 beats", () => {
     const s = buildScript({ ...MOCK_SCENE, rounds: 1, votes: undefined });
@@ -138,6 +138,19 @@ describe("seats", () => {
         const d = Math.hypot((seats[i].x - seats[j].x) * 1.6, seats[i].y - seats[j].y);
         expect(d).toBeGreaterThan(n >= 8 ? 15 : 19);
       }
+    }
+  });
+});
+
+describe("ring positions", () => {
+  it("put the first advisor clockwise from the top and keep every seat on the ring", () => {
+    const c = { x: 80, y: 48 };
+    const r = { x: 30, y: 30 };
+    for (let n = 1; n <= 8; n++) {
+      const seats = ringPositions(n, c, r);
+      expect(seats).toHaveLength(n);
+      for (const s of seats) expect(Math.hypot((s.x - c.x) / r.x, (s.y - c.y) / r.y)).toBeCloseTo(1, 1);
+      if (n >= 2) expect(seats[0].x).toBeGreaterThan(c.x);
     }
   });
 });

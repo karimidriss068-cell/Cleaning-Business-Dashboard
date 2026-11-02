@@ -120,79 +120,86 @@ try {
   const beat = async (page) => Number(await room(page).getAttribute("data-beat"));
   const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
 
-  // ============================================================ playback, desktop
-  const dctx = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
-  const dp = await signIn(dctx, owner, /command-center/);
-  await dp.goto(`${base}/board/preview`, { waitUntil: "networkidle" });
-  check("the preview loads with its heading, the sample-data label and the AI label", (await dp.locator("h1").innerText()) === "Boardroom preview" && /Sample data/.test(await dp.locator("body").innerText()) && /AI approximation[\s\S]*Not real people/.test(await dp.getByTestId("scene-label").innerText()));
-  check("the table shows the chair and five advisors", (await dp.getByTestId("scene-table").locator('[data-testid^="seat-"]').count()) === 6);
-  check("the phone conversation is hidden on desktop", !(await dp.getByTestId("scene-conversation").isVisible()));
-  check("the chair opens first, streaming", await dp.getByTestId("scene-bubble").getAttribute("data-speaker") === "chair");
-  check("idle animation runs (breathing and blinking)", (await dp.evaluate(() => document.getAnimations().filter((a) => a.playState === "running" && a.effect?.getTiming().iterations === Infinity).length)) > 6);
-  await dp.waitForFunction(() => document.querySelector('[data-testid="scene-bubble"]')?.textContent?.includes("is thinking"), null, { timeout: 30000 });
-  check("an advisor shows a thinking state before talking", /is thinking/.test(await dp.getByTestId("scene-bubble").innerText()));
-  await dp.waitForFunction(() => document.querySelector('[data-testid="scene-table"] [data-state="speaking"]'), null, { timeout: 30000 });
-  const speaker = await dp.getByTestId("scene-bubble").getAttribute("data-speaker");
-  check("the speaking advisor is marked speaking (glow) and has a streaming bubble", speaker !== "chair" && (await dp.getByTestId(`seat-${speaker}`).getAttribute("data-state")) === "speaking" && (await dp.getByTestId(`seat-${speaker}`).locator("svg.kc-speaking").count()) === 1);
-  const t1 = (await dp.getByTestId("scene-bubble").innerText()).length;
-  await sleep(700);
-  const t2 = (await dp.getByTestId("scene-bubble").innerText()).length;
-  check("the speech streams in", t2 >= t1, `${t1} -> ${t2}`);
-
-  // pause holds still
-  await dp.getByTestId("scene-play").click();
-  const pausedAt = await beat(dp);
-  const pausedText = await dp.getByTestId("scene-bubble").innerText();
-  await sleep(1500);
-  check("pause holds the scene still", (await beat(dp)) === pausedAt && (await dp.getByTestId("scene-bubble").innerText()) === pausedText && (await room(dp).getAttribute("data-playing")) === "false");
-  await dp.getByTestId("scene-play").click();
-  await dp.getByTestId("scene-speed-4").click();
-  check("speed 4x is selected", (await dp.getByTestId("scene-speed-4").getAttribute("aria-pressed")) === "true" && (await dp.getByTestId("scene-speed-1").getAttribute("aria-pressed")) === "false");
-
-  // reactions and votes show up as it plays
-  await dp.waitForSelector('[data-testid="scene-reaction"]', { timeout: 45000 });
-  check("a reaction chip appears between advisors", /(Agrees|Pushes back|Adds a condition) · /.test(await dp.getByTestId("scene-reaction").first().innerText()));
-  await dp.waitForFunction(() => document.querySelector('[data-testid="boardroom"]')?.getAttribute("data-stage") === "voting", null, { timeout: 60000 });
-  await sleep(1800);
-  const tally = async () => (await Promise.all(["for", "conditional", "against"].map(async (v) => Number((await dp.getByTestId(`score-${v}`).innerText()).match(/(\d+)\s*$/)?.[1] ?? NaN))));
-  const mid = (await tally()).reduce((a, b) => a + b, 0);
-  check("votes appear as chips by the seats and the score board counts them live", (await dp.getByTestId("scene-table").getByText(/^(Yes|Yes, if…|No)$/).count()) >= 1 && mid >= 1, `tally ${await tally()}`);
-  await dp.waitForFunction(() => document.querySelector('[data-testid="boardroom"]')?.getAttribute("data-stage") === "verdict", null, { timeout: 60000 });
-  await dp.getByTestId("scene-verdict").waitFor({ timeout: 10000 });
-  await dp.getByTestId("scene-actions").locator("li").nth(2).waitFor({ timeout: 30000 });
-  check("final tally: 1 yes, 2 yes-if, 2 no", (await tally()).join() === "1,2,2", (await tally()).join());
-  check("the chair gives the verdict, the dissent and exactly three actions", (await dp.getByTestId("scene-verdict").innerText()).includes("Go, with conditions") && (await dp.getByTestId("scene-dissent").locator("li").count()) === 2 && (await dp.getByTestId("scene-actions").locator("li").count()) === 3);
-  await dp.waitForFunction(() => document.querySelector('[data-testid="boardroom"]')?.getAttribute("data-done") === "true", null, { timeout: 30000 });
-  check("when it ends the button offers a replay and nobody is marked speaking", /Replay/.test(await dp.getByTestId("scene-play").innerText()) && (await dp.getByTestId("scene-table").locator('[data-state="speaking"]').count()) === 0);
-  await dp.getByTestId("scene-replay").click();
-  check("replay starts over from the chair's opening", (await beat(dp)) <= 1 && (await room(dp).getAttribute("data-stage")) === "opening" && (await dp.getByTestId("scene-verdict").count()) === 0);
-  await dp.getByTestId("scene-skip").click();
-  await dp.getByTestId("scene-verdict").waitFor({ timeout: 10000 });
-  check("skip to verdict jumps there with every vote counted", (await tally()).join() === "1,2,2" && (await room(dp).getAttribute("data-stage")) === "verdict");
-  check("skip is disabled once at the verdict", await dp.getByTestId("scene-skip").isDisabled());
-  await dctx.close();
+  // ============================================================ playback, desktop, every style
+  const tally = async (page) => Promise.all(["for", "conditional", "against"].map(async (v) => Number((await page.getByTestId(`score-${v}`).innerText()).match(/^\s*(\d+)/)?.[1] ?? NaN)));
+  for (const style of ["a", "b", "c"]) {
+    const t = `[${style}]`;
+    const dctx = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+    const dp = await signIn(dctx, owner, /command-center/);
+    await dp.goto(`${base}/board/preview?style=${style}`, { waitUntil: "networkidle" });
+    check(`${t} loads with its heading, the sample-data label and the AI label`, (await dp.locator("h1").innerText()) === "Boardroom preview" && /Sample data/.test(await dp.locator("body").innerText()) && /AI approximation[\s\S]*Not real people/.test(await dp.getByTestId("scene-label").innerText()));
+    check(`${t} the style switcher marks the current style`, (await dp.getByTestId(`style-${style}`).getAttribute("aria-current")) === "page" && (await room(dp).getAttribute("data-style")) === style);
+    check(`${t} the stage shows the chair and five advisors`, (await dp.getByTestId("scene-stage").locator('[data-testid^="seat-"]').count()) === 6);
+    check(`${t} the phone conversation is hidden on desktop`, !(await dp.getByTestId("scene-conversation").isVisible()));
+    check(`${t} the chair opens first`, (await dp.getByTestId("scene-caption").getAttribute("data-speaker")) === "chair");
+    check(`${t} ambient motion runs`, (await dp.evaluate(() => document.getAnimations().filter((a) => a.playState === "running" && a.effect?.getTiming().iterations === Infinity).length)) >= 4);
+    await dp.waitForFunction(() => document.querySelector('[data-testid="scene-caption"]')?.textContent?.includes("is thinking"), null, { timeout: 30000 });
+    check(`${t} an advisor shows a thinking state before talking`, /is thinking/.test(await dp.getByTestId("scene-caption").innerText()));
+    await dp.waitForFunction(() => document.querySelector('[data-testid="scene-stage"] [data-state="speaking"]'), null, { timeout: 30000 });
+    await dp.waitForFunction(() => (document.querySelector('[data-testid="scene-caption"]')?.textContent?.length ?? 0) > 30, null, { timeout: 10000 });
+    const speaker = await dp.getByTestId("scene-caption").getAttribute("data-speaker");
+    check(`${t} the speaker is the only one marked speaking and has a streaming caption`, speaker !== "chair" && (await dp.getByTestId(`seat-${speaker}`).getAttribute("data-state")) === "speaking" && (await dp.getByTestId("scene-stage").locator('[data-testid^="seat-"][data-state="speaking"]').count()) === 1 && (await dp.getByTestId("scene-caption").innerText()).length > 20);
+    const t1 = (await dp.getByTestId("scene-caption").innerText()).length;
+    await sleep(700);
+    check(`${t} the speech streams in`, (await dp.getByTestId("scene-caption").innerText()).length >= t1);
+    await dp.getByTestId("scene-play").click();
+    const pausedAt = await beat(dp);
+    const pausedText = await dp.getByTestId("scene-caption").innerText();
+    await sleep(1500);
+    check(`${t} pause holds the scene still`, (await beat(dp)) === pausedAt && (await dp.getByTestId("scene-caption").innerText()) === pausedText && (await room(dp).getAttribute("data-playing")) === "false");
+    await dp.getByTestId("scene-play").click();
+    await dp.getByTestId("scene-speed-4").click();
+    check(`${t} speed 4x is selected`, (await dp.getByTestId("scene-speed-4").getAttribute("aria-pressed")) === "true" && (await dp.getByTestId("scene-speed-1").getAttribute("aria-pressed")) === "false");
+    await dp.waitForSelector('[data-testid="scene-reaction"]', { timeout: 45000 });
+    check(`${t} a reaction appears between advisors`, /(Agrees|Pushes back|Adds a condition) · /.test(await dp.getByTestId("scene-reaction").first().innerText()));
+    await dp.waitForFunction(() => document.querySelector('[data-testid="boardroom"]')?.getAttribute("data-stage") === "voting", null, { timeout: 60000 });
+    check(`${t} nobody is singled out while the votes come in`, (await dp.getByTestId("scene-stage").locator('[data-testid^="seat-"][data-state="speaking"], [data-testid^="seat-"][data-state="thinking"]').count()) === 0);
+    await sleep(1800);
+    check(`${t} votes appear on the seats and the vote panel counts them live`, (await dp.getByTestId("scene-stage").getByText(/^(Yes|Yes, if…|No)$/).count()) >= 1 && (await tally(dp)).reduce((x, y) => x + y, 0) >= 1, `tally ${await tally(dp)}`);
+    await dp.waitForFunction(() => document.querySelector('[data-testid="boardroom"]')?.getAttribute("data-stage") === "verdict", null, { timeout: 60000 });
+    await dp.getByTestId("scene-verdict").waitFor({ timeout: 10000 });
+    await dp.getByTestId("scene-actions").locator("li").nth(2).waitFor({ timeout: 30000 });
+    check(`${t} final tally: 1 yes, 2 yes-if, 2 no`, (await tally(dp)).join() === "1,2,2", (await tally(dp)).join());
+    check(`${t} the verdict panel has the verdict, the dissent and exactly three actions`, (await dp.getByTestId("scene-verdict").innerText()).includes("Go, with conditions") && (await dp.getByTestId("scene-dissent").locator("li").count()) === 2 && (await dp.getByTestId("scene-actions").locator("li").count()) === 3);
+    await dp.waitForFunction(() => document.querySelector('[data-testid="boardroom"]')?.getAttribute("data-done") === "true", null, { timeout: 30000 });
+    check(`${t} at the end the button offers a replay and nobody is marked speaking`, /Replay/.test(await dp.getByTestId("scene-play").innerText()) && (await dp.getByTestId("scene-stage").locator('[data-testid^="seat-"][data-state="speaking"]').count()) === 0);
+    await dp.getByTestId("scene-replay").click();
+    check(`${t} replay starts over from the chair's opening`, (await beat(dp)) <= 1 && (await room(dp).getAttribute("data-stage")) === "opening" && (await dp.getByTestId("scene-verdict").count()) === 0);
+    await dp.getByTestId("scene-skip").click();
+    await dp.getByTestId("scene-verdict").waitFor({ timeout: 10000 });
+    check(`${t} skip to verdict jumps there with every vote counted`, (await tally(dp)).join() === "1,2,2" && (await room(dp).getAttribute("data-stage")) === "verdict");
+    check(`${t} skip is disabled once at the verdict`, await dp.getByTestId("scene-skip").isDisabled());
+    if (style === "a") {
+      await dp.getByTestId("style-b").click();
+      await dp.waitForURL(/style=b/);
+      check("the switcher changes the style", (await room(dp).getAttribute("data-style")) === "b");
+    }
+    await dctx.close();
+  }
 
   // ============================================================ reduced motion
   const nctx = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   const np = await signIn(nctx, owner, /command-center/);
   await np.goto(`${base}/board/preview?moment=debate`, { waitUntil: "networkidle" });
-  const normalLen = (await np.getByTestId("scene-bubble").innerText()).length;
+  const normalLen = (await np.getByTestId("scene-caption").innerText()).length;
   await nctx.close();
   const rctx = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: "reduce" });
   const rp = await signIn(rctx, owner, /command-center/);
   await rp.goto(`${base}/board/preview?moment=debate`, { waitUntil: "networkidle" });
-  const rtext = await rp.getByTestId("scene-bubble").innerText();
-  check("under reduced motion the speech appears in full at once (longer than the half-streamed normal one)", rtext.length > normalLen && (await rp.getByTestId("scene-bubble").locator("p.text-sm span").count()) === 0, `${normalLen} vs ${rtext.length}`);
+  const rtext = await rp.getByTestId("scene-caption").innerText();
+  check("under reduced motion the speech appears in full at once (longer than the half-streamed normal one)", rtext.length > normalLen && (await rp.getByTestId("scene-caption").locator("span[aria-hidden]").count()) === 0, `${normalLen} vs ${rtext.length}`);
   check("under reduced motion nothing loops", (await rp.evaluate(() => document.getAnimations().filter((a) => a.playState === "running" && a.effect?.getTiming().iterations === Infinity && a.effect.getTiming().duration > 0).length)) === 0);
   await rctx.close();
 
   // ============================================================ phone layout
   const pctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   const pp = await signIn(pctx, owner, /command-center/);
-  await pp.goto(`${base}/board/preview?moment=debate`, { waitUntil: "networkidle" });
-  check("phone: a vertical conversation with avatar chips and no table", (await pp.getByTestId("scene-conversation").isVisible()) && !(await pp.getByTestId("scene-table").isVisible()) && (await pp.getByTestId("scene-conversation").locator("svg").count()) >= 3);
-  check("phone: no horizontal overflow", !(await overflow(pp)));
-  check("phone: the controls are at least 44px tall", (await pp.getByTestId("scene-play").boundingBox()).height >= 44);
+  for (const style of ["a", "b", "c"]) {
+    await pp.goto(`${base}/board/preview?style=${style}&moment=debate`, { waitUntil: "networkidle" });
+    check(`[${style}] phone: a vertical conversation with avatar chips and no stage`, (await pp.getByTestId("scene-conversation").isVisible()) && !(await pp.getByTestId("scene-stage").isVisible()) && (await pp.getByTestId("scene-conversation").locator("svg").count()) >= 3);
+    check(`[${style}] phone: no horizontal overflow`, !(await overflow(pp)));
+    check(`[${style}] phone: the controls are at least 44px tall`, (await pp.getByTestId("scene-play").boundingBox()).height >= 44);
+  }
   await pctx.close();
 
   // ============================================================ who may see it
@@ -210,14 +217,21 @@ try {
     for (const p of prefs) {
       await db.from("user_preferences").upsert({ user_id: owner.id, direction: p.direction, theme: p.theme });
       const page = ctx.pages()[0] ?? (await signIn(ctx, owner, /command-center/));
-      for (const moment of ["opening", "debate", "verdict"]) {
-        await page.goto(`${base}/board/preview?moment=${moment}`, { waitUntil: "networkidle" });
-        await sleep(2500);
+      for (const [style, moment] of ["a", "b", "c"].flatMap((st) => ["opening", "debate", "verdict"].map((m) => [st, m]))) {
+        await page.goto(`${base}/board/preview?style=${style}&moment=${moment}`, { waitUntil: "networkidle" });
+        await sleep(1800);
         const attrs = await page.evaluate(() => ({ d: document.documentElement.dataset.direction, dark: document.documentElement.classList.contains("dark") }));
         const c = await page.evaluate(contrastInPage);
         const bad = (await overflow(page)) ? "overflow" : attrs.d !== p.direction || attrs.dark !== (p.theme === "dark") ? `wrong theme ${JSON.stringify(attrs)}` : (await room(page).getAttribute("data-stage")) !== (moment === "opening" ? "opening" : moment === "debate" ? "debate" : "verdict") ? "wrong moment" : c.bad.length ? `contrast: ${c.bad.slice(0, 4).join("; ")}` : c.checked < 8 ? "too little text checked" : "";
-        check(`${moment} ${label} ${p.direction} ${p.theme}`, bad === "", bad);
-        if (shots) await page.screenshot({ path: `${shots}/room-${moment}-${label}-${p.direction}-${p.theme}.png`, fullPage: true });
+        check(`style ${style} ${moment} ${label} ${p.direction} ${p.theme}`, bad === "", bad);
+        if (shots) {
+          // Size the window to the whole page rather than a fullPage capture, so entrance animations finish before the shot.
+          const full = await page.evaluate(() => document.documentElement.scrollHeight);
+          await page.setViewportSize({ width, height: full });
+          await sleep(1500);
+          await page.screenshot({ path: `${shots}/room-${style}-${moment}-${label}-${p.direction}-${p.theme}.png` });
+          await page.setViewportSize({ width, height });
+        }
       }
     }
     await ctx.close();

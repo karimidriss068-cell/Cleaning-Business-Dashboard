@@ -48,7 +48,7 @@ export function buildScript(input: SceneInput): Beat[] {
   const n = input.advisors.length;
   beats.push({
     kind: "chair_open",
-    text: `The question before the board: ${clip(input.question.trim(), 200)} I will hear from ${n} ${n === 1 ? "advisor" : "advisors"}${input.rounds === 2 ? ", they will answer each other once," : ""} and then you will see the vote. Remember, every advisor here is an AI approximation, not a real person.`,
+    text: `Today's question: ${clip(input.question.trim(), 150)} ${n} AI ${n === 1 ? "advisor" : "advisors"} (approximations, not real people) will weigh in${input.rounds === 2 ? ", then answer each other once" : ""}. Then you will see the vote.`,
   });
   const votes = input.votes ?? {};
   for (const round of input.rounds === 2 ? ([1, 2] as const) : ([1] as const)) {

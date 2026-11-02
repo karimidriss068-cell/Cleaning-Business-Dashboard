@@ -543,4 +543,26 @@
 .kc-tone-5 { --char: color-mix(in oklab, var(--kc-accent2) 55%, var(--kc-success-fill)); }
 .kc-tone-6 { --char: color-mix(in oklab, var(--kc-accent) 60%, var(--kc-danger-fill)); }
 .kc-tone-7 { --char: var(--kc-text-muted); }
-.kc-tone-chair { --char: var(--kc-text); }
+.kc-tone-chair { --char: color-mix(in oklab, var(--kc-text) 55%, var(--kc-accent)); }
+
+/* Boardroom scene styles A, B and C: slow ambient motion. Same exception and same reduced-motion rule as above. */
+@keyframes kc-spin { to { transform: rotate(360deg); } }
+@utility kc-spin { animation: kc-spin var(--spin, 18s) linear infinite; transform-box: fill-box; transform-origin: 50% 50%; }
+@keyframes kc-ripple {
+  from { transform: scale(0.85); opacity: 0.7; }
+  to { transform: scale(1.9); opacity: 0; }
+}
+@utility kc-ripple { animation: kc-ripple 2.2s ease-out infinite; animation-delay: calc(var(--d, 0) * 0.7s); transform-box: fill-box; transform-origin: 50% 50%; }
+@keyframes kc-halo { 0%, 100% { transform: scale(1); opacity: 0.85; } 50% { transform: scale(1.07); opacity: 1; } }
+@utility kc-halo { animation: kc-halo 5s ease-in-out infinite; animation-delay: calc(var(--i, 0) * -0.9s); transform-box: fill-box; transform-origin: 50% 50%; }
+@keyframes kc-wave { 0%, 100% { transform: scaleY(0.25); } 50% { transform: scaleY(1); } }
+@utility kc-wave { animation: kc-wave 760ms ease-in-out infinite; animation-delay: calc(var(--d, 0) * -97ms); transform-box: fill-box; transform-origin: 50% 100%; }
+@keyframes kc-flow { to { stroke-dashoffset: -9; } }
+@utility kc-flow { animation: kc-flow 1.1s linear infinite; }
+@keyframes kc-float { 0%, 100% { transform: translateY(0); opacity: 0.25; } 50% { transform: translateY(-2.5px); opacity: 0.7; } }
+@utility kc-float { animation: kc-float 10s ease-in-out infinite; animation-delay: calc(var(--d, 0) * -1.3s); transform-box: fill-box; transform-origin: 50% 50%; }
+@keyframes kc-pulse-once { from { transform: scale(0.8); opacity: 0.9; } to { transform: scale(2.1); opacity: 0; } }
+@utility kc-pulse-once { animation: kc-pulse-once 900ms ease-out 1 both; transform-box: fill-box; transform-origin: 50% 50%; }
+@keyframes kc-drift { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(5px, -3px); } 50% { transform: translate(0, -6px); } 75% { transform: translate(-5px, -3px); } }
+@utility kc-orbit-drift { animation: kc-drift 12s ease-in-out infinite; animation-delay: calc(var(--i, 0) * -2.3s); }
+.kc-stop-a { stop-color: var(--char); }
