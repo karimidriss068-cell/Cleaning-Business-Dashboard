@@ -63,7 +63,7 @@ describe("the advisors", () => {
 });
 
 describe("cost estimate", () => {
-  const base = { questionChars: 600, advisors: DEFAULT_ADVISORS, rounds: 1 as const, useContext: false };
+  const base: { questionChars: number; advisors: readonly AdvisorKey[]; rounds: 1 | 2; useContext: boolean } = { questionChars: 600, advisors: DEFAULT_ADVISORS, rounds: 1, useContext: false };
   it("counts one call per advisor per round plus the synthesis", () => {
     expect(estimateSession(base).calls).toBe(4);
     expect(estimateSession({ ...base, rounds: 2 }).calls).toBe(7);
