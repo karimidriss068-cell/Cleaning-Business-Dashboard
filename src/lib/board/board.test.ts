@@ -54,9 +54,9 @@ function fakes(opts: { capMicros?: number; synthesisText?: string; failAdvisor?:
 }
 
 describe("the advisors", () => {
-  it("are eight original lenses, three on the default board, and never named as real people", () => {
-    expect(ADVISORS).toHaveLength(8);
-    expect(new Set(ADVISOR_KEYS).size).toBe(8);
+  it("are eleven original lenses, three on the default board, and never named as real people", () => {
+    expect(ADVISORS).toHaveLength(11);
+    expect(new Set(ADVISOR_KEYS).size).toBe(11);
     expect(DEFAULT_ADVISORS).toEqual(["cash_ruin", "offers_pricing", "operations"]);
     for (const a of ADVISORS) expect(`${a.name} ${a.persona}`).not.toMatch(/"|“|”|\bsaid\b|\bonce said\b/);
   });
@@ -67,7 +67,7 @@ describe("cost estimate", () => {
   it("counts one call per advisor per round plus the synthesis", () => {
     expect(estimateSession(base).calls).toBe(4);
     expect(estimateSession({ ...base, rounds: 2 }).calls).toBe(7);
-    expect(estimateSession({ ...base, advisors: ADVISOR_KEYS }).calls).toBe(9);
+    expect(estimateSession({ ...base, advisors: ADVISOR_KEYS }).calls).toBe(12);
   });
   it("grows with advisors, rounds, question length and the snapshot", () => {
     const e = (o: Partial<typeof base>) => estimateSession({ ...base, ...o }).micros;
@@ -114,7 +114,7 @@ describe("running a session", () => {
   it("sets max_tokens on every call and caches the persona prompt", async () => {
     const f = fakes();
     await runBoard(input(), null, USER, f.deps);
-    for (const b of f.bodies) { expect(b.max_tokens).toBeGreaterThan(0); expect(b.max_tokens).toBeLessThanOrEqual(1200); expect(b.cached).toBe(true); }
+    for (const b of f.bodies) { expect(b.max_tokens).toBeGreaterThan(0); expect(b.max_tokens).toBeLessThanOrEqual(2500); expect(b.cached).toBe(true); }
     expect(f.bodies.filter((b) => b.model === ADVISOR_MODEL).every((b) => b.max_tokens === 700)).toBe(true);
   });
   it("runs a second round where each advisor sees the others' round-1 answers", async () => {
@@ -242,8 +242,19 @@ describe("prompt assembly", () => {
   it("makes the synthesis end with exactly 3 prioritized actions for the next 7 days", () => {
     expect(synthesisSystem()).toMatch(/exactly 3 prioritized actions for the next 7 days/);
   });
-  it("labels the advisors as AI approximations and forbids quotes and impersonation", () => {
-    for (const k of ADVISOR_KEYS) expect(advisorSystem(k)).toMatch(/AI advisor[\s\S]*not a real person[\s\S]*never quote/);
+  it("labels the advisors as AI approximations and limits quotes to the hot sheet", () => {
+    for (const k of ADVISOR_KEYS) {
+      const sys = advisorSystem(k);
+      expect(sys).toMatch(/AI approximation[\s\S]*not a real person[\s\S]*Never invent new quotes/);
+      expect(sys).toMatch(/<hot_sheet>[\s\S]*seat[\s\S]*\(S\d{3}/);
+    }
+  });
+
+  it("loads the right hot sheet per seat", () => {
+    expect(advisorSystem("cash_ruin")).toContain("Warren Buffett seat");
+    expect(advisorSystem("offers_pricing")).toMatch(/Hormozi/);
+    expect(advisorSystem("strategy")).toMatch(/Graham/);
+    expect(synthesisSystem()).toMatch(/Bezos/);
   });
   it("builds a numbers-only snapshot with no contact data, secrets or free text from the growth data", () => {
     expect(ctx.length).toBeLessThanOrEqual(MAX_CONTEXT_CHARS);

@@ -16,7 +16,7 @@ export function SessionsList({ sessions }: { sessions: BoardSessionRow[] }) {
         <ul className="space-y-2">
           {sessions.map((s) => (
             <li key={s.id}>
-              <GlassPanel level="flat" as={Link} href={`/board/${s.id}`} className="block space-y-1.5 p-4 outline-none transition-colors hover:border-brand focus-visible:ring-2 focus-visible:ring-ring" data-testid="board-session-link">
+              <GlassPanel level="flat" as={Link} href={`/board/${s.id}`} className="block space-y-1.5 p-4 outline-none transition-[border-color,box-shadow] hover:border-brand hover:shadow-[0_0_24px_-8px_var(--kc-glow)] focus-visible:ring-2 focus-visible:ring-ring" data-testid="board-session-link">
                 <p className="line-clamp-2 text-sm font-medium text-ink">{s.question}</p>
                 <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-ink-muted">
                   <span>{formatNyDateTime(s.created_at)}</span>

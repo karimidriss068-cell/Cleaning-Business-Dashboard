@@ -90,7 +90,7 @@ export function BoardPanel({ view, script }: { view: SceneView; script: readonly
           <h2 id="scene-score" className="font-heading text-base font-medium text-ink">Vote</h2>
           <span className="tabular text-[12px] text-ink-muted">{voted} of {total}</span>
         </div>
-        <div className="flex h-1.5 gap-0.5 overflow-hidden rounded-full bg-surface-raised" aria-hidden>
+        <div className="flex h-1.5 gap-0.5 overflow-hidden rounded-full bg-[color-mix(in_oklab,var(--kc-surface-raised)_55%,transparent)] ring-1 ring-hairline" aria-hidden>
           {rows.map((v) => <div key={v} className={cn("h-full rounded-full transition-[flex-grow] duration-base ease-standard", segment[v])} style={{ flexGrow: view.tally[v], flexBasis: 0 }} />)}
         </div>
         <ul className="grid grid-cols-3 gap-2 text-center">

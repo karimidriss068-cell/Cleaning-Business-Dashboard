@@ -41,10 +41,29 @@ export function captionText(text: string): string {
   return parts.join(" ");
 }
 
-/** The scene for a saved session, or null when it has no readable synthesis (a stopped session shows the cards only). */
+/** Pulls what it can out of a synthesis that was cut off mid-JSON: the verdict, plus any complete split points. */
+export function salvageRaw(raw: string): { verdict: string; dissent: string[] } | null {
+  const str = (key: string) => {
+    const m = new RegExp(`"${key}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`).exec(raw);
+    if (!m) return null;
+    try { return JSON.parse(`"${m[1]}"`) as string; } catch { return m[1]; }
+  };
+  const verdict = str("verdict");
+  if (!verdict) return null;
+  const arr = /"disagreements"\s*:\s*(\[[^\]]*\])/.exec(raw);
+  let dissent: string[] = [];
+  if (arr) { try { dissent = (JSON.parse(arr[1]) as unknown[]).filter((x): x is string => typeof x === "string").slice(0, 3); } catch { /* cut off */ } }
+  return { verdict, dissent };
+}
+
+/** The scene for a saved session, or null when no advisor answered. */
 export function sceneFromSession(session: BoardSessionRow): SceneInput | null {
   const syn = session.synthesis;
-  if (!syn || !("verdict" in syn)) return null;
+  if (!session.advisor_outputs.some((o) => o.text.trim())) return null;
+  // A session without a readable synthesis still plays the debate; the chair says why there is no verdict.
+  const verdict = syn && "verdict" in syn
+    ? { verdict: syn.verdict, dissent: syn.disagreements.slice(0, 3), actions: syn.actions }
+    : (syn && "raw" in syn && salvageRaw(syn.raw) ? { ...salvageRaw(syn.raw)!, actions: [] } : null) ?? { verdict: "The chair could not give a clean verdict on this session. Read the advisors' answers below.", dissent: [], actions: [] };
   const pick = (round: number) => Object.fromEntries(session.advisor_outputs.filter((o) => o.round === round && o.text.trim()).map((o) => [o.advisor, captionText(o.text)])) as Partial<Record<AdvisorKey, string>>;
   const finalRound = session.rounds === 2 ? 2 : 1;
   const votes = Object.fromEntries(session.advisor_outputs.filter((o) => o.round === finalRound && o.text.trim()).map((o) => [o.advisor, voteFromStance(o.text)])) as Partial<Record<AdvisorKey, Vote>>;
@@ -55,6 +74,6 @@ export function sceneFromSession(session: BoardSessionRow): SceneInput | null {
     opening: pick(1),
     replies: session.rounds === 2 ? pick(2) : undefined,
     votes,
-    verdict: { verdict: syn.verdict, dissent: syn.disagreements.slice(0, 3), actions: syn.actions },
+    verdict,
   };
 }

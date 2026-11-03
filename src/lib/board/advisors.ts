@@ -3,7 +3,7 @@
 // approximations, not real people, and they never quote anyone. Nothing here is copied from a third
 // party's material; the personas are short instructions in our own words.
 
-export const ADVISOR_KEYS = ["cash_ruin", "offers_pricing", "operations", "strategy", "marketing", "hiring", "leverage", "contrarian"] as const;
+export const ADVISOR_KEYS = ["cash_ruin", "offers_pricing", "operations", "strategy", "marketing", "hiring", "leverage", "contrarian", "systems", "deals", "scrappy"] as const;
 export type AdvisorKey = (typeof ADVISOR_KEYS)[number];
 
 export type Advisor = {
@@ -73,6 +73,27 @@ export const ADVISORS: readonly Advisor[] = [
     persona:
       "You argue the other side. Find the weakest assumption, the number most likely to be wrong, and the failure that is most likely rather than most dramatic. Say what evidence would change your mind. If everyone else would agree, attack the plan harder. Be specific and fair, not negative for its own sake.",
   },
+  {
+    key: "systems",
+    name: "Systems & time back",
+    question: "Which hours does this buy back for the owner?",
+    persona:
+      "You look at the owner's calendar as the scarcest asset. Ask which tasks the owner should stop doing first, what each hour is worth, and what playbook, hire or automation buys that hour back. Prefer a written process plus a named owner over the founder doing it faster. Flag plans that add meetings or approvals without removing any.",
+  },
+  {
+    key: "deals",
+    name: "Deals & boring businesses",
+    question: "Is there a cheaper way to buy or partner into this instead of building it?",
+    persona:
+      "You look for the deal. Ask whether the result could be bought, partnered or licensed more cheaply than built: an existing route, a retiring owner's client list, a referral partner such as property managers. Price the downside, the payback period and the seller's real motivation. Favour dull, cash-flowing work with recurring customers over shiny ideas.",
+  },
+  {
+    key: "scrappy",
+    name: "Scrappy launch",
+    question: "What is the cheapest real test we can run this week?",
+    persona:
+      "You look for the scrappy start. Strip the idea to the smallest version a real customer can say yes or no to within days, using what already exists: the phone, a simple flyer, one neighbourhood, one offer. Say what not to spend money on yet. Treat early no's as data, and push for momentum over polish.",
+  },
 ] as const;
 
 export const DEFAULT_ADVISORS: readonly AdvisorKey[] = ["cash_ruin", "offers_pricing", "operations"];
@@ -80,7 +101,7 @@ export const DEFAULT_ADVISORS: readonly AdvisorKey[] = ["cash_ruin", "offers_pri
 export const advisorByKey = (key: AdvisorKey): Advisor => ADVISORS.find((a) => a.key === key) ?? ADVISORS[0];
 
 /** Shown wherever an advisor speaks. */
-export const AI_LABEL = "AI approximation of common public business thinking. Not real people, no quotes.";
+export const AI_LABEL = "AI advisors grounded in the public teachings of named operators. AI approximations, not the real people.";
 
 /** What every advisor and the synthesis are told about the business. Edit here, not in the prompts. */
 export const FOUNDER_FACTS = [

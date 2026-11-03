@@ -1,40 +1,27 @@
 "use client";
 
-import { useId } from "react";
 import { ringPositions } from "@/lib/board/scene/layout";
 import { cn } from "@/lib/utils";
 import { GlassPanel } from "@/components/system/glass-panel";
 import { StatusPill } from "@/components/system/status-pill";
-import { Glyph, TONE, type AvatarWho, type NodeState } from "@/components/board/scene/glyphs";
+import { TONE, type AvatarWho, type NodeState } from "@/components/board/scene/glyphs";
+import { Bust } from "@/components/board/scene/bust";
 import { Dots, REACTION_LABEL, VOTE_LABEL, captionOf, focusOf, nameOf, reactionTone, stateOf, voteTone, type StageProps } from "@/components/board/scene/shared";
 
-// Style C, "Glass orbit": advisors are semi-abstract figures in frosted glass capsules that drift round a
+// Style C, "Glass orbit": advisors are talking portraits in frosted glass capsules that drift round a
 // glowing core (the chair). Whoever speaks is pushed toward the camera; everyone else softens and
 // blurs. While the votes come in, nobody is singled out.
 
 const CENTER = { x: 50, y: 32 };
 const RADIUS = { x: 35, y: 24 };
 
-/** A semi-abstract figure: a halo glyph over a head and shoulders, drawn in thin line with a soft body. */
+/** A talking portrait bust filling the frosted capsule (frames ported from the original Roast Room). */
 export function Figure({ who, state = "idle" }: { who: AvatarWho; state?: NodeState }) {
-  const gid = useId();
-  return (
-    <svg viewBox="0 0 50 80" role="img" aria-label={nameOf(who)} className={cn("block size-full", TONE[who])} data-state={state}>
-      <defs>
-        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" className="kc-stop-a" stopOpacity="0.1" />
-          <stop offset="1" className="kc-stop-a" stopOpacity={state === "idle" ? 0.35 : 0.6} />
-        </linearGradient>
-      </defs>
-      <path d="M8 76 C8 56 16 49 25 49 C34 49 42 56 42 76 Z" fill={`url(#${gid})`} className="stroke-(--char)" strokeWidth="0.8" />
-      <circle cx="25" cy="35" r="8.5" className={cn("fill-(--char)/15 stroke-(--char)", state === "thinking" && "kc-halo")} strokeWidth="0.9" />
-      <g transform="translate(25 14) scale(0.3) translate(-50 -50)"><Glyph who={who} width={3} /></g>
-    </svg>
-  );
+  return <Bust who={who} state={state} alt={nameOf(who)} className={cn("absolute inset-x-0 bottom-0 w-full", TONE[who])} />;
 }
 
 export const MiniC = ({ who, state }: { who: AvatarWho; state: NodeState }) => (
-  <span className={cn("block size-full overflow-hidden rounded-full border border-hairline bg-linear-to-b from-ink/10 to-surface-raised/40 px-1.5 pt-1.5", TONE[who], state === "speaking" && "shadow-[0_0_12px_var(--kc-glow)]")}><Figure who={who} state={state} /></span>
+  <span className={cn("relative block size-full overflow-hidden rounded-full border border-hairline bg-linear-to-b from-ink/10 to-surface-raised/40", TONE[who], state === "speaking" && "shadow-[0_0_12px_var(--kc-glow)]")}><Figure who={who} state={state} /></span>
 );
 
 export function StageC(props: StageProps) {
@@ -64,7 +51,7 @@ export function StageC(props: StageProps) {
             <div className="relative grid size-[clamp(72px,8vw,108px)] place-items-center">
               {stateOf(view, "chair") === "speaking" && [0, 1].map((d) => <span key={d} aria-hidden className="kc-ripple absolute inset-0 rounded-full border border-brand" style={{ "--d": d } as React.CSSProperties} />)}
               <span aria-hidden className="kc-halo absolute inset-0 rounded-full bg-[radial-gradient(circle_at_35%_30%,color-mix(in_oklab,var(--kc-text)_70%,transparent),color-mix(in_oklab,var(--kc-accent)_55%,transparent)_38%,color-mix(in_oklab,var(--kc-accent)_10%,transparent)_70%,transparent)] shadow-[0_0_46px_var(--kc-glow)]" />
-              <svg aria-hidden viewBox="0 0 100 100" className="relative size-1/2"><Glyph who="chair" width={4} /></svg>
+              <span className="relative size-[86%] overflow-hidden rounded-full ring-1 ring-brand/60"><Bust who="chair" state={stateOf(view, "chair")} alt="Chair" className="size-full scale-110 translate-y-[5%]" /></span>
             </div>
           </div>
           <span className="mt-1 block text-center text-[11px] leading-tight text-ink-muted">Chair</span>
@@ -79,7 +66,7 @@ export function StageC(props: StageProps) {
               <div className="kc-orbit-drift relative flex flex-col items-center" style={{ "--i": i } as React.CSSProperties}>
                 {reacting && <span className="kc-enter absolute -top-8 z-20 whitespace-nowrap" data-testid="scene-reaction"><StatusPill tone={reactionTone[reacting.reaction]}>{REACTION_LABEL[reacting.reaction]} · {nameOf(reacting.target)}</StatusPill></span>}
                 <div className={bodyOf(k)} style={{ scale: depth(p.y) }}>
-                  <div className={cn("w-[clamp(46px,4.8vw,66px)] aspect-[5/8] overflow-hidden rounded-full border bg-linear-to-b from-ink/12 to-surface-raised/30 shadow-e1 backdrop-blur-md", state === "idle" ? "border-hairline" : "border-brand shadow-[0_0_26px_var(--kc-glow)]")}>
+                  <div className={cn("w-[clamp(46px,4.8vw,66px)] relative aspect-[5/8] overflow-hidden rounded-full border bg-linear-to-b from-ink/12 to-surface-raised/30 shadow-e1 backdrop-blur-md", state === "idle" ? "border-hairline" : "border-brand shadow-[0_0_26px_var(--kc-glow)]")}>
                     <Figure who={k} state={state} />
                   </div>
                 </div>
