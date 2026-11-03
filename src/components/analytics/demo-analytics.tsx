@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { prototypeRoutesEnabled } from "@/lib/flags";
 import { AnalyticsSection } from "@/components/analytics/analytics-section";
 import type { PACKS } from "@/components/analytics/packs";
 
@@ -21,5 +22,16 @@ export async function demoAnalyticsVisible(): Promise<boolean> {
 
 export async function DemoAnalytics({ pack }: { pack: keyof typeof PACKS }) {
   if (!(await demoAnalyticsVisible())) return null;
+  return <AnalyticsSection pack={pack} />;
+}
+
+/**
+ * Prototype screens (Sales, Agent room, Agent data room) are sample-only by design
+ * and already sit behind NEXT_PUBLIC_PROTOTYPE_ROUTES, so they may show a pack
+ * without demo mode. Real pages must keep using DemoAnalytics; a test enforces that
+ * only prototype-gated pages import this.
+ */
+export async function PrototypeAnalytics({ pack }: { pack: keyof typeof PACKS }) {
+  if (!prototypeRoutesEnabled()) return null;
   return <AnalyticsSection pack={pack} />;
 }

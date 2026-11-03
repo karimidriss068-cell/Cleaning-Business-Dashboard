@@ -32,4 +32,15 @@ describe("sample analytics stay behind demo mode", () => {
     expect(src).toContain('process.env.DEMO_ANALYTICS !== "1"');
     expect(src).toContain("5eed0000-");
   });
+
+  it("PrototypeAnalytics is used only on pages gated by prototype routes", () => {
+    const users = files.filter((f) => /<PrototypeAnalytics\b/.test(readFileSync(f, "utf8")));
+    expect(users.length).toBeGreaterThan(0);
+    for (const f of users) {
+      const src = readFileSync(f, "utf8");
+      expect(src, relative(root, f)).toContain("if (!prototypeRoutesEnabled()) notFound();");
+    }
+    const demo = readFileSync(join(root, "components/analytics/demo-analytics.tsx"), "utf8");
+    expect(demo).toContain("if (!prototypeRoutesEnabled()) return null;");
+  });
 });
