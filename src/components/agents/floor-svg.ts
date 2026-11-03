@@ -78,5 +78,5 @@ const content={
 for(const [k,w,t,s] of wings){svg+=`<g class="wing" data-team="${k}">${box(w.x,w.y,w.z-.6,w.w,w.d,.6,null,true)}${box(w.x+.2,w.y+.2,w.z,w.w-.4,w.d-.4,.5)}${grid(w.x+.2,w.y+.2,w.z+.5,w.w-.4,w.d-.4)}${content[k](w)}${label(w.x+w.w/2,w.y+w.d+1.4,w.z-.6,t,s)}</g>`}
 svg+=pkt('p1',6,0)+pkt('p2',5,1.5)+pkt('p3',7,3)+pkt('p4',4,.5)+pkt('p5',4.5,2);
 
-  return `<svg viewBox="80 -50 1440 990" preserveAspectRatio="xMidYMid meet" role="img" style="width:100%;height:100%;display:block;font-family:ui-sans-serif,-apple-system,Inter,sans-serif"><title>Agent teams floor</title>${svg}</svg>`;
+  return `<svg viewBox="80 -110 1440 1010" preserveAspectRatio="xMidYMid meet" role="img" style="width:100%;height:100%;display:block;font-family:ui-sans-serif,-apple-system,Inter,sans-serif"><title>Agent teams floor</title>${svg}</svg>`;
 }
