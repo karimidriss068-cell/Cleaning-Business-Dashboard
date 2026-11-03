@@ -38,7 +38,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const roleLabel = role ? ROLE_LABELS[role] : "No team profile";
 
   return (
-    <div className="relative flex min-h-dvh">
+    <div className="relative flex min-h-dvh" data-crew={role === "subcontractor" ? "" : undefined}>
       <Ambient quiet={role === "subcontractor"} />
       <Sidebar role={role} userName={userName} roleLabel={roleLabel} />
       <div className="relative z-10 flex min-w-0 flex-1 flex-col">

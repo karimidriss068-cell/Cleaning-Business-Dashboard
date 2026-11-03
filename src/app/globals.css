@@ -577,6 +577,11 @@
   --kc-ease-flow: cubic-bezier(0.22, 1, 0.36, 1);
 }
 /* One soft ambient effect: the umber field and its slowly drifting light. No grid, no particles. */
+/* Crew screens hold muted text to AAA: every text-ink-muted inside the crew shell uses the crew value. */
+[data-crew] {
+  --kc-text-muted: var(--kc-crew-text-muted);
+}
+
 [data-direction="vault"] .kc-ambient {
   background: linear-gradient(165deg, var(--kc-canvas) 0%, color-mix(in oklab, var(--kc-canvas) 78%, var(--kc-highlight)) 100%);
 }

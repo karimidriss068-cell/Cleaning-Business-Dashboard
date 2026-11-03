@@ -90,6 +90,8 @@ const pairs: Pair[] = [
   ["chart series 5 on surface", "chart5", "surface", UI],
   ["crew body text on surface (AAA)", "text", "surface", AAA],
   ["crew muted text on surface (AAA)", "crewTextMuted", "surface", AAA],
+  ["crew muted text on canvas (AAA)", "crewTextMuted", "canvas", AAA],
+  ["crew muted text on raised surface (AAA)", "crewTextMuted", "surfaceRaised", AAA],
 ];
 
 const combos: [DirectionId, ThemeName][] = directionIds.flatMap((d) => (["dark", "light"] as ThemeName[]).map((t) => [d, t] as [DirectionId, ThemeName]));
