@@ -61,7 +61,7 @@ export function PipelineMap({ stages }: { stages: PipelineStage[] }) {
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-medium tracking-[0.1em] text-ink-muted uppercase">{s.label}</span>
-                    <span className="text-[10px] tabular-nums text-ink-muted/70">0{i + 1}</span>
+                    <span className="text-[11px] tabular-nums text-ink-muted">0{i + 1}</span>
                   </div>
                   <p className="mt-3 truncate font-heading text-[26px] leading-none font-medium text-ink tabular-nums">{s.stat}</p>
                   <p className="mt-2 truncate text-[12px] text-ink-muted">{s.hint ?? "—"}</p>

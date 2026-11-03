@@ -31,6 +31,7 @@ import { GlassPanel } from "@/components/system/glass-panel";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { Database } from "@/lib/supabase/database.types";
 import { DemoAnalytics } from "@/components/analytics/demo-analytics";
+import { prototypeRoutesEnabled } from "@/lib/flags";
 import { PipelineMap, type PipelineStage } from "@/components/command-center/pipeline-map";
 
 export const metadata: Metadata = { title: "Command Center" };
@@ -206,7 +207,7 @@ export default async function CommandCenterPage() {
       meta: coi.map((s) => s.display_name).slice(0, 2).join(", ") },
   ].filter((a) => a.show);
 
-  const pipeline: PipelineStage[] = [
+  const allStages: PipelineStage[] = [
     { id: "leads", label: "Leads", stat: String(openLeadsRes.count ?? 0), hint: `${waiting.length} waiting on a reply`, href: "/leads", tone: waiting.length ? "warn" : "ok" },
     { id: "schedule", label: "Schedule", stat: `${todaysLive.length} today`, hint: `${done} done · ${todaysLive.length - done} to go`, href: "/schedule" },
     { id: "crews", label: "Crews", stat: `${unassigned.length} unassigned`, hint: coiExpired.length ? `${coiExpired.length} COI expired` : "upcoming visits", href: "/crews", tone: unassigned.length || coiExpired.length ? "warn" : "ok" },
@@ -216,6 +217,7 @@ export default async function CommandCenterPage() {
     { id: "agents", label: "Agents", stat: `${followUps.length} follow-ups`, hint: "AI workforce", href: "/agents", tone: "ai" },
     { id: "board", label: "Roast Room", stat: "Advisors", hint: "pressure-test a decision", href: "/board", tone: "ai" },
   ];
+  const pipeline = allStages.filter((s) => (s.id !== "board" || isAdmin) && (s.id !== "agents" || prototypeRoutesEnabled()));
 
   return (
     <ReplayProvider frames={replay} includesDemo={growth.includesDemo}>
