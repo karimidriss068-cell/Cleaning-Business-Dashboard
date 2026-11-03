@@ -88,9 +88,10 @@ export function DebateThread({ entries, title = "Debate transcript" }: { entries
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
-      <section aria-labelledby="debate-thread" className="glass-card space-y-3 rounded-md border p-4" data-testid="board-debate-thread">
+      <section aria-labelledby="debate-thread" className="glass-card space-y-4 rounded-md border p-6" data-testid="board-debate-thread">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
+            <p className="text-[11px] font-medium tracking-[0.1em] text-ink-muted uppercase">Roast Room · transcript</p>
             <h2 id="debate-thread" className="font-heading text-lg font-medium text-ink">{title}</h2>
             <p className="text-[12px] text-ink-muted">
               {done ? `${total} turns · replayed from saved answers` : `Streaming turn ${shown} of ${total}…`}
@@ -112,7 +113,7 @@ export function DebateThread({ entries, title = "Debate transcript" }: { entries
         </div>
 
         <ThreadPrimitive.Root className="relative">
-          <ThreadPrimitive.Viewport className="max-h-[560px] space-y-3 overflow-y-auto pr-1">
+          <ThreadPrimitive.Viewport className="max-h-[600px] space-y-4 overflow-y-auto pr-2">
             <ThreadPrimitive.Messages>{() => <DebateMessage />}</ThreadPrimitive.Messages>
             <ThreadPrimitive.If running>
               <div className="flex items-center gap-2 pl-1 text-[12px] text-ink-muted" aria-live="polite">
@@ -150,35 +151,44 @@ function MessageBody() {
   const meta = useAuiState((s) => (s.message.metadata?.custom ?? {}) as Partial<Meta>);
   const speaker = meta.speaker ?? "";
   const kind = meta.kind ?? "advisor";
-  const isQ = kind === "question";
+  if (kind === "question") {
+    return (
+      <div className="flex justify-end">
+        <div className="glass-popover max-w-[min(620px,90%)] space-y-1.5 rounded-md border px-4 py-3">
+          <p className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">Question to the board</p>
+          <div className="text-sm whitespace-pre-wrap text-ink"><MessagePrimitive.Parts /></div>
+        </div>
+      </div>
+    );
+  }
   const isChair = kind === "chair";
   return (
-    <div className={isQ ? "flex justify-end" : "flex gap-3"}>
-      {!isQ && (
-        <div
-          aria-hidden
-          className={
-            "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full border text-[11px] font-medium " +
-            (isChair ? "bg-primary text-primary-foreground" : "glass-flat text-ink")
-          }
-        >
-          {initials(speaker)}
-        </div>
-      )}
+    <div className="flex gap-3">
       <div
+        aria-hidden
         className={
-          "max-w-[min(680px,100%)] space-y-1 rounded-md border p-3 " +
-          (isQ ? "glass-popover" : isChair ? "glass-card ring-1 ring-primary/40" : "glass-flat")
+          "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full border text-[11px] font-medium " +
+          (isChair ? "border-primary/50 bg-primary text-primary-foreground" : "glass-flat text-ink")
         }
       >
-        <p className="flex flex-wrap items-center gap-2 text-[12px] text-ink-muted">
-          <span className="font-medium text-ink">{isQ ? "You asked" : speaker}</span>
-          {!isQ && meta.lens && <span className="truncate">{meta.lens}</span>}
-          {!isQ && !isChair && meta.round ? <span className="rounded-full border px-1.5 text-[10px]">R{meta.round}</span> : null}
-        </p>
-        <div className="text-sm whitespace-pre-wrap text-ink">
-          <MessagePrimitive.Parts />
+        {initials(speaker)}
+      </div>
+      <div
+        className={
+          "min-w-0 max-w-[min(720px,100%)] flex-1 space-y-2 rounded-md border px-4 py-3 " +
+          (isChair ? "glass-card border-primary/40 ring-1 ring-primary/30" : "glass-flat")
+        }
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[13px] font-medium text-ink">{speaker}</span>
+          {isChair ? (
+            <span className="rounded-full border border-primary/40 bg-primary/10 px-2 py-px text-[10px] font-medium tracking-[0.08em] text-primary uppercase">Verdict</span>
+          ) : meta.round ? (
+            <span className="rounded-full border px-2 py-px text-[10px] font-medium tabular-nums text-ink-muted">R{meta.round}</span>
+          ) : null}
+          {meta.lens && <span className="min-w-0 truncate text-[12px] text-ink-muted">{meta.lens}</span>}
         </div>
+        <div className="text-sm leading-relaxed whitespace-pre-wrap text-ink"><MessagePrimitive.Parts /></div>
       </div>
     </div>
   );

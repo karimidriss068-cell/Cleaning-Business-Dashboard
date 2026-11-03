@@ -66,6 +66,11 @@ export function SessionView({ session, style = "a" }: { session: BoardSessionRow
       )}
 
 
+      <details className="group glass-flat rounded-md border px-4 py-3" data-testid="board-full-answers">
+        <summary className="cursor-pointer list-none text-[13px] font-medium text-ink select-none">
+          Full answers by round <span className="text-ink-muted">· same as the transcript above, grouped for reference</span>
+        </summary>
+        <div className="mt-4 space-y-6">
       {rounds.map((round) => (
         <section key={round} aria-labelledby={`board-round-${round}`} className="space-y-3" data-testid="board-round">
           <h2 id={`board-round-${round}`} className="font-heading text-lg font-medium text-ink">{session.rounds === 1 ? "Full answers" : round === 1 ? "Round 1: first answers" : "Round 2: after hearing each other"}</h2>
@@ -84,6 +89,8 @@ export function SessionView({ session, style = "a" }: { session: BoardSessionRow
           </div>
         </section>
       ))}
+        </div>
+      </details>
 
       <SynthesisPanel session={session} />
     </div>

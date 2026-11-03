@@ -219,7 +219,7 @@ export default async function CommandCenterPage() {
 
   return (
     <ReplayProvider frames={replay} includesDemo={growth.includesDemo}>
-    <div className="mx-auto w-full max-w-[1400px] space-y-6 px-4 py-6 md:px-6">
+    <div className="mx-auto w-full max-w-[1400px] space-y-8 px-4 py-8 md:px-8">
       <PageHeader
         eyebrow={`Operations · ${formatNyDate(now, "weekday")}`}
         title="Command Center"
@@ -228,7 +228,7 @@ export default async function CommandCenterPage() {
 
       <ReplayDeck />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <ReplayStatTile
           metric="visits"
           label="Jobs today"
