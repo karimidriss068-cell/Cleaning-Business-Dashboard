@@ -256,6 +256,8 @@ The crew view (`/my-jobs`, `/my-jobs/[id]`) uses crew mode everywhere:
 
 ## Vault (default direction)
 
+Vault covers the whole dashboard through tokens: every screen uses `GlassPanel`/`Card` and the shared components, with no per-screen styling. Crew screens keep the solid panel and sit in a `data-crew` shell that maps muted text to `crewTextMuted` (7.2:1 or better on surface, canvas and raised surface, tested in `brand.test.ts`). `npm run e2e:screens` checks every screen in every direction, theme and width.
+
 Mood: warm brown frosted glass. Palette in `brand.ts` (`directions.vault`): canvas #0B0A09, surface #1B1511, highlight #2F241C, cream text #F2EBDD, one muted tan accent #A67B5B, slate-blue second accent. Light variant: cream canvas, brown-black text. Warning is an olive yellow and danger a rose so both clear the 30 degree hue rule against the tan. Type: Mohave (display), DM Sans (body).
 
 Principles: one focal number per card, fewer borders and labels (Vault softens the glass border and drops uppercase eyebrows), generous space. Motion is slow and flowing (`--kc-ease-flow`): numbers roll, ribbons and flow bands draw in over 1.6 s, presses ease to 0.97. The only ambient effect is the CSS aurora drifting over an umber gradient (90-110 s loops); the grid is hidden. Phones and reduced motion get the same background still, no reveal animations.
