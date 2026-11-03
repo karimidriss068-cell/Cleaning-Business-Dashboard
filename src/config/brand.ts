@@ -458,7 +458,7 @@ export const directions = {
 
 export type DirectionId = keyof typeof directions;
 export const directionIds = Object.keys(directions) as DirectionId[];
-export const defaultDirection: DirectionId = "titanium";
+export const defaultDirection: DirectionId = "vault";
 
 /** DESIGN.md section 5. */
 export const radius = {

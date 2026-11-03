@@ -19,7 +19,7 @@ Build components from this spec, then apply them. The dev-only `/design` page re
 
 ## 2. Visual directions (permanent, per user)
 
-There are three permanent visual directions, and each member picks their own. Each direction has a dark palette (primary), a light palette (secondary), a display and body font pairing, and effect values. **The default is Titanium & Ice in dark.**
+There are four visual directions, and each member picks their own. Each direction has a dark palette (primary), a light palette (secondary), a display and body font pairing, and effect values. **The default is Vault in dark.**
 
 **Where the choice lives:**
 - **Settings → Appearance:** a picker with a live mini Command Center per direction (`AppearancePicker`), plus the theme (dark, light, system).
@@ -254,7 +254,7 @@ The crew view (`/my-jobs`, `/my-jobs/[id]`) uses crew mode everywhere:
 - Dates and times show in America/New_York via `src/lib/format.ts`, and money via `formatCents`.
 
 
-## Vault (previous default; Titanium & Ice is now default)
+## Vault (default direction)
 
 Mood: warm brown frosted glass. Palette in `brand.ts` (`directions.vault`): canvas #0B0A09, surface #1B1511, highlight #2F241C, cream text #F2EBDD, one muted tan accent #A67B5B, slate-blue second accent. Light variant: cream canvas, brown-black text. Warning is an olive yellow and danger a rose so both clear the 30 degree hue rule against the tan. Type: Mohave (display), DM Sans (body).
 
