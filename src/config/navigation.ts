@@ -16,6 +16,7 @@ import {
   Workflow,
   type LucideIcon,
 } from "lucide-react";
+import { prototypeRoutesEnabled } from "@/lib/flags";
 
 export type NavItem = {
   href: string;
@@ -30,25 +31,29 @@ export type NavItem = {
   /** Sidebar group. */
   section: "Operate" | "Business" | "Crew";
   keywords?: string;
+  /** Unplanned prototype screen: hidden from navigation and routing unless NEXT_PUBLIC_PROTOTYPE_ROUTES=1. */
+  prototype?: boolean;
 };
 
 /** Office navigation, in DESIGN.md order. */
-export const officeNav: NavItem[] = [
+const allOfficeNav: NavItem[] = [
   { href: "/command-center", label: "Command Center", short: "Home", icon: Gauge, tab: true, section: "Operate", keywords: "dashboard home today" },
   { href: "/leads", label: "Leads & Pipeline", short: "Leads", icon: KanbanSquare, tab: true, section: "Operate", keywords: "pipeline quotes prospects" },
   { href: "/schedule", label: "Schedule", short: "Schedule", icon: CalendarDays, tab: true, section: "Operate", keywords: "calendar jobs dispatch" },
   { href: "/crews", label: "Crews", short: "Crews", icon: Users, section: "Operate", keywords: "subcontractors team cleaners" },
-  { href: "/sales", label: "Sales", short: "Sales", icon: Handshake, section: "Operate", keywords: "dials sms close rate reps bots pipeline forecast" },
+  { href: "/sales", label: "Sales", short: "Sales", icon: Handshake, section: "Operate", keywords: "dials sms close rate reps bots pipeline forecast", prototype: true },
   { href: "/invoices", label: "Invoices", short: "Invoices", icon: Receipt, tab: true, section: "Business", keywords: "invoices payments billing stripe collect" },
   { href: "/payouts", label: "Payouts", short: "Payouts", icon: Wallet, section: "Business", adminOnly: true, keywords: "payouts pay subcontractors 1099 w-9 zelle" },
   { href: "/growth", label: "Growth", short: "Growth", icon: TrendingUp, section: "Business", keywords: "goal pace milestones ad spend meta cac capacity cash runway scale" },
   { href: "/board", label: "Roast Room", short: "Board", icon: MessagesSquare, section: "Business", adminOnly: true, keywords: "board advisors decision roast critique ai council" },
   { href: "/marketing", label: "Marketing", short: "Marketing", icon: Megaphone, section: "Business", keywords: "campaigns ads" },
   { href: "/automations", label: "Automations", short: "Automations", icon: Workflow, section: "Business", keywords: "workflows texts reminders" },
-  { href: "/agents", label: "Agent room", short: "Agents", icon: Bot, section: "Business", keywords: "agents vault floor atlas bots ops approvals" },
-  { href: "/data-room", label: "Agent data room", short: "Data room", icon: Database, section: "Business", keywords: "agents feeds roi ai data" },
+  { href: "/agents", label: "Agent room", short: "Agents", icon: Bot, section: "Business", keywords: "agents vault floor atlas bots ops approvals", prototype: true },
+  { href: "/data-room", label: "Agent data room", short: "Data room", icon: Database, section: "Business", keywords: "agents feeds roi ai data", prototype: true },
   { href: "/settings", label: "Settings", short: "Settings", icon: Settings, section: "Business", keywords: "account team integrations" },
 ];
+
+export const officeNav: NavItem[] = allOfficeNav.filter((i) => !i.prototype || prototypeRoutesEnabled());
 
 /** Crew (subcontractor) navigation. The crew view arrives with its own step. */
 export const crewNav: NavItem[] = [
