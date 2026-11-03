@@ -121,7 +121,7 @@ try {
   check("card: scale light shown to admin", (await page.getByTestId("growth-scale-light").count()) === 1);
 
   // -- /growth
-  await page.goto(`${base}/growth`, { waitUntil: "networkidle" });
+  await page.goto(`${base}/growth/settings`, { waitUntil: "networkidle" });
   check("growth page loads", (await page.getByRole("heading", { name: "Growth", level: 1 }).count()) === 1);
   check("six milestones listed", (await page.getByTestId("milestone-list").locator("li").count()) === 6);
   check("capacity panel shows a percentage and the 80% marker text", /of capacity/.test(await page.getByTestId("capacity-panel").innerText()) && /80%/.test(await page.getByTestId("capacity-panel").innerText()));

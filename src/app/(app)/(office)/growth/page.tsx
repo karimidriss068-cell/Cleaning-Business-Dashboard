@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { UserX } from "lucide-react";
+import Link from "next/link";
+import { Plus, Settings2, UserX } from "lucide-react";
+import { GrowthBlock, GrowthStickyBar, type GrowthKpi } from "@/components/growth/growth-layout";
 import { financeContext } from "@/lib/finance-auth";
 import { loadGrowthSnapshot } from "@/lib/growth-data";
-import { growthSettingsSchema } from "@/lib/schemas/growth";
+import { loadGrowthSettings } from "@/lib/growth-settings-load";
 import { formatCents } from "@/lib/format";
 import { budgetLabel, budgetTone, paceLabel, paceTone } from "@/lib/status";
 import { PageHeader } from "@/components/shell/page-header";
@@ -24,10 +26,7 @@ import { ForecastPanel } from "@/components/growth/forecast-panel";
 import { DecisionLog, GatesPanel, HireTriggersPanel } from "@/components/growth/gates-panel";
 import { FunnelPanel } from "@/components/growth/funnel-panel";
 import { ChannelTestPanel } from "@/components/growth/channel-test-panel";
-import { ForecastForm, TierForm } from "@/components/growth/north-forms";
 import { DemoDataPill } from "@/components/growth/demo-pill";
-import { AdSpendPanel } from "@/components/growth/ad-spend-panel";
-import { AssumptionsForm, CashForm, PlanForm } from "@/components/growth/growth-forms";
 import { CapacityPanel, CashPanel, ScaleLightPanel } from "@/components/growth/scale-light-panel";
 import { longDate, money, monthLabel, paceSentence } from "@/components/growth/format";
 import { monthShort } from "@/lib/payouts";
@@ -37,18 +36,6 @@ export const metadata: Metadata = { title: "Growth" };
 export const dynamic = "force-dynamic";
 
 const stagger = (i: number) => ({ "--i": i }) as React.CSSProperties;
-
-function Section({ id, title, description, children, index }: { id: string; title: string; description?: string; children: React.ReactNode; index: number }) {
-  return (
-    <section aria-labelledby={id} className="space-y-3 kc-enter" style={stagger(index)}>
-      <div>
-        <h2 id={id} className="font-heading text-lg font-medium text-ink">{title}</h2>
-        {description && <p className="text-[13px] text-ink-muted">{description}</p>}
-      </div>
-      {children}
-    </section>
-  );
-}
 
 export default async function GrowthPage() {
   const ctx = await financeContext();
@@ -63,69 +50,75 @@ export default async function GrowthPage() {
   }
   const snapshot = await loadGrowthSnapshot(ctx.supabase);
   const [replay, byChannel] = await Promise.all([loadReplay(ctx.supabase, snapshot.today, snapshot.goal.milestones), loadChannelStream(ctx.supabase, snapshot.today)]);
-  const { data: settingsRow, error } = await ctx.supabase.from("growth_settings").select("*").single();
-  if (error) throw new Error(`Loading growth settings failed: ${error.message}`);
-  const settings = growthSettingsSchema.parse({
-    startDate: settingsRow.start_date,
-    residentialTargetCents: settingsRow.residential_target_cents,
-    commercialTargetCents: settingsRow.commercial_target_cents,
-    resVisitPriceCents: settingsRow.res_visit_price_cents,
-    resVisitsPerMonth: settingsRow.res_visits_per_month,
-    commAccountValueCents: settingsRow.comm_account_value_cents,
-    closeRateBps: settingsRow.close_rate_bps,
-    cacCents: settingsRow.cac_cents,
-    marginBps: settingsRow.margin_bps,
-    monthlyAdBudgetCents: settingsRow.monthly_ad_budget_cents,
-    replyTargetMinutes: settingsRow.reply_target_minutes,
-    cleansPerCleanerPerWeek: settingsRow.cleans_per_cleaner_per_week,
-    startingCapitalCents: settingsRow.starting_capital_cents,
-    cashStartDate: settingsRow.cash_start_date,
-    monthlyFixedCostsCents: settingsRow.monthly_fixed_costs_cents,
-    minBufferCents: settingsRow.min_buffer_cents,
-  });
+  const settings = await loadGrowthSettings(ctx.supabase);
   const canEdit = ctx.isAdmin;
   const { pace, ads, goal } = snapshot;
   const milestoneRows = goal.milestones;
   const cents = (c: number | null) => (c === null ? "—" : formatCents(c, { hideZeroCents: true }));
 
+  const funnelTotal = snapshot.funnel.total.stages;
+  const leadsN = funnelTotal.find((st) => st.key === "leads")?.count ?? 0;
+  const bookedN = funnelTotal.find((st) => st.key === "booked")?.count ?? 0;
+  const closePct = leadsN > 0 ? Math.round((bookedN / leadsN) * 100) : null;
+  const profitMonths = snapshot.profit?.months ?? [];
+  const thisProfit = snapshot.profit?.thisMonth ?? null;
+  const kpis: GrowthKpi[] = [
+    {
+      label: "Revenue MTD",
+      value: money(pace.revenueCents),
+      hint: pace.phase === "before" ? "Plan not started" : `${paceLabel[pace.status]} · ${money(pace.expectedToDateCents)} expected`,
+      tone: pace.phase === "before" ? "neutral" : pace.status === "behind" ? "warning" : "success",
+      spark: milestoneRows.filter((m) => m.monthStart <= snapshot.today).map((m) => m.actualCents),
+    },
+    {
+      label: "Profit MTD",
+      value: thisProfit?.netProfitCents == null ? "—" : money(thisProfit.netProfitCents),
+      hint: snapshot.profit ? (thisProfit?.marginBps == null ? "No revenue yet" : `${Math.round(thisProfit.marginBps / 100)}% margin`) : "Owner/admin only",
+      tone: thisProfit?.netProfitCents == null ? "neutral" : thisProfit.netProfitCents >= 0 ? "success" : "danger",
+      spark: profitMonths.map((m) => m.netProfitCents ?? 0),
+    },
+    { label: "Cost / booked client", value: cents(ads.costPerBookedCents), hint: `${ads.booked30} booked · 30d` },
+    { label: "CAC payback", value: ads.paybackMonths === null ? "—" : `${ads.paybackMonths} mo`, hint: `${cents(ads.cacCents)} CAC (${ads.cacSource})` },
+    { label: "Close rate", value: closePct === null ? "—" : `${closePct}%`, hint: `${bookedN} booked of ${leadsN} leads · ${snapshot.funnel.windowDays}d` },
+    {
+      label: "Cash runway",
+      value: !snapshot.cash ? "—" : snapshot.cash.runwayMonths === null ? "Growing" : `${snapshot.cash.runwayMonths} mo`,
+      hint: snapshot.cash ? `${money(snapshot.cash.onHandCents)} on hand` : "Owner/admin only",
+      tone: !snapshot.cash ? "neutral" : snapshot.cash.status === "ok" ? "success" : snapshot.cash.status === "low" ? "warning" : "danger",
+    },
+  ];
+  const lockedPanel = (title: string, why: string) => (
+    <GlassPanel as="section" className="p-5"><h3 className="font-heading text-base font-medium text-ink">{title}</h3><p className="mt-2 text-sm text-ink-muted">{why}</p></GlassPanel>
+  );
+
   return (
     <ReplayProvider frames={replay} includesDemo={snapshot.includesDemo}>
-    <div className="mx-auto w-full max-w-[1400px] space-y-8 px-4 py-6 md:px-6">
-      <PageHeader
-        eyebrow="Business"
-        title="Growth"
-        description={`${money(goal.monthlyGoalCents)} a month by ${longDate(goal.deadline)}. Residential ${money(goal.residentialTargetCents)}, commercial ${money(goal.commercialTargetCents)}.`}
-        actions={snapshot.includesDemo ? <DemoDataPill /> : undefined}
-      />
-
-      <ReplayDeck />
-
-      <GrowthCard snapshot={snapshot} index={1} />
-
-      <div className="space-y-6">
-        <RevenueByChannelPanel data={byChannel} index={2} />
-        {snapshot.profit?.thisMonth ? <MoneyFlowPanel month={snapshot.profit.thisMonth} index={2} /> : null}
+    <div className="mx-auto w-full max-w-[1400px] space-y-6 px-4 pb-6 md:px-6">
+      <div className="pt-6">
+        <PageHeader
+          eyebrow="Business"
+          title="Growth"
+          description={`${money(goal.monthlyGoalCents)} a month by ${longDate(goal.deadline)}. Residential ${money(goal.residentialTargetCents)}, commercial ${money(goal.commercialTargetCents)}.`}
+          actions={
+            <div className="flex items-center gap-2">
+              {snapshot.includesDemo ? <DemoDataPill /> : null}
+              <Link href="/growth/settings" className="inline-flex items-center gap-1.5 rounded-md border border-hairline px-3 py-1.5 text-[13px] font-medium text-ink hover:bg-surface-raised">
+                <Settings2 className="size-3.5" aria-hidden /> Growth settings
+              </Link>
+            </div>
+          }
+        />
       </div>
 
-      <Section id="north-star" title="North star: 12 months" description={`Pace against the ${snapshot.tiers.selected === "north_star" ? "north star" : snapshot.tiers.selected} tier, with the others beside it. Month ${snapshot.tiers.planMonth === 0 ? "1 hasn't started" : `${snapshot.tiers.planMonth} of 12`}.`} index={2}>
-        <TiersPanel snapshot={snapshot} />
-      </Section>
+      <GrowthStickyBar kpis={kpis} />
 
-      <Section id="profit" title="Profit" description="Revenue minus cleaner pay, ad spend and other costs, by New York month." index={2}>
-        <ProfitPanel snapshot={snapshot} canEdit={canEdit} />
-      </Section>
-
-      <Section id="forecast" title="What each tier takes" description="Revenue, clients, cleans a week, crews and ad budget needed by month 12, with churn replaced." index={2}>
-        <ForecastPanel snapshot={snapshot} />
-      </Section>
-
-      <Section id="gates" title="Go/no-go gates" description="Checkpoints at day 30 and months 3, 6, 9 and 12, judged from real data." index={2}>
-        <GatesPanel gates={snapshot.gates} canEdit={canEdit} />
-        <HireTriggersPanel triggers={snapshot.hireTriggers} canEdit={canEdit} />
-        <DecisionLog decisions={snapshot.decisions} canEdit={canEdit} today={snapshot.today} />
-      </Section>
-
-      <Section id="milestones" title="Monthly milestones" description="Revenue earned each plan month (invoiced, plus completed visits not yet invoiced) against its milestone." index={2}>
+      <GrowthBlock
+        id="pace"
+        title="Pace"
+        info={`Month ${snapshot.tiers.planMonth === 0 ? "1 hasn't started" : `${snapshot.tiers.planMonth} of 12`} of the north star. Goal, tiers, forecast and monthly milestones.`}
+        tabs={[
+          { key: "goal", label: "This month", content: <div className="space-y-4"><GrowthCard snapshot={snapshot} index={1} /><ReplayDeck /></div> },
+          { key: "milestones", label: "Milestones", content: <div className="space-y-3">
         <div className="grid gap-4 lg:grid-cols-5">
           <GlassPanel as="div" className="p-5 lg:col-span-2">
             <BarChart
@@ -163,85 +156,81 @@ export default async function GrowthPage() {
             : `${monthLabel(pace.monthStart)}: ${paceSentence(pace.daysAhead).toLowerCase()}. Expected by today ${money(pace.expectedToDateCents)}, projected month end ${money(pace.projectedCents)}.`}{" "}
           {pace.phase !== "before" && <StatusPill tone={paceTone[pace.status]}>{paceLabel[pace.status]}</StatusPill>}
         </p>
-      </Section>
+        </div> },
+          { key: "north", label: "North star", content: <TiersPanel snapshot={snapshot} /> },
+          { key: "forecast", label: "What each tier takes", content: <ForecastPanel snapshot={snapshot} /> },
+        ]}
+      />
 
-      <Section id="ads" title="Meta ads" description="Typed in by hand for now. Nothing here connects to Meta or any ad platform." index={3}>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4" data-testid="ad-tiles">
-          <StatTile label="Cost per lead" value={cents(ads.costPerLeadCents)} hint={`${ads.leads30} lead${ads.leads30 === 1 ? "" : "s"} from ads, last 30 days`} index={4} />
-          <StatTile label="Cost per booked client" value={cents(ads.costPerBookedCents)} hint={`${ads.booked30} booked, last 30 days`} index={5} />
-          <StatTile
-            label="CAC payback"
-            value={ads.paybackMonths === null ? "—" : `${ads.paybackMonths} mo`}
-            hint={`${cents(ads.cacCents)} per client (${ads.cacSource}), ${cents(ads.avgMonthlyClientValueCents)} a month at ${settings.marginBps / 100}% margin`}
-            index={6}
-          />
+      <GrowthBlock
+        id="money"
+        title="Money"
+        info="Revenue by channel, where this month's money went, and profit by New York month."
+        tabs={[
+          { key: "flow", label: "Overview", content: (
+            <div className="grid gap-4 xl:grid-cols-2">
+              <RevenueByChannelPanel data={byChannel} index={2} />
+              {thisProfit ? <MoneyFlowPanel month={thisProfit} index={2} /> : lockedPanel("Money flow", "Profit includes cleaner pay, so only the owner or an admin sees it.")}
+            </div>
+          ) },
+          { key: "profit", label: "Profit by month", content: <ProfitPanel snapshot={snapshot} canEdit={canEdit} /> },
+        ]}
+      />
+
+      <GrowthBlock
+        id="acquisition"
+        title="Acquisition"
+        info="Meta ad spend is typed in by hand; nothing connects to Meta yet. Channel test recommends, you decide."
+        actions={canEdit ? <Link href="/growth/settings#ad-spend" className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-[13px] font-medium text-primary-foreground hover:opacity-90"><Plus className="size-3.5" aria-hidden /> Add spend</Link> : undefined}
+      >
+        <div className="grid grid-cols-2 gap-3 xl:grid-cols-4" data-testid="ad-tiles">
+          <StatTile label="Cost per lead" value={cents(ads.costPerLeadCents)} hint={`${ads.leads30} lead${ads.leads30 === 1 ? "" : "s"} · 30d`} index={4} />
+          <StatTile label="Cost per booked client" value={cents(ads.costPerBookedCents)} hint={`${ads.booked30} booked · 30d`} index={5} />
+          <StatTile label="CAC payback" value={ads.paybackMonths === null ? "—" : `${ads.paybackMonths} mo`} hint={`${cents(ads.cacCents)} per client, ${settings.marginBps / 100}% margin`} index={6} />
           <GlassPanel as="div" className="kc-enter flex flex-col gap-2 p-5" style={stagger(7)} data-testid="budget-tile">
             <span className="text-[11px] font-semibold tracking-[0.12em] text-ink-muted uppercase">Spend vs budget</span>
-            <span className="font-heading text-[40px] leading-[44px] font-medium tracking-[-0.02em] text-ink tabular text-glow">
+            <span className="font-heading text-[32px] leading-9 font-medium tracking-[-0.02em] text-ink tabular text-glow">
               <AnimatedNumber value={Math.round(ads.spendMonthCents / 100) * 100} kind="cents" hideZeroCents />
             </span>
             <Meter value={ads.budgetCents > 0 ? ads.spendMonthCents / ads.budgetCents : ads.spendMonthCents > 0 ? 1 : 0} marker={undefined} tone={budgetTone[ads.budgetStatus]} label="Ad spend this month against the monthly budget" />
-            <div className="flex flex-wrap items-center gap-2 text-[13px] text-ink-muted">
+            <div className="flex flex-wrap items-center gap-2 text-[12px] text-ink-muted">
               <StatusPill tone={budgetTone[ads.budgetStatus]}>{budgetLabel[ads.budgetStatus]}</StatusPill>
-              <span className="tabular">{ads.budgetUsedPercent}% of {money(ads.budgetCents)} this month</span>
+              <span className="tabular">{ads.budgetUsedPercent}% of {money(ads.budgetCents)}</span>
             </div>
           </GlassPanel>
         </div>
-        <AdSpendPanel ads={ads} today={snapshot.today} canEdit={canEdit} />
-      </Section>
+        <details className="group rounded-md border border-hairline glass-card">
+          <summary className="cursor-pointer px-5 py-3 text-sm font-medium text-ink">Channel test: channels side by side against your rules</summary>
+          <div className="border-t border-hairline p-4"><ChannelTestPanel snapshot={snapshot} canEdit={canEdit} /></div>
+        </details>
+      </GrowthBlock>
 
-      <Section id="funnel" title="Channels and funnel" description="Where leads come from and how far they get, with reply time and churn." index={7}>
+      <GrowthBlock id="funnel" title="Funnel" info="Where leads come from and how far they get, with reply time and churn.">
         <FunnelPanel snapshot={snapshot} />
-      </Section>
+      </GrowthBlock>
 
-      <Section id="channel-test" title="Channel test" description="Channels side by side against your rules. It recommends; you decide." index={7}>
-        <ChannelTestPanel snapshot={snapshot} canEdit={canEdit} />
-      </Section>
+      <GrowthBlock
+        id="operations"
+        title="Operations"
+        info="Capacity, cash and the scale light, then the go/no-go gates and hire triggers."
+        tabs={[
+          { key: "status", label: "Status", content: (
+            <div className="grid gap-4 lg:grid-cols-3">
+              <CapacityPanel capacity={snapshot.capacity} />
+              {snapshot.cash ? <CashPanel cash={snapshot.cash} /> : lockedPanel("Cash and runway", "Cash includes payouts, so only the owner or an admin sees it.")}
+              {snapshot.scaleLight ? <ScaleLightPanel light={snapshot.scaleLight} /> : lockedPanel("Can I scale spend?", "This light depends on cash, so only the owner or an admin sees it.")}
+            </div>
+          ) },
+          { key: "gates", label: "Gates", content: <GatesPanel gates={snapshot.gates} canEdit={canEdit} /> },
+          { key: "hire", label: "Hire triggers", content: <HireTriggersPanel triggers={snapshot.hireTriggers} canEdit={canEdit} /> },
+          { key: "log", label: "Decision log", content: <DecisionLog decisions={snapshot.decisions} canEdit={canEdit} today={snapshot.today} /> },
+        ]}
+      />
 
-      <Section id="operations" title="Capacity, cash and the scale light" index={8}>
-        <div className="grid gap-4 lg:grid-cols-2">
-          <CapacityPanel capacity={snapshot.capacity} />
-          {snapshot.cash ? (
-            <CashPanel cash={snapshot.cash} />
-          ) : (
-            <GlassPanel as="section" className="p-5"><h3 className="font-heading text-base font-medium text-ink">Cash and runway</h3><p className="mt-2 text-sm text-ink-muted">Cash includes payouts, so only the owner or an admin sees it.</p></GlassPanel>
-          )}
-        </div>
-        {snapshot.scaleLight ? (
-          <ScaleLightPanel light={snapshot.scaleLight} />
-        ) : (
-          <GlassPanel as="section" className="p-5"><h3 className="font-heading text-base font-medium text-ink">Can I scale spend?</h3><p className="mt-2 text-sm text-ink-muted">This light depends on cash, so only the owner or an admin sees it.</p></GlassPanel>
-        )}
-      </Section>
-
-      <Section id="plan" title="Plan and milestones" description="The goal, when it starts, and what each month should reach." index={9}>
-        <GlassPanel as="div" className="p-5 md:p-6">
-          <PlanForm key={`${settings.startDate}-${milestoneRows.map((m) => m.targetCents).join("-")}`} settings={settings} milestones={milestoneRows.map((m) => m.targetCents)} canEdit={canEdit} />
-        </GlassPanel>
-      </Section>
-
-      <Section id="assumptions" title="Assumptions" description="Change these and the accounts and leads the plan needs update. Saved for everyone." index={10}>
-        <GlassPanel as="div" className="p-5 md:p-6">
-          <AssumptionsForm key={JSON.stringify(settings)} settings={settings} canEdit={canEdit} />
-        </GlassPanel>
-      </Section>
-
-      <Section id="tiers-settings" title="Tiers and forecast" description="Which tier to track, the three targets, and the churn and crew assumptions behind the forecast." index={10}>
-        <GlassPanel as="div" className="space-y-6 p-5 md:p-6">
-          <TierForm key={JSON.stringify([snapshot.settingsExtra.tier, snapshot.settingsExtra.tierBaseRevenueCents, snapshot.settingsExtra.tierStrongRevenueCents, snapshot.settingsExtra.tierNorthProfitCents])} extra={snapshot.settingsExtra} canEdit={canEdit} />
-          <hr className="border-hairline" />
-          <ForecastForm key={`${snapshot.settingsExtra.monthlyChurnBps}-${snapshot.settingsExtra.cleansPerCrewPerWeek}`} extra={snapshot.settingsExtra} canEdit={canEdit} />
-        </GlassPanel>
-      </Section>
-
-      {ctx.isAdmin && (
-        <Section id="cash-settings" title="Cash settings" description="Starting capital, fixed costs and the minimum buffer behind the cash and scale-light numbers." index={11}>
-          <GlassPanel as="div" className="p-5 md:p-6">
-            <CashForm key={`${settings.startingCapitalCents}-${settings.cashStartDate}-${settings.monthlyFixedCostsCents}-${settings.minBufferCents}`} settings={settings} canEdit />
-          </GlassPanel>
-        </Section>
-      )}
-      <DemoAnalytics pack="growth" />
+      <details className="rounded-md border border-hairline glass-card">
+        <summary className="cursor-pointer px-5 py-3 text-sm font-medium text-ink">More growth analytics (sample)</summary>
+        <div className="border-t border-hairline p-4"><DemoAnalytics pack="growth" /></div>
+      </details>
     </div>
     </ReplayProvider>
   );
