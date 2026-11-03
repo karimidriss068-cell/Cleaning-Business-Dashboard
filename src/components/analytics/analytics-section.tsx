@@ -31,9 +31,9 @@ const colKind = (key: string, kind: Kind): Kind =>
   MONEY_KEY.test(key) && kind !== "pct" ? "money" : key === "ticket" ? "money" : RAW_KEY.test(key) ? (key === "roas" ? "ratio" : "count") : kind;
 const label = (k: string) => k.replace(/_x10$/, " ×10").replace(/_/g, " ");
 
-function scaleRows(data: Row[], kind: Kind, f: number): Row[] {
-  if (!SCALES.includes(kind) || f === 1) return data;
-  return data.map((r) => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, typeof v === "number" && colKind(k, kind) !== "pct" ? v * f : v])));
+function scaleRows(data: Row[], kind: Kind, f: number, cols?: Record<string, Kind>): Row[] {
+  if (f === 1 || (!SCALES.includes(kind) && !cols)) return data;
+  return data.map((r) => Object.fromEntries(Object.entries(r).map(([k, v]) => { const ck = cols?.[k] ?? colKind(k, kind); return [k, typeof v === "number" && SCALES.includes(ck) && !/rev_per|cost_per|avg_ticket|ticket/.test(k) ? v * f : v]; })));
 }
 
 const axis = { stroke: "currentColor", tick: { fontSize: 11, fill: "currentColor" }, tickLine: false, axisLine: false } as const;
@@ -43,7 +43,7 @@ const tip = {
 };
 
 function PanelChart({ p, f }: { p: Panel; f: number }) {
-  const data = useMemo(() => scaleRows(p.data, p.kind, f), [p, f]);
+  const data = useMemo(() => scaleRows(p.data, p.kind, f, p.cols), [p, f]);
   const tf = (v: unknown) => fmt(Number(v), p.kind);
   if (p.type === "table") {
     return (
@@ -56,7 +56,7 @@ function PanelChart({ p, f }: { p: Panel; f: number }) {
           <tbody>{data.map((r) => (
             <tr key={String(r.x)} className="border-t border-border/60">
               <td className="py-1.5 pr-3 text-ink">{r.x}</td>
-              {p.keys.map((k) => <td key={k} className="py-1.5 pl-3 text-right">{fmt(Number(r[k]), colKind(k, p.kind))}</td>)}
+              {p.keys.map((k) => <td key={k} className="py-1.5 pl-3 text-right">{fmt(Number(r[k]), p.cols?.[k] ?? colKind(k, p.kind))}</td>)}
             </tr>
           ))}</tbody>
         </table>
@@ -162,16 +162,17 @@ export function AnalyticsSection({ pack, className }: { pack: keyof typeof PACKS
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-5">
+      <div className={cn("grid grid-cols-2 gap-3", def.kpis.length > 5 ? "md:grid-cols-4" : "lg:grid-cols-4 xl:grid-cols-5")}>
         {def.kpis.map((k) => {
           const on = filter === k.label;
-          const v = SCALES.includes(k.kind) ? k.value * f : k.value;
+          const v = SCALES.includes(k.kind) && !k.fixed ? k.value * f : k.value;
           return (
             <button key={k.label} type="button" aria-pressed={on} onClick={() => setFilter(on ? null : k.label)}
               className={cn("glass-card relative overflow-hidden rounded-md border p-4 text-left transition-shadow", on && "ring-2 ring-brand/60")}>
               <span aria-hidden className="pointer-events-none absolute inset-x-6 top-0 h-px bg-linear-to-r from-transparent via-brand/60 to-transparent" />
               <span className="text-[11px] font-semibold tracking-[0.12em] text-ink-muted uppercase">{k.label}</span>
               <div className="mt-1 font-heading text-[28px] leading-8 font-medium tracking-[-0.02em] text-ink tabular text-glow">{fmt(v, k.kind)}</div>
+              {k.sub && <p className="mt-0.5 truncate text-[12px] text-ink-muted">{k.sub}</p>}
               <span className={cn("mt-1 inline-flex rounded-full px-2 py-0.5 text-[12px] font-medium tabular ring-1 ring-inset", k.good ? "text-success-label ring-success/40" : "text-danger-label ring-danger/40")}>
                 {k.delta} <span className="sr-only">{k.good ? "(good)" : "(needs attention)"}</span>
               </span>

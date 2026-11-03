@@ -10,7 +10,7 @@ export default function Page() {
   if (!prototypeRoutesEnabled()) notFound();
   return (
     <div className="mx-auto w-full max-w-[1400px] space-y-6 px-4 py-6 md:px-6">
-      <PageHeader eyebrow="Operate" title="Sales" description="Dials, SMS, close rate and pipeline by rep and bot." />
+      <PageHeader eyebrow="Operate" title="Sales" description="Lead → booked funnel, speed-to-lead, rep leaderboard, pipeline and lost revenue." />
       <DemoAnalytics pack="sales" />
     </div>
   );
