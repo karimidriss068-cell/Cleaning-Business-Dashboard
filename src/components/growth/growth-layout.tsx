@@ -68,7 +68,7 @@ export function GrowthStickyBar({ kpis }: { kpis: GrowthKpi[] }) {
             aria-current={active === s.id ? "true" : undefined}
             className={cn(
               "rounded-full px-3 py-1 text-[13px] font-medium whitespace-nowrap transition-colors",
-              active === s.id ? "bg-info-soft text-brand-text ring-1 ring-brand/30" : "text-ink-muted hover:text-ink",
+              active === s.id ? "bg-info-soft text-ink ring-1 ring-brand/30" : "text-ink-muted hover:text-ink",
             )}
           >
             {s.label}
@@ -95,7 +95,7 @@ export function GrowthBlock({ id, title, info, tabs, children, actions }: { id: 
       {tabs ? (
         <Tabs defaultValue={tabs[0].key}>
           <TabsList variant="line">
-            {tabs.map((t) => <TabsTrigger key={t.key} value={t.key}>{t.label}</TabsTrigger>)}
+            {tabs.map((t) => <TabsTrigger key={t.key} value={t.key} className="text-ink-muted">{t.label}</TabsTrigger>)}
           </TabsList>
           {tabs.map((t) => <TabsContent key={t.key} value={t.key} className="pt-3">{t.content}</TabsContent>)}
         </Tabs>

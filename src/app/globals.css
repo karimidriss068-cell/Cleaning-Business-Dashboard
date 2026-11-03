@@ -581,6 +581,10 @@
 [data-crew] {
   --kc-text-muted: var(--kc-crew-text-muted);
 }
+/* Accent text (eyebrows) is not AAA on crew screens; there it reads as plain text. */
+[data-crew] .text-brand-text {
+  color: var(--kc-text);
+}
 
 [data-direction="vault"] .kc-ambient {
   background: linear-gradient(165deg, var(--kc-canvas) 0%, color-mix(in oklab, var(--kc-canvas) 78%, var(--kc-highlight)) 100%);

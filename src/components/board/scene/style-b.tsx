@@ -17,7 +17,6 @@ const W = 160;
 const H = 126;
 const CENTER = { x: 80, y: 47 };
 const R = 30;
-const BARS = 28;
 const voteStroke: Record<Vote, string> = { for: "stroke-success-fill", conditional: "stroke-brand", against: "stroke-danger-fill" };
 
 /** Speaking: two slow rings spreading from the node. Calm, no spikes. */
