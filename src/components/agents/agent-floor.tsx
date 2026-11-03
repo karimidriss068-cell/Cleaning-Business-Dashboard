@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CheckCircle2, Clock, MessagesSquare, ShieldAlert, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sparkline } from "@/components/system/sparkline";
+import { AgentStage } from "./agent-stage";
 import { AGENTS, APPROVALS, FEED, GUARDRAILS, HANDOFFS, type Agent, type AgentStatus } from "./agent-data";
 
 const statusDot: Record<AgentStatus, string> = { working: "bg-success", waiting: "bg-warning", idle: "bg-ink-muted", paused: "bg-danger" };
@@ -208,7 +209,7 @@ function Sheet({ a, onClose }: { a: Agent; onClose: () => void }) {
 const DESKS = ["All", "Command", "Marketing", "Sales", "CRM"] as const;
 
 export function AgentFloor({ dataRoom }: { dataRoom?: React.ReactNode }) {
-  const [view, setView] = useState<"floor" | "data">("floor");
+  const [view, setView] = useState<"floor" | "grid" | "data">("floor");
   const [desk, setDesk] = useState<(typeof DESKS)[number]>("All");
   const [open, setOpen] = useState<Agent | null>(null);
   const shown = desk === "All" ? AGENTS : AGENTS.filter((a) => a.desk === desk);
@@ -216,12 +217,12 @@ export function AgentFloor({ dataRoom }: { dataRoom?: React.ReactNode }) {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div role="tablist" aria-label="Agent room views" className="flex gap-1 border-b border-border/60">
-          {([["floor", "Live floor"], ["data", "Data room"]] as const).map(([k, l]) => (
+          {([["floor", "Live floor"], ["grid", "Agent grid"], ["data", "Data room"]] as const).map(([k, l]) => (
             <button key={k} role="tab" type="button" aria-selected={view === k} onClick={() => setView(k)}
               className={cn("-mb-px border-b-2 px-3 py-2 text-[13px] font-medium", view === k ? "border-brand text-ink" : "border-transparent text-ink-muted hover:text-ink")}>{l}</button>
           ))}
         </div>
-        {view === "floor" && (
+        {view !== "data" && (
           <div role="group" aria-label="Desk" className="inline-flex rounded-full p-0.5 ring-1 ring-hairline ring-inset">
             {DESKS.map((d) => (
               <button key={d} type="button" aria-pressed={desk === d} onClick={() => setDesk(d)}
@@ -234,9 +235,11 @@ export function AgentFloor({ dataRoom }: { dataRoom?: React.ReactNode }) {
         <>
           <Kpis />
           <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
+            {view === "floor" ? <AgentStage desk={desk} onOpen={setOpen} /> : (
             <div className="grid content-start gap-4 sm:grid-cols-2 2xl:grid-cols-3">
               {shown.map((a) => <AgentCard key={a.id} a={a} onOpen={() => setOpen(a)} />)}
             </div>
+            )}
             <Rail />
           </div>
           <Below />
