@@ -6,10 +6,9 @@ import type { Vote } from "@/lib/board/scene/script";
 import { cn } from "@/lib/utils";
 import { StatusPill } from "@/components/system/status-pill";
 import { TONE, type AvatarWho, type NodeState } from "@/components/board/scene/glyphs";
-import { BustSvg } from "@/components/board/scene/bust";
 import { Dots, REACTION_LABEL, VOTE_LABEL, captionOf, focusOf, nameOf, reactionTone, stateOf, voteTone, type StageProps } from "@/components/board/scene/shared";
 
-// Style B, "Signal chamber": each advisor is a talking portrait in a glowing node on a ring. Speaking is an
+// Style B, "Signal chamber": no characters. Each advisor is a glowing node on a ring. Speaking is an
 // audio waveform around the node and light trails flowing to the others; the words are plain captions;
 // a vote pulses once on the node and stays as a ring. Drawn in one SVG (160 x 112 units).
 
@@ -32,7 +31,7 @@ function Waveform({ r }: { r: number; bars?: number }) {
 
 function NodeGlyph({ who, state, vote, focused, receded }: { who: AvatarWho; state: NodeState; vote?: Vote; focused: boolean; receded: boolean }) {
   const r = who === "chair" ? 4.3 : 3.3;
-  const gid = useId().replace(/:/g, "");
+  const gid = useId();
   return (
     <g className={cn("origin-center transition-[transform,opacity] duration-500 [transform-box:fill-box]", focused && "scale-[1.3]", receded && "opacity-60")}>
       <defs>
@@ -43,10 +42,8 @@ function NodeGlyph({ who, state, vote, focused, receded }: { who: AvatarWho; sta
       </defs>
       <circle r={r * 2.4} fill={`url(#${gid})`} className="kc-halo" />
       {state === "thinking" && <circle r={r + 1.8} className="kc-spin fill-none stroke-(--char)" strokeWidth="0.3" strokeDasharray="0.8 1.6" style={{ "--spin": "3s" } as React.CSSProperties} />}
-      <clipPath id={`${gid}-c`}><circle r={r} /></clipPath>
-      <circle r={r} className="fill-canvas" />
-      <g clipPath={`url(#${gid}-c)`}><BustSvg who={who} state={state} r={r * 1.1} /></g>
-      <circle r={r} className="fill-none stroke-(--char)" strokeWidth="0.5" />
+      <circle r={r} className="fill-canvas stroke-(--char)" strokeWidth="0.5" />
+      <circle r={r * 0.42} className="fill-(--char)" />
       {state === "speaking" && <Waveform r={r} />}
       {vote && (
         <>
@@ -59,14 +56,11 @@ function NodeGlyph({ who, state, vote, focused, receded }: { who: AvatarWho; sta
 }
 
 export function MiniB({ who, state }: { who: AvatarWho; state: NodeState }) {
-  const gid = useId().replace(/:/g, "");
   return (
     <svg viewBox="-9 -9 18 18" role="img" aria-label={nameOf(who)} className={cn("size-full overflow-visible", TONE[who])} data-state={state}>
       <circle r="6.5" className="fill-(--char)" opacity={state === "idle" ? 0.12 : 0.25} />
-      <clipPath id={`${gid}-m`}><circle r="3.6" /></clipPath>
-      <circle r="3.6" className="fill-canvas" />
-      <g clipPath={`url(#${gid}-m)`}><BustSvg who={who} state={state} r={4} /></g>
-      <circle r="3.6" className="fill-none stroke-(--char)" strokeWidth="0.6" />
+      <circle r="3.6" className="fill-canvas stroke-(--char)" strokeWidth="0.6" />
+      <circle r="1.5" className="fill-(--char)" />
       {state === "speaking" && <Waveform r={3.6} />}
     </svg>
   );

@@ -8,17 +8,14 @@ import { formatNyDateTime } from "@/lib/format";
 import { PageHeader } from "@/components/shell/page-header";
 import { DeleteSession } from "@/components/board/delete-session";
 import { SessionView } from "@/components/board/session-view";
-import { STYLES, type SceneStyle } from "@/components/board/scene/styles";
 
 export const metadata: Metadata = { title: "Roast Room session" };
 export const dynamic = "force-dynamic";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export default async function BoardSessionPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ style?: string }> }) {
+export default async function BoardSessionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { style } = await searchParams;
-  const current: SceneStyle = STYLES.find((x) => x.key === style)?.key ?? "a";
   const ctx = await financeContext();
   if (!ctx) redirect("/login");
   if (!ctx.isAdmin) redirect("/command-center");
@@ -31,7 +28,7 @@ export default async function BoardSessionPage({ params, searchParams }: { param
         <ArrowLeft className="size-3.5" aria-hidden /> Roast Room
       </Link>
       <PageHeader eyebrow="Roast Room" title="Session" description={formatNyDateTime(session.created_at)} actions={<DeleteSession sessionId={session.id} />} />
-      <SessionView session={session} style={current} />
+      <SessionView session={session} />
     </div>
   );
 }

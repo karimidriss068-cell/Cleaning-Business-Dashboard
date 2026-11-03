@@ -208,6 +208,7 @@ try {
   check("Log decision writes the chosen action and the verdict to the decision log", dec.length === 1 && dec[0].decision === SYN.actions[1].title && dec[0].note.includes(SYN.verdict) && dec[0].note.startsWith("Roast Room (AI advisors, not real people)") && dec[0].kind === "general", JSON.stringify(dec));
   check("the session is linked to it and the button is gone", (await db.from("board_sessions").select("logged_decision_id").eq("id", row.id).single()).data.logged_decision_id === dec[0].id && (await op.getByTestId("board-log").count()) === 0);
   await op.goto(`${base}/growth`, { waitUntil: "networkidle" });
+  await op.getByRole("tab", { name: "Decision log" }).click();
   check("the Go/No-go decision log on /growth shows it", (await op.getByText(SYN.actions[1].title).count()) >= 1);
   await op.goto(sessionUrl, { waitUntil: "networkidle" });
   check("reopening the session still shows it as logged", (await op.getByText("Logged", { exact: true }).count()) === 1);

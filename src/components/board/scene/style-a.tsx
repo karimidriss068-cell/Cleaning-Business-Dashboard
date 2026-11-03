@@ -5,12 +5,11 @@ import { CHAIR_SEAT, seatPositions } from "@/lib/board/scene/layout";
 import { cn } from "@/lib/utils";
 import { GlassPanel } from "@/components/system/glass-panel";
 import { StatusPill } from "@/components/system/status-pill";
-import { TONE, type AvatarWho, type NodeState } from "@/components/board/scene/glyphs";
-import { Bust } from "@/components/board/scene/bust";
+import { Glyph, TONE, type AvatarWho, type NodeState } from "@/components/board/scene/glyphs";
 import { Dots, REACTION_LABEL, VOTE_LABEL, captionOf, focusOf, nameOf, reactionTone, stateOf, voteTone, type StageProps } from "@/components/board/scene/shared";
 
 // Style A, "Holo command deck": a dark glass room, a holographic table with a luminous ring, advisors as
-// talking portrait busts (ported from the original Roast Room) inside rings of light, a cone of light on whoever is speaking, a faint particle
+// orbs of light drawn with thin line geometry, a cone of light on whoever is speaking, a faint particle
 // field and quiet mono readouts. Everything not speaking recedes.
 
 const PARTICLES = Array.from({ length: 26 }, (_, i) => ({ x: (i * 37 + 11) % 160, y: (i * 53 + 7) % 100, r: 0.22 + ((i * 7) % 5) * 0.07, d: i % 9 }));
@@ -18,8 +17,7 @@ const PARTICLES = Array.from({ length: 26 }, (_, i) => ({ x: (i * 37 + 11) % 160
 export function OrbA({ who, state = "idle", index = 0, className }: { who: AvatarWho; state?: NodeState; index?: number; className?: string }) {
   const gid = useId();
   return (
-    <span className={cn("relative block aspect-square", TONE[who], className)} data-state={state}>
-    <svg aria-hidden viewBox="0 0 100 100" className="absolute inset-0 block size-full overflow-visible">
+    <svg viewBox="0 0 100 100" role="img" aria-label={nameOf(who)} className={cn("block overflow-visible", TONE[who], className)} data-state={state}>
       <defs>
         <radialGradient id={gid}>
           <stop offset="0" className="kc-stop-a" stopOpacity={state === "idle" ? 0.6 : 0.85} />
@@ -29,12 +27,12 @@ export function OrbA({ who, state = "idle", index = 0, className }: { who: Avata
       <circle cx="50" cy="50" r="48" fill={`url(#${gid})`} className="kc-halo" style={{ "--i": index } as React.CSSProperties} />
       {state === "speaking" && [0, 1].map((d) => <circle key={d} cx="50" cy="50" r="26" className="kc-ripple fill-none stroke-(--char)" strokeWidth="0.8" style={{ "--d": d } as React.CSSProperties} />)}
       {state === "thinking" && <circle cx="50" cy="50" r="35" className="kc-spin fill-none stroke-(--char)" strokeWidth="1" strokeDasharray="2 7" style={{ "--spin": "3s" } as React.CSSProperties} />}
+      <circle cx="50" cy="50" r="27" className="fill-none stroke-(--char)" strokeWidth="1.4" />
+      <g className="kc-spin" style={{ "--spin": state === "speaking" ? "24s" : "90s" } as React.CSSProperties}>
+        <Glyph who={who} width={2} />
+      </g>
+      <circle cx="50" cy="50" r="3" className="fill-(--char)" />
     </svg>
-    {/* the talking portrait, clipped to the ring's glass disc */}
-    <span className="absolute inset-[22%] overflow-hidden rounded-full bg-linear-to-b from-ink/10 to-surface-raised/40 ring-1 ring-(--char)/60 backdrop-blur-sm">
-      <Bust who={who} state={state} alt={nameOf(who)} className="size-full scale-[1.08] translate-y-[4%]" />
-    </span>
-    </span>
   );
 }
 
@@ -70,7 +68,7 @@ export function StageA(props: StageProps) {
   const total = props.script.filter((b) => b.kind === "vote").length;
   const voted = view.tally.for + view.tally.conditional + view.tally.against;
   return (
-    <GlassPanel level="card" className="relative hidden aspect-[16/10] w-full overflow-hidden md:block" data-testid="scene-stage" data-style="a">
+    <GlassPanel level="solid" className="relative hidden aspect-[16/10] w-full overflow-hidden md:block" data-testid="scene-stage" data-style="a">
       <div aria-hidden className="absolute inset-0 bg-[radial-gradient(70%_65%_at_50%_58%,color-mix(in_oklab,var(--kc-accent)_16%,transparent),transparent)]" />
       <svg aria-hidden viewBox="0 0 160 100" className="absolute inset-0 size-full">
         {PARTICLES.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r={p.r} className="kc-float fill-brand" style={{ "--d": p.d } as React.CSSProperties} />)}
