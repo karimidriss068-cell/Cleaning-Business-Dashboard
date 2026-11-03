@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/shell/page-header";
 import { EmptyState } from "@/components/system/empty-state";
 import { BoardToolbar } from "@/components/schedule/board-toolbar";
 import { ScheduleClient } from "@/components/schedule/schedule-client";
-import { AnalyticsSection } from "@/components/analytics/analytics-section";
+import { DemoAnalytics } from "@/components/analytics/demo-analytics";
 
 export const metadata: Metadata = { title: "Schedule" };
 export const dynamic = "force-dynamic";
@@ -91,7 +91,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
           isAdmin={profile.role === "owner" || profile.role === "admin"}
         />
       )}
-      <AnalyticsSection pack="schedule" />
+      <DemoAnalytics pack="schedule" />
     </div>
   );
 }

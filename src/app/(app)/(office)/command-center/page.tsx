@@ -30,7 +30,7 @@ import { BarChart } from "@/components/system/bar-chart";
 import { GlassPanel } from "@/components/system/glass-panel";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { Database } from "@/lib/supabase/database.types";
-import { AnalyticsSection } from "@/components/analytics/analytics-section";
+import { DemoAnalytics } from "@/components/analytics/demo-analytics";
 import { PipelineMap, type PipelineStage } from "@/components/command-center/pipeline-map";
 
 export const metadata: Metadata = { title: "Command Center" };
@@ -488,7 +488,7 @@ export default async function CommandCenterPage() {
           </section>
         </div>
       </div>
-      <AnalyticsSection pack="command" />
+      <DemoAnalytics pack="command" />
     </div>
     </ReplayProvider>
   );

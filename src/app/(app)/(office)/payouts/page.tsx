@@ -12,7 +12,7 @@ import { PayoutCard } from "@/components/payouts/payout-card";
 import { WeekBar } from "@/components/payouts/week-bar";
 import { ExcludedVisits } from "@/components/payouts/excluded-visits";
 import { Contractors1099 } from "@/components/payouts/contractor-1099";
-import { AnalyticsSection } from "@/components/analytics/analytics-section";
+import { DemoAnalytics } from "@/components/analytics/demo-analytics";
 
 export const metadata: Metadata = { title: "Payouts" };
 export const dynamic = "force-dynamic";
@@ -99,7 +99,7 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Prom
       <ExcludedVisits rows={excluded} />
 
       <Contractors1099 rows={contractors} year={year} thresholdCents={settings.thresholdCents} warnBps={settings.warnBps} />
-      <AnalyticsSection pack="payouts" />
+      <DemoAnalytics pack="payouts" />
     </div>
   );
 }

@@ -31,7 +31,7 @@ import { AssumptionsForm, CashForm, PlanForm } from "@/components/growth/growth-
 import { CapacityPanel, CashPanel, ScaleLightPanel } from "@/components/growth/scale-light-panel";
 import { longDate, money, monthLabel, paceSentence } from "@/components/growth/format";
 import { monthShort } from "@/lib/payouts";
-import { AnalyticsSection } from "@/components/analytics/analytics-section";
+import { DemoAnalytics } from "@/components/analytics/demo-analytics";
 
 export const metadata: Metadata = { title: "Growth" };
 export const dynamic = "force-dynamic";
@@ -241,7 +241,7 @@ export default async function GrowthPage() {
           </GlassPanel>
         </Section>
       )}
-      <AnalyticsSection pack="growth" />
+      <DemoAnalytics pack="growth" />
     </div>
     </ReplayProvider>
   );
