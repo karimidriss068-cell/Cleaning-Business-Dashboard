@@ -59,11 +59,6 @@ export default function LoginPage() {
           <h1 className="font-heading text-[28px] leading-8 font-semibold text-ink">Sign in</h1>
           <p className="mt-1.5 text-sm text-ink-muted">For the {brand.shortName} office team and crew members.</p>
 
-          {process.env.NEXT_PUBLIC_OPEN_ACCESS === "1" && (
-            <a href="/api/open-access" className="mt-8 flex h-11 w-full items-center justify-center rounded-md bg-primary text-[15px] font-medium text-primary-foreground">
-              Enter dashboard
-            </a>
-          )}
           <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
             <div className="space-y-1.5">
               <Label htmlFor="email">Email</Label>
