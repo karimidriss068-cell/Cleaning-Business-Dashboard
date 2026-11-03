@@ -65,22 +65,8 @@ describe("sceneFromSession", () => {
     expect(Object.keys(scene.replies ?? {})).toEqual(["cash_ruin"]);
     expect(scene.votes?.cash_ruin).toBe("conditional");
   });
-  it("no readable synthesis still plays the debate with a no-verdict chair line", () => {
-    const sc = sceneFromSession(row({ synthesis: null }));
-    expect(sc?.verdict.actions).toEqual([]);
-    expect(sc?.verdict.verdict).toMatch(/could not give a clean verdict/);
-  });
-  it("no advisor answers means no scene", () => {
-    expect(sceneFromSession(row({ synthesis: null, advisor_outputs: [] }))).toBeNull();
-  });
-
-});
-
-describe("salvageRaw", () => {
-  it("reads the verdict and complete splits from a cut-off synthesis", async () => {
-    const { salvageRaw } = await import("@/lib/board/scene/from-session");
-    const raw = '{"verdict":"Keep backups \\"on call\\".","summary":"x","agreements":["a"],"disagreements":["d1","d2"],"actions":[{"title":"Wr';
-    expect(salvageRaw(raw)).toEqual({ verdict: 'Keep backups "on call".', dissent: ["d1", "d2"] });
-    expect(salvageRaw('{"summ')).toBeNull();
+  it("no readable synthesis means no scene", () => {
+    expect(sceneFromSession(row({ synthesis: null }))).toBeNull();
+    expect(sceneFromSession(row({ synthesis: { raw: "text" }, status: "partial" }))).toBeNull();
   });
 });
