@@ -54,8 +54,8 @@ export function AppearancePicker() {
   return (
     <div className="space-y-8">
       <fieldset>
-        <legend className="font-heading text-lg font-medium text-ink">Visual direction</legend>
-        <p className="mt-1 text-sm text-ink-muted">Each comes in dark and light. Your choice is saved to your account and follows you to any device.</p>
+        <legend className="font-heading text-lg font-medium text-ink">Color scheme</legend>
+        <p className="mt-1 text-sm text-ink-muted">Five Glass schemes up top (Glass Ice is the light one), then the classic directions. Your choice is saved to your account and follows you to any device.</p>
         <div role="radiogroup" aria-label="Choose a visual direction" className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
           {directionIds.map((id, i) => {
             const selected = isClient && direction === id;
@@ -68,7 +68,12 @@ export function AppearancePicker() {
                 aria-checked={selected}
                 aria-label={d.label}
                 aria-describedby={`direction-${id}-mood`}
-                onClick={() => setDirection(id)}
+                onClick={() => {
+                  setDirection(id);
+                  // Glass Ice is the white frosted scheme: it only reads in light.
+                  if (id === "glass-ice-light") setTheme("light");
+                  else if (id.startsWith("glass-") && theme === "light") setTheme("dark");
+                }}
                 className={cn(
                   "kc-enter group rounded-lg border glass-card p-3 text-left transition-[border-color,box-shadow,transform] duration-base ease-standard hover:-translate-y-0.5",
                   selected ? "border-brand/70 shadow-[0_0_0_1px_var(--kc-accent),0_12px_32px_-12px_var(--kc-glow)]" : "border-hairline hover:border-border-input",
