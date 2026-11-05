@@ -1,6 +1,6 @@
 /**
  * Every-screen audit. Creates and deletes its own temporary owner and cleaner (cleaning project only) and visits each
- * screen in all 4 directions x dark/light at 1440px and 390px, checking: the page rendered (no error page), the right
+ * screen in all 9 directions x dark/light at 1440px and 390px, checking: the page rendered (no error page), the right
  * direction and theme, no horizontal overflow, text contrast (4.5:1 office, 7:1 crew screens), and layout shift (CLS).
  *
  *   npm run build
@@ -67,13 +67,13 @@ try {
 
   browser = await chromium.launch({ channel: "chrome", headless: true });
   const prefs = [];
-  for (const direction of ["vault", "titanium", "ocean", "midnight"]) for (const theme of ["dark", "light"]) prefs.push({ direction, theme });
+  for (const direction of ["glass-cyan-dark", "glass-ice-light", "glass-titanium", "glass-midnight-violet", "glass-emerald", "vault", "titanium", "ocean", "midnight"]) for (const theme of ["dark", "light"]) prefs.push({ direction, theme });
 
   const visit = async (page, path, p, label, minNormal, tag) => {
     const res = await page.goto(`${base}${path}`, { waitUntil: "networkidle" });
     await sleep(1400);
     const a = await page.evaluate(() => ({ d: document.documentElement.dataset.direction, dark: document.documentElement.classList.contains("dark") }));
-    const over = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+    const over = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
     const c = await page.evaluate(contrastInPage, minNormal);
     const cls = await page.evaluate(() => window.__cls ?? 0);
     const crashed = await page.evaluate(() => /Application error|Internal Server Error|This page couldn.t load/i.test(document.body.innerText));

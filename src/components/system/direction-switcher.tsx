@@ -15,7 +15,7 @@ export function DirectionSwitcher({ className, compact = false, persist = false 
   const isClient = useIsClient();
 
   return (
-    <div role="radiogroup" aria-label="Visual direction" className={cn("inline-flex items-center gap-0.5 rounded-full border border-hairline bg-surface-raised/70 p-0.5", className)}>
+    <div role="radiogroup" aria-label="Visual direction" className={cn("inline-flex min-w-0 max-w-full items-center gap-0.5 overflow-x-auto rounded-full [scrollbar-width:none] border border-hairline bg-surface-raised/70 p-0.5", className)}>
       {directionIds.map((id) => {
         const selected = isClient && direction === id;
         const swatch = directions[id].palettes.dark;
@@ -29,7 +29,7 @@ export function DirectionSwitcher({ className, compact = false, persist = false 
             title={directions[id].label}
             onClick={() => setDirection(id)}
             className={cn(
-              "flex h-7 items-center gap-1.5 rounded-full px-2 text-[12px] font-medium transition-colors duration-fast",
+              "flex h-7 shrink-0 items-center gap-1.5 rounded-full px-2 text-[12px] font-medium transition-colors duration-fast",
               selected ? "bg-surface text-ink shadow-e1" : "text-ink-muted hover:text-ink",
             )}
           >

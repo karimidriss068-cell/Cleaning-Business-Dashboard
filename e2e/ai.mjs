@@ -126,7 +126,7 @@ try {
     await page.waitForURL(landing, { timeout: 25000 });
     return page;
   };
-  const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+  const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   const dbCap = async (scope, key) => (await db.from("ai_budgets").select("*").eq("scope", scope).eq("scope_key", key).maybeSingle()).data;
 
   const octx = await browser.newContext({ viewport: { width: 1440, height: 1000 } });

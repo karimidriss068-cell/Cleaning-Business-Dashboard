@@ -12,6 +12,11 @@ begin
     (u1, 'owner1@test.invalid', 'authenticated', 'authenticated'),
     (u2, 'owner2@test.invalid', 'authenticated', 'authenticated'),
     (u3, 'nobody@test.invalid', 'authenticated', 'authenticated');
+  -- The last-owner guard counts every active owner, so on a project with a real owner "the last owner"
+  -- never exists. Demote them inside this rolled-back test (guard off just for that statement).
+  alter table public.profiles disable trigger profiles_guard_last_owner;
+  update public.profiles set role = 'admin' where role = 'owner';
+  alter table public.profiles enable trigger profiles_guard_last_owner;
   insert into public.profiles (user_id, role, full_name) values (u1, 'owner', 'Owner One');
 
   begin update public.profiles set role = 'admin' where user_id = u1; r := r || 'demote-last:ALLOWED(BAD) ';

@@ -168,7 +168,7 @@ export default async function GrowthPage() {
         info="Revenue by channel, where this month's money went, and profit by New York month."
         tabs={[
           { key: "flow", label: "Overview", content: (
-            <div className="grid gap-4 xl:grid-cols-2">
+            <div className="grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-2">
               <RevenueByChannelPanel data={byChannel} index={2} />
               {thisProfit ? <MoneyFlowPanel month={thisProfit} index={2} /> : lockedPanel("Money flow", "Profit includes cleaner pay, so only the owner or an admin sees it.")}
             </div>

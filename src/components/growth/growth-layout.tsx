@@ -94,10 +94,10 @@ export function GrowthBlock({ id, title, info, tabs, children, actions }: { id: 
       </div>
       {tabs ? (
         <Tabs defaultValue={tabs[0].key}>
-          <TabsList variant="line">
-            {tabs.map((t) => <TabsTrigger key={t.key} value={t.key} className="text-ink-muted">{t.label}</TabsTrigger>)}
+          <TabsList variant="line" className="max-w-full justify-start overflow-x-auto [scrollbar-width:none]">
+            {tabs.map((t) => <TabsTrigger key={t.key} value={t.key} className="shrink-0 flex-none text-ink-muted">{t.label}</TabsTrigger>)}
           </TabsList>
-          {tabs.map((t) => <TabsContent key={t.key} value={t.key} className="pt-3">{t.content}</TabsContent>)}
+          {tabs.map((t) => <TabsContent key={t.key} value={t.key} className="min-w-0 pt-3">{t.content}</TabsContent>)}
         </Tabs>
       ) : null}
       {children}

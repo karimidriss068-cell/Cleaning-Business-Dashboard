@@ -349,7 +349,7 @@ try {
     await page.waitForURL(landing, { timeout: 25000 });
     return page;
   };
-  const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+  const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
 
   // a failed sync to look at and retry
   const { data: dead } = await db.from("sync_queue").insert({ provider: "ghl", direction: "outbound", entity_type: "lead", entity_id: l.id, operation: "update_opportunity", status: "dead", attempts: 8, last_error: "GHL answered 503" }).select("id").single();

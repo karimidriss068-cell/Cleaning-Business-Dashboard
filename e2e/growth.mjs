@@ -100,7 +100,7 @@ async function signIn(ctx, email, password, landing) {
   await page.waitForURL(landing, { timeout: 25000 });
   return page;
 }
-const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
 const toast = (page, text) => page.getByText(text).first().waitFor({ timeout: 10000 });
 const lastLine = (text) => text.trim().split("\n").pop().trim();
 

@@ -17,16 +17,16 @@ import { signOut } from "@/app/(app)/actions";
 export function MobileTopBar() {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-hairline glass-sidebar px-4 md:hidden">
-      <Link href="/command-center" aria-label="Command Center">
+      <Link href="/command-center" aria-label="Command Center" className="shrink-0">
         <BrandLockup />
       </Link>
-      <div className="flex items-center gap-1">
+      <div className="flex min-w-0 items-center gap-1">
       <DirectionSwitcher compact persist />
       <button
         type="button"
         onClick={openCommandPalette}
         aria-label="Search"
-        className="flex size-11 items-center justify-center rounded-full text-ink-muted hover:bg-surface-raised hover:text-ink"
+        className="flex size-11 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-surface-raised hover:text-ink"
       >
         <Search className="size-5" aria-hidden />
       </button>

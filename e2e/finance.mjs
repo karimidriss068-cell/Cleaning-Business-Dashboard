@@ -144,7 +144,7 @@ async function signIn(ctx, email, password, landing) {
   await page.waitForURL(landing, { timeout: 25000 });
   return page;
 }
-const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
 const sign = (body, ts = Math.floor(Date.now() / 1000), key = whsec) => `t=${ts},v1=${createHmac("sha256", key).update(`${ts}.${body}`).digest("hex")}`;
 async function postEvent(event, { header } = {}) {
   const body = JSON.stringify(event);

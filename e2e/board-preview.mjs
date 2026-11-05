@@ -118,7 +118,7 @@ try {
   };
   const room = (page) => page.getByTestId("boardroom");
   const beat = async (page) => Number(await room(page).getAttribute("data-beat"));
-  const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+  const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
 
   // ============================================================ playback, desktop, every style
   const tally = async (page) => Promise.all(["for", "conditional", "against"].map(async (v) => Number((await page.getByTestId(`score-${v}`).innerText()).match(/^\s*(\d+)/)?.[1] ?? NaN)));

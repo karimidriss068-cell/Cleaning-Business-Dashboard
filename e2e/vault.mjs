@@ -5,7 +5,7 @@
  *   npm run build
  *   npm run e2e:vault            (E2E_SHOTS_DIR=/some/dir saves screenshots)
  *
- * Covers: Vault is the default direction; the slim replay strip (play, speed, drag, back to today) moves the
+ * Covers: Glass Cyan is the default direction (Vault is still selectable); the slim replay strip (play, speed, drag, back to today) moves the
  * numbers, the pace and the growth card; the channel ribbons isolate a channel on hover and switch range;
  * the revenue flow is owner/admin only; nothing 3D, canvas or tilt anywhere; frame rate while idle, playing
  * and hovering; and, for every direction x theme at 1440px and 390px, no overflow, the right theme
@@ -139,7 +139,7 @@ try {
     await page.waitForURL(landing, { timeout: 25000 });
     return page;
   };
-  const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+  const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   const shot = async (page, name, width, height) => {
     if (!shots) return;
     const full = await page.evaluate(() => document.documentElement.scrollHeight);
@@ -154,7 +154,7 @@ try {
   const dp = await signIn(dctx, owner, /command-center/);
   await dp.waitForLoadState("networkidle");
   const attrs = await dp.evaluate(() => ({ d: document.documentElement.dataset.direction, dark: document.documentElement.classList.contains("dark") }));
-  check("a new member gets Vault in dark by default", attrs.d === "vault" && attrs.dark, JSON.stringify(attrs));
+  check("a new member gets Glass Cyan in dark by default", attrs.d === "glass-cyan-dark" && attrs.dark, JSON.stringify(attrs));
   check("no horizontal overflow on the Command Center", !(await overflow(dp)));
   await dp.getByTestId("replay-deck").waitFor();
   check("the replay deck starts on today, live", (await dp.getByTestId("replay-deck").getAttribute("data-replay-live")) === "true");
@@ -284,7 +284,7 @@ try {
 
   // ============================================================ every direction x theme, two widths
   const prefs = [];
-  for (const direction of ["vault", "titanium", "ocean", "midnight"]) for (const theme of ["dark", "light"]) prefs.push({ direction, theme });
+  for (const direction of ["glass-cyan-dark", "glass-ice-light", "glass-titanium", "glass-midnight-violet", "glass-emerald", "vault", "titanium", "ocean", "midnight"]) for (const theme of ["dark", "light"]) prefs.push({ direction, theme });
   for (const [width, height, label] of [[1440, 900, "desktop"], [390, 844, "phone"]]) {
     const ctx = await browser.newContext({ viewport: { width, height }, isMobile: width < 500, hasTouch: width < 500 });
     for (const p of prefs) {

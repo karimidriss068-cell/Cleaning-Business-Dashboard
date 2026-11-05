@@ -221,7 +221,7 @@ try {
 
   // ============================================================ Part B: browser
   browser = await chromium.launch({ channel: "chrome", headless: true });
-  const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+  const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   const stub = (ctx) => ctx.route("https://challenges.cloudflare.com/**", (route) =>
     route.fulfill({ contentType: "application/javascript", body: `window.turnstile={render:function(el,o){setTimeout(function(){o.callback("good-token")},50);return "w1"},reset:function(){}};` }));
   const newCtx = async (width, height, extra = {}) => {

@@ -124,7 +124,7 @@ try {
     await page.waitForURL(landing, { timeout: 25000 });
     return page;
   };
-  const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+  const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   const sessionCount = async () => (await db.from("board_sessions").select("id", { count: "exact", head: true }).eq("created_by", owner.id)).count ?? 0;
   const usageRows = async () => (await db.from("ai_usage").select("*").eq("actor_id", owner.id).eq("feature", "board")).data ?? [];
   const runAndWait = async (page, question) => {
