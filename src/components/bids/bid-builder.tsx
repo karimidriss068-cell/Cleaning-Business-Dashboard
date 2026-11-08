@@ -20,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { GlassPanel } from "@/components/system/glass-panel";
 import { StatusPill } from "@/components/system/status-pill";
 import { useFinanceAction } from "@/components/invoices/use-finance-action";
+import { BidProjectPanel } from "./bid-project-panel";
 
 type AreaDraft = { key: number; label: string; spaceType: SpaceType; sqft: string };
 type Draft = {
@@ -278,6 +279,8 @@ export function BidBuilder({ rules, bid, lead }: { rules: PricingSnapshot; bid: 
             <Button render={<Link href={`/bids/${bid.id}/print`} target="_blank" />} variant="secondary" className="h-11 w-full md:h-9"><Printer aria-hidden /> Printable bid</Button>
           </GlassPanel>
         )}
+
+        {bid && <BidProjectPanel bid={bid} />}
 
         {bid && bid.versions.length > 0 && (
           <GlassPanel as="section" aria-label="Versions" className="space-y-2 p-5" data-testid="bid-versions">

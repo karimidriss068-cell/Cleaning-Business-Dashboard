@@ -30,6 +30,8 @@ export type BidDetail = {
   leadStage: LeadStage;
   accountId: string;
   accountName: string;
+  /** The project made from this bid, once it was won. */
+  projectId: string | null;
   contact: { name: string; phone: string | null; email: string | null; address: string | null };
   versions: BidVersionRow[];
 };
@@ -42,7 +44,7 @@ export async function loadBid(supabase: SupabaseClient<Database>, id: string): P
     .from("bids")
     .select(
       "id, bid_number, title, status, current_version, valid_until, sent_at, updated_at, lead_id, account_id, " +
-        "account:accounts(name), lead:leads(stage), contact:contacts(first_name, last_name, phone, email, address_line1, zip, borough), " +
+        "account:accounts(name), project:projects(id), lead:leads(stage), contact:contacts(first_name, last_name, phone, email, address_line1, zip, borough), " +
         "bid_versions(version, created_at, inputs, cost_lines, cost_cents, price_cents, margin_bps, rules_version, floor_override_reason)",
     )
     .eq("id", id)
@@ -51,7 +53,7 @@ export async function loadBid(supabase: SupabaseClient<Database>, id: string): P
   if (!data) return null;
   const b = data as unknown as {
     id: string; bid_number: number; title: string; status: string; current_version: number; valid_until: string | null; sent_at: string | null; updated_at: string;
-    lead_id: string; account_id: string; account: { name: string } | null; lead: { stage: LeadStage } | null;
+    lead_id: string; account_id: string; account: { name: string } | null; project: { id: string } | { id: string }[] | null; lead: { stage: LeadStage } | null;
     contact: { first_name: string; last_name: string | null; phone: string | null; email: string | null; address_line1: string | null; zip: string | null; borough: string | null } | null;
     bid_versions: { version: number; created_at: string; inputs: unknown; cost_lines: unknown; cost_cents: number; price_cents: number; margin_bps: number; rules_version: number; floor_override_reason: string | null }[];
   };
@@ -70,6 +72,7 @@ export async function loadBid(supabase: SupabaseClient<Database>, id: string): P
     leadStage: b.lead?.stage ?? "new",
     accountId: b.account_id,
     accountName: b.account?.name ?? "Account",
+    projectId: (Array.isArray(b.project) ? b.project[0]?.id : b.project?.id) ?? null,
     contact: { name: `${b.contact?.first_name ?? ""} ${b.contact?.last_name ?? ""}`.trim() || "Contact", phone: b.contact?.phone ?? null, email: b.contact?.email ?? null, address: address || null },
     versions: b.bid_versions
       .map<BidVersionRow>((v) => ({

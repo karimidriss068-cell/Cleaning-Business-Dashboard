@@ -128,3 +128,9 @@ export type BidStatusKey = "draft" | "ready" | "sent" | "won" | "lost" | "expire
 export const bidLabel: Record<BidStatusKey, string> = { draft: "Draft", ready: "Ready to send", sent: "Sent", won: "Won", lost: "Lost", expired: "Expired" };
 const bidTones: Record<BidStatusKey, Tone> = { draft: "neutral", ready: "info", sent: "secondary", won: "success", lost: "neutral", expired: "warning" };
 export const bidTone = (s: BidStatusKey): Tone => bidTones[s];
+
+// Projects: scheduled -> in progress -> completed (or cancelled).
+export type ProjectStatusKey = "scheduled" | "in_progress" | "completed" | "cancelled";
+export const projectLabel: Record<ProjectStatusKey, string> = { scheduled: "Scheduled", in_progress: "In progress", completed: "Completed", cancelled: "Cancelled" };
+const projectTones: Record<ProjectStatusKey, Tone> = { scheduled: "info", in_progress: "secondary", completed: "success", cancelled: "neutral" };
+export const projectTone = (s: ProjectStatusKey): Tone => projectTones[s];

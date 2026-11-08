@@ -1,6 +1,5 @@
 /**
- * Bids and projects end-to-end test (grown one step at a time): pricing rules and the bid builder now;
- * projects are added to this file as they land. Needs a build, no logins: it starts the app, signs in as
+ * Bids and projects end-to-end test: pricing rules, the bid builder, and projects. Needs a build, no logins: it starts the app, signs in as
  * temporary owner, staff and cleaner users, and puts every row and setting back (the script refuses any
  * project but the cleaning one).
  *
@@ -15,8 +14,16 @@
  * a price below the floor needs a reason, an older version can be loaded and saved forward, ready then
  * sent moves the opportunity to Bid sent, the printed bid shows scope and price but no cost or margin, and
  * staff cannot open or read bids.
+ *
+ * Projects: winning a sent bid creates the project (price becomes the contract, the opportunity becomes Won),
+ * deposit and final invoices are drafts for 30% and the remainder, a work day is scheduled and staffed with
+ * the day's pay, a project cost changes the profit against the bid, the status moves on, the projects list
+ * shows it, and staff cannot open or read projects.
  */
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { randomBytes } from "node:crypto";
 import { chromium } from "playwright-core";
 import { createClient } from "@supabase/supabase-js";
@@ -38,18 +45,42 @@ const { data: rulesBefore } = await db.from("pricing_rules").select("*").single(
 const { data: ratesBefore } = await db.from("pricing_space_rates").select("*");
 
 const BID_PHONE = "+13325550312";
+// Deleting an invoice runs trigger functions the API role can't execute, so this one statement goes through the CLI.
+function runSql(sql) {
+  const dir = mkdtempSync(join(tmpdir(), "e2e-bids-"));
+  const file = join(dir, "q.sql");
+  writeFileSync(file, sql);
+  try {
+    for (let i = 0; i < 3; i++) {
+      const res = spawnSync("scripts/supabase-cleaning.sh", ["db", "query", "-f", file], { encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
+      const out = `${res.stdout ?? ""}${res.stderr ?? ""}`;
+      if (res.status === 0 && !/ERROR:/.test(out)) return;
+      if (/ERROR:/.test(out)) throw new Error(`cleanup SQL failed: ${out.slice(out.indexOf("ERROR:"), out.indexOf("ERROR:") + 300)}`);
+    }
+    throw new Error("cleanup SQL could not run (network)");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
 async function cleanBidRows() {
+  runSql(`delete from public.invoices where project_id in (select p.id from public.projects p join public.leads l on l.id = p.lead_id join public.contacts c on c.id = l.contact_id where c.phone = '${BID_PHONE}');`);
   const { data: contacts } = await db.from("contacts").select("id, account_id").eq("phone", BID_PHONE);
   for (const c of contacts ?? []) {
     const { data: ls } = await db.from("leads").select("id").eq("contact_id", c.id);
     for (const l of ls ?? []) {
+      const { data: pjs } = await db.from("projects").select("id").eq("lead_id", l.id);
+      for (const pj of pjs ?? []) {
+        await db.from("jobs").delete().eq("project_id", pj.id);
+        await db.from("expenses").delete().eq("project_id", pj.id);
+        await db.from("projects").delete().eq("id", pj.id);
+      }
       await db.from("bids").delete().eq("lead_id", l.id);
       await db.from("activities").delete().eq("lead_id", l.id);
       await db.from("leads").delete().eq("id", l.id);
     }
     await db.from("activities").delete().eq("contact_id", c.id);
     await db.from("contacts").update({ account_id: null }).eq("id", c.id);
-    if (c.account_id) { await db.from("accounts").update({ primary_contact_id: null }).eq("id", c.account_id); await db.from("accounts").delete().eq("id", c.account_id); }
+    if (c.account_id) { await db.from("properties").delete().eq("account_id", c.account_id); await db.from("accounts").update({ primary_contact_id: null }).eq("id", c.account_id); await db.from("accounts").delete().eq("id", c.account_id); }
     await db.from("contacts").delete().eq("id", c.id);
   }
 }
@@ -59,6 +90,7 @@ async function cleanup() {
   await db.from("pricing_rules").update({ ...rulesBefore }).eq("id", true);
   for (const r of ratesBefore ?? []) await db.from("pricing_space_rates").update(r).eq("space_type", r.space_type);
   await db.from("finance_log").delete().in("entity", ["pricing", "bid", "project"]).gte("occurred_at", t0);
+  await db.from("finance_log").delete().eq("entity", "invoice").gte("occurred_at", t0).contains("detail", { from: "project" });
   for (const u of users) {
     await db.from("profiles").delete().eq("user_id", u.id);
     await db.auth.admin.deleteUser(u.id);
@@ -167,7 +199,7 @@ try {
   // ============================================================ bid builder
   // The pricing section left the rules at: labor $27.50, supplies 8% of labor, 35% margin target, floor 22.5%.
   const rulesNow = await current();
-  const { data: c0 } = await db.from("contacts").insert({ first_name: "Dana", last_name: "Bidder", phone: BID_PHONE, type: "commercial" }).select("id").single();
+  const { data: c0 } = await db.from("contacts").insert({ first_name: "Dana", last_name: "Bidder", phone: BID_PHONE, type: "commercial", address_line1: "5 Court St", zip: "11201", borough: "brooklyn" }).select("id").single();
   const { data: lead } = await db.from("leads").insert({ contact_id: c0.id, service_type: "commercial", stage: "site_visit", source: "referral" }).select("*").single();
   const bctx = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   const bp = await signIn(bctx, owner, /command-center/);
@@ -225,6 +257,70 @@ try {
   check("sent: the bid is marked sent with an expiry date", sentBid.status === "sent" && sentBid.sent_at !== null && sentBid.valid_until !== null);
   check("sent: the opportunity moved to Bid sent and took the bid's price", lead2.stage === "quoted" && lead2.expected_value_cents === 913847, JSON.stringify(lead2));
 
+  // ============================================================ projects
+  await bp.goto(`${base}/bids/${bidId}`, { waitUntil: "networkidle" });
+  check("a sent bid offers to become a project", await bp.getByTestId("bid-project-panel").isVisible());
+  await bp.locator("#pj-new-title").fill("E2E Atlas project");
+  await bp.getByTestId("bid-create-project").click();
+  await bp.waitForURL(/\/projects\/[0-9a-f-]{36}$/, { timeout: 20000 });
+  const projectId = bp.url().split("/").pop();
+  const { data: proj } = await db.from("projects").select("*").eq("id", projectId).single();
+  const { data: bidAfter } = await db.from("bids").select("status").eq("id", bidId).single();
+  const { data: leadWon } = await db.from("leads").select("stage").eq("id", lead.id).single();
+  check("the project takes the bid's price as its contract, with a 30% deposit", proj.contract_cents === 913847 && proj.deposit_bps === 3000 && proj.title === "E2E Atlas project" && proj.estimated_cost_cents === 594000, JSON.stringify(proj));
+  check("winning marks the bid and the opportunity Won", bidAfter.status === "won" && leadWon.stage === "won");
+  check("the project page shows the contract", (await bp.getByTestId("pj-contract").innerText()) === "$9,138.47");
+
+  // milestone invoices
+  await bp.getByTestId("pj-deposit").click();
+  await bp.getByText("Deposit invoice created as a draft").waitFor({ timeout: 15000 });
+  await bp.getByTestId("pj-final").click();
+  await bp.getByText("Final payment invoice created as a draft").waitFor({ timeout: 15000 });
+  const { data: invs } = await db.from("invoices").select("milestone, status, subtotal_cents, project_id").eq("project_id", projectId);
+  const dep = invs.find((i) => i.milestone === "deposit"), fin = invs.find((i) => i.milestone === "final");
+  check("the deposit is 30% and the final is the remainder, both drafts", dep?.subtotal_cents === 274154 && fin?.subtotal_cents === 639693 && dep.status === "draft" && fin.status === "draft", JSON.stringify(invs));
+  check("a second deposit can't be made", await bp.getByTestId("pj-deposit").isDisabled());
+  await sleep(600);
+  check("both invoices are listed on the project", (await bp.getByTestId("pj-invoices").locator("li").count()) === 2);
+
+  // a work day with a cleaner
+  const tomorrow = new Date(Date.now() + 36 * 3600000).toISOString().slice(0, 10);
+  await bp.locator("#pj-day-date").fill(tomorrow);
+  await bp.locator("#pj-day-start").fill("08:00");
+  await bp.locator("#pj-day-end").fill("16:00");
+  await bp.getByTestId("pj-add-day").click();
+  await bp.getByText("Work day added").waitFor({ timeout: 15000 });
+  const { data: day } = await db.from("jobs").select("id, project_id, price_cents, scheduled_start").eq("project_id", projectId).single();
+  check("the work day is a $0 visit on the project, 8am New York time", day.price_cents === 0 && /T1[23]:00:00/.test(day.scheduled_start), JSON.stringify(day));
+  await sleep(600);
+  await bp.getByTestId("pj-assign").click();
+  await bp.getByLabel("E2E Bids Cleaner").check();
+  await bp.locator("#pj-daypay").fill("220");
+  await bp.getByRole("button", { name: "Assign", exact: true }).click();
+  await bp.getByText("Crew assigned").waitFor({ timeout: 15000 });
+  const { data: asg } = await db.from("job_assignments").select("pay_cents, subcontractor_id").eq("job_id", day.id);
+  check("the cleaner is assigned with the day's pay", asg?.length === 1 && asg[0].pay_cents === 22000 && asg[0].subcontractor_id === sub.id, JSON.stringify(asg));
+
+  // a cost, and profit against the bid
+  await bp.locator("#pj-cost-amt").fill("120");
+  await bp.locator("#pj-cost-note").fill("Floor wax");
+  await bp.getByTestId("pj-add-cost").click();
+  await bp.getByText("Cost recorded").waitFor({ timeout: 15000 });
+  await sleep(800);
+  check("labor, other costs and total cost are shown", (await bp.getByTestId("pj-labor").innerText()) === "$220" && (await bp.getByTestId("pj-other").innerText()) === "$120" && (await bp.getByTestId("pj-cost").innerText()) === "$340");
+  check("profit is the contract less actual cost", (await bp.getByTestId("pj-profit").innerText()) === "$8,798.47", await bp.getByTestId("project-profit").innerText());
+  const { data: exp } = await db.from("expenses").select("project_id, amount_cents").eq("project_id", projectId);
+  check("the cost is stored on the project in cents", exp?.length === 1 && exp[0].amount_cents === 12000);
+
+  // status
+  await bp.getByTestId("pj-start").click();
+  await bp.getByText("Project started").waitFor({ timeout: 15000 });
+  await bp.getByTestId("pj-complete").click();
+  await bp.getByText("Project completed").waitFor({ timeout: 15000 });
+  check("the project moves to completed", (await db.from("projects").select("status, completed_at").eq("id", projectId).single()).data.status === "completed");
+  await bp.goto(`${base}/projects`, { waitUntil: "networkidle" });
+  check("the projects list shows it with its contract", /E2E Atlas project/.test(await bp.getByTestId("projects-table").innerText()) && /\$9,138\.47/.test(await bp.getByTestId("projects-table").innerText()));
+
   // the printed bid
   await bp.goto(`${base}/bids/${bidId}/print`, { waitUntil: "networkidle" });
   const sheet = await bp.getByTestId("bid-sheet").innerText();
@@ -238,6 +334,8 @@ try {
   const bpp = await signIn(bpc, owner, /command-center/);
   await bpp.goto(`${base}/bids/${bidId}`, { waitUntil: "networkidle" });
   check("no horizontal overflow on the builder on a phone", !(await overflow(bpp)));
+  await bpp.goto(`${base}/projects/${projectId}`, { waitUntil: "networkidle" });
+  check("no horizontal overflow on the project on a phone", !(await overflow(bpp)));
   await bpc.close();
 
   // staff can't open or read bids
@@ -248,11 +346,15 @@ try {
   check("staff opening a bid are sent to the pipeline", new URL(stp.url()).pathname === "/leads");
   await stp.goto(`${base}/leads?lead=${lead.id}`, { waitUntil: "networkidle" });
   check("staff see no Build bid link", (await stp.getByRole("link", { name: /Build bid|Open bid/ }).count()) === 0);
+  await stp.goto(`${base}/projects/${projectId}`);
+  await stp.waitForURL(/\/leads/, { timeout: 10000 }).catch(() => {});
+  check("staff opening a project are sent to the pipeline", new URL(stp.url()).pathname === "/leads");
   const sdb2 = createClient(url, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, { auth: { persistSession: false } });
   await sdb2.auth.signInWithPassword({ email: staff.email, password });
   const { data: sb } = await sdb2.from("bids").select("id");
   const { data: sv } = await sdb2.from("bid_versions").select("id");
-  check("staff's own API session reads no bids or versions", (sb ?? []).length === 0 && (sv ?? []).length === 0);
+  const { data: sproj } = await sdb2.from("projects").select("id");
+  check("staff's own API session reads no bids, versions or projects", (sb ?? []).length === 0 && (sv ?? []).length === 0 && (sproj ?? []).length === 0);
   await stctx.close();
 
   // staff and cleaners

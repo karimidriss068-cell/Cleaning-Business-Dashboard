@@ -33,10 +33,10 @@ async function cleanBidFixtures() {
     const { data: contacts } = await db.from("contacts").select("id, account_id").eq("phone", phone);
     for (const c of contacts ?? []) {
       const { data: ls } = await db.from("leads").select("id").eq("contact_id", c.id);
-      for (const l of ls ?? []) { await db.from("bids").delete().eq("lead_id", l.id); await db.from("activities").delete().eq("lead_id", l.id); await db.from("leads").delete().eq("id", l.id); }
+      for (const l of ls ?? []) { await db.from("projects").delete().eq("lead_id", l.id); await db.from("bids").delete().eq("lead_id", l.id); await db.from("activities").delete().eq("lead_id", l.id); await db.from("leads").delete().eq("id", l.id); }
       await db.from("activities").delete().eq("contact_id", c.id);
       await db.from("contacts").update({ account_id: null }).eq("id", c.id);
-      if (c.account_id) { await db.from("accounts").update({ primary_contact_id: null }).eq("id", c.account_id); await db.from("accounts").delete().eq("id", c.account_id); }
+      if (c.account_id) { await db.from("properties").delete().eq("account_id", c.account_id); await db.from("accounts").update({ primary_contact_id: null }).eq("id", c.account_id); await db.from("accounts").delete().eq("id", c.account_id); }
       await db.from("contacts").delete().eq("id", c.id);
     }
   }
@@ -88,6 +88,9 @@ try {
     await db.from("bid_versions").insert({ bid_id: bd.id, version: 1, inputs: { areas: [{ label: "Whole building", spaceType: "office", sqft: 40000 }], cleans: 2, crewSize: 2, rush: false, overrides: {} }, cost_lines: [{ label: "Labor", cents: 133333 }, { label: "Supplies and equipment", cents: 10667 }], cost_cents: 144000, price_cents: 240000, margin_bps: 4000, rules_version: pr.version, rules_snapshot: rules });
     const { data: ct2 } = await db.from("contacts").insert({ first_name: "Screens", last_name: "Fresh", phone: SCREEN_PHONES[1], type: "commercial" }).select("id").single();
     const { data: ld2 } = await db.from("leads").insert({ contact_id: ct2.id, service_type: "commercial", stage: "site_visit", source: "referral" }).select("id").single();
+    const { data: prop } = await db.from("properties").insert({ account_id: ac.id, label: "Screens site", address_line1: "5 Court St", zip: "11201", borough: "brooklyn" }).select("id").single();
+    const { data: pj } = await db.from("projects").insert({ bid_id: bd.id, lead_id: ld.id, account_id: ac.id, contact_id: ct.id, property_id: prop.id, title: "Screens whole building", status: "in_progress", contract_cents: 240000, bid_version: 1, estimated_cost_cents: 144000, estimated_margin_bps: 4000 }).select("id").single();
+    OFFICE.push("/projects", `/projects/${pj.id}`);
     OFFICE.push(`/bids/${bd.id}`, `/bids/new?lead=${ld2.id}`, `/bids/${bd.id}/print`);
   }
   const { data: sub, error: se } = await db.from("subcontractors").insert({ display_name: "E2E Screens Cleaner", pay_rate_bps: 4000, status: "active" }).select("id").single();

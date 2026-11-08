@@ -42,7 +42,7 @@ export type LeadRow = {
   accountName: string | null;
   quote: { id: string; number: number; status: string } | null;
   /** The newest open bid; only owners and admins can read bids, so everyone else gets null. */
-  bid: { id: string; number: number; status: string; priceCents: number | null } | null;
+  bid: { id: string; number: number; status: string; priceCents: number | null; projectId: string | null } | null;
 };
 
 export type TimelineEntry = { id: string; type: string; direction: string | null; subject: string | null; body: string | null; at: string; actor: string | null };
@@ -50,7 +50,7 @@ export type TeamMember = { id: string; name: string };
 
 const SELECT =
   "id, updated_at, created_at, stage, stage_changed_at, contact_id, service_type, source, channel, creative, notes, owner_id, next_follow_up_on, lost_reason, bid_due_on, site_visit_at, expected_value_cents, win_probability_bps, account_id, account:accounts(name), " +
-  "contact:contacts(first_name, last_name, phone, email, borough, address_line1, zip, sms_consent), quotes(id, quote_number, status, created_at), bids(id, bid_number, status, current_version, created_at, bid_versions(version, price_cents))";
+  "contact:contacts(first_name, last_name, phone, email, borough, address_line1, zip, sms_consent), quotes(id, quote_number, status, created_at), bids(id, bid_number, status, current_version, created_at, bid_versions(version, price_cents), project:projects(id))";
 
 /** Every opportunity for the pipeline (closed ones only from the last 60 days), newest activity first. Only the service types the business sells now are shown. */
 export async function loadLeads(supabase: SupabaseClient<Database>, since: string): Promise<{ leads: LeadRow[]; team: TeamMember[] }> {
@@ -71,7 +71,7 @@ export async function loadLeads(supabase: SupabaseClient<Database>, since: strin
     bid_due_on: string | null; site_visit_at: string | null; expected_value_cents: number | null; win_probability_bps: number | null; account_id: string | null; account: { name: string } | null;
     contact: { first_name: string; last_name: string | null; phone: string | null; email: string | null; borough: string | null; address_line1: string | null; zip: string | null; sms_consent: boolean } | null;
     quotes: { id: string; quote_number: number; status: string; created_at: string }[];
-    bids: { id: string; bid_number: number; status: string; current_version: number; created_at: string; bid_versions: { version: number; price_cents: number }[] }[];
+    bids: { id: string; bid_number: number; status: string; current_version: number; created_at: string; bid_versions: { version: number; price_cents: number }[]; project: { id: string } | { id: string }[] | null }[];
   }>;
   const leads = rows.map<LeadRow>((l) => {
     const q = [...(l.quotes ?? [])].sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
@@ -114,11 +114,11 @@ export async function loadLeads(supabase: SupabaseClient<Database>, since: strin
   return { leads, team };
 }
 
-function bidOf(bids: { id: string; bid_number: number; status: string; current_version: number; created_at: string; bid_versions: { version: number; price_cents: number }[] }[] | null): LeadRow["bid"] {
+function bidOf(bids: { id: string; bid_number: number; status: string; current_version: number; created_at: string; bid_versions: { version: number; price_cents: number }[]; project: { id: string } | { id: string }[] | null }[] | null): LeadRow["bid"] {
   const open = [...(bids ?? [])].filter((b) => b.status !== "lost" && b.status !== "expired").sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
   if (!open) return null;
   const price = open.bid_versions.find((v) => v.version === open.current_version)?.price_cents;
-  return { id: open.id, number: Number(open.bid_number), status: open.status, priceCents: price === undefined ? null : Number(price) };
+  return { id: open.id, number: Number(open.bid_number), status: open.status, priceCents: price === undefined ? null : Number(price), projectId: (Array.isArray(open.project) ? open.project[0]?.id : open.project?.id) ?? null };
 }
 
 export async function loadTimeline(supabase: SupabaseClient<Database>, leadId: string): Promise<TimelineEntry[]> {

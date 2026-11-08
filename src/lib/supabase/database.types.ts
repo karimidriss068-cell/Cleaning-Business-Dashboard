@@ -945,6 +945,7 @@ export type Database = {
           id: string
           incurred_on: string
           job_id: string | null
+          project_id: string | null
           receipt_path: string | null
           updated_at: string
           vendor_id: string | null
@@ -958,6 +959,7 @@ export type Database = {
           id?: string
           incurred_on: string
           job_id?: string | null
+          project_id?: string | null
           receipt_path?: string | null
           updated_at?: string
           vendor_id?: string | null
@@ -971,6 +973,7 @@ export type Database = {
           id?: string
           incurred_on?: string
           job_id?: string | null
+          project_id?: string | null
           receipt_path?: string | null
           updated_at?: string
           vendor_id?: string | null
@@ -988,6 +991,13 @@ export type Database = {
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
           {
@@ -1449,9 +1459,11 @@ export type Database = {
           id: string
           invoice_number: number
           issued_on: string | null
+          milestone: string | null
           notes: string | null
           paid_at: string | null
           pay_token: string
+          project_id: string | null
           quote_id: string | null
           sent_at: string | null
           status: Database["public"]["Enums"]["invoice_status"]
@@ -1480,9 +1492,11 @@ export type Database = {
           id?: string
           invoice_number?: never
           issued_on?: string | null
+          milestone?: string | null
           notes?: string | null
           paid_at?: string | null
           pay_token?: string
+          project_id?: string | null
           quote_id?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
@@ -1511,9 +1525,11 @@ export type Database = {
           id?: string
           invoice_number?: never
           issued_on?: string | null
+          milestone?: string | null
           notes?: string | null
           paid_at?: string | null
           pay_token?: string
+          project_id?: string | null
           quote_id?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
@@ -1555,6 +1571,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "invoices_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "invoices_quote_id_fkey"
@@ -1871,6 +1894,7 @@ export type Database = {
           id: string
           notes: string | null
           price_cents: number
+          project_id: string | null
           property_id: string
           quote_id: string | null
           scheduled_end: string
@@ -1894,6 +1918,7 @@ export type Database = {
           id?: string
           notes?: string | null
           price_cents: number
+          project_id?: string | null
           property_id: string
           quote_id?: string | null
           scheduled_end: string
@@ -1917,6 +1942,7 @@ export type Database = {
           id?: string
           notes?: string | null
           price_cents?: number
+          project_id?: string | null
           property_id?: string
           quote_id?: string | null
           scheduled_end?: string
@@ -1953,6 +1979,13 @@ export type Database = {
             columns: ["crew_id"]
             isOneToOne: false
             referencedRelation: "crews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
           {
@@ -2730,6 +2763,121 @@ export type Database = {
           },
         ]
       }
+      projects: {
+        Row: {
+          account_id: string
+          bid_id: string
+          bid_version: number
+          completed_at: string | null
+          contact_id: string | null
+          contract_cents: number
+          created_at: string
+          created_by: string | null
+          deposit_bps: number
+          ends_on: string | null
+          estimated_cost_cents: number
+          estimated_margin_bps: number
+          id: string
+          lead_id: string
+          notes: string | null
+          project_number: number
+          property_id: string
+          starts_on: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          bid_id: string
+          bid_version: number
+          completed_at?: string | null
+          contact_id?: string | null
+          contract_cents: number
+          created_at?: string
+          created_by?: string | null
+          deposit_bps?: number
+          ends_on?: string | null
+          estimated_cost_cents: number
+          estimated_margin_bps: number
+          id?: string
+          lead_id: string
+          notes?: string | null
+          project_number?: never
+          property_id: string
+          starts_on?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          bid_id?: string
+          bid_version?: number
+          completed_at?: string | null
+          contact_id?: string | null
+          contract_cents?: number
+          created_at?: string
+          created_by?: string | null
+          deposit_bps?: number
+          ends_on?: string | null
+          estimated_cost_cents?: number
+          estimated_margin_bps?: number
+          id?: string
+          lead_id?: string
+          notes?: string | null
+          project_number?: never
+          property_id?: string
+          starts_on?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_bid_id_fkey"
+            columns: ["bid_id"]
+            isOneToOne: true
+            referencedRelation: "bids"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "projects_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       properties: {
         Row: {
           access_instructions: string | null
@@ -3446,6 +3594,16 @@ export type Database = {
         Args: { p_expected_updated_at: string; p_payout_id: string }
         Returns: string
       }
+      assign_project_day: {
+        Args: {
+          p_expected_updated_at: string
+          p_job_id: string
+          p_override_reason?: string
+          p_pay_cents?: number
+          p_subcontractor_ids: string[]
+        }
+        Returns: string
+      }
       build_payout_drafts: {
         Args: { p_subcontractor_id?: string; p_week_start: string }
         Returns: Json
@@ -3566,6 +3724,25 @@ export type Database = {
         }
         Returns: Json
       }
+      create_project_from_bid: {
+        Args: {
+          p_bid_id: string
+          p_deposit_bps?: number
+          p_ends_on?: string
+          p_expected_updated_at: string
+          p_starts_on?: string
+          p_title?: string
+        }
+        Returns: Json
+      }
+      create_project_invoice: {
+        Args: {
+          p_amount_cents?: number
+          p_milestone: string
+          p_project_id: string
+        }
+        Returns: string
+      }
       crew_me: {
         Args: never
         Returns: {
@@ -3616,6 +3793,7 @@ export type Database = {
         Returns: undefined
       }
       delete_payout_draft: { Args: { p_payout_id: string }; Returns: undefined }
+      delete_project_cost: { Args: { p_id: string }; Returns: undefined }
       demo_data_present: { Args: never; Returns: boolean }
       finance_summary: {
         Args: { p_months?: number }
@@ -3925,6 +4103,16 @@ export type Database = {
         }
         Returns: string
       }
+      record_project_cost: {
+        Args: {
+          p_amount_cents: number
+          p_category: Database["public"]["Enums"]["expense_category"]
+          p_date: string
+          p_description: string
+          p_project_id: string
+        }
+        Returns: string
+      }
       record_refund: {
         Args: {
           p_amount_cents: number
@@ -4075,11 +4263,24 @@ export type Database = {
         }
         Returns: undefined
       }
+      schedule_project_day: {
+        Args: {
+          p_end: string
+          p_notes?: string
+          p_project_id: string
+          p_start: string
+        }
+        Returns: string
+      }
       send_invoice: {
         Args: { p_expected_updated_at: string; p_invoice_id: string }
         Returns: string
       }
       set_ai_kill_switch: { Args: { p_on: boolean }; Returns: undefined }
+      set_assignment_pay: {
+        Args: { p_assignment_id: string; p_pay_cents: number }
+        Returns: undefined
+      }
       set_bid_status: {
         Args: {
           p_bid_id: string
@@ -4099,6 +4300,14 @@ export type Database = {
       }
       set_lead_attribution: {
         Args: { p_channel: string; p_creative?: string; p_lead_id: string }
+        Returns: string
+      }
+      set_project_status: {
+        Args: {
+          p_expected_updated_at: string
+          p_project_id: string
+          p_status: string
+        }
         Returns: string
       }
       set_sms_consent: {

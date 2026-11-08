@@ -200,7 +200,7 @@ function LeadBody({ lead, team, today, canBid, onMove, onChanged }: Props & { le
             <p className="text-ink">
               <strong className="font-semibold">Bid {lead.bid.number}</strong> <span className="text-ink-muted">({bidLabel[lead.bid.status as BidStatusKey] ?? lead.bid.status}{lead.bid.priceCents !== null ? `, ${formatCents(lead.bid.priceCents, { hideZeroCents: true })}` : ""})</span>
             </p>
-            {canBid && <Button render={<Link href={`/bids/${lead.bid.id}`} />} className="h-11 md:h-9">Open bid</Button>}
+            {canBid && <Button render={<Link href={lead.bid.projectId ? `/projects/${lead.bid.projectId}` : `/bids/${lead.bid.id}`} />} className="h-11 md:h-9">{lead.bid.projectId ? "Open project" : "Open bid"}</Button>}
           </div>
         ) : lead.stage === "lost" ? (
           <p className="text-ink-muted">Reopen this opportunity before bidding on it.</p>
