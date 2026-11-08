@@ -17,7 +17,7 @@ export const templateSchema = z.object({
 
 export const ghlSettingsSchema = z.object({
   pipelineId: optionalId,
-  stageIds: z.object({ new: optionalId, contacted: optionalId, quoted: optionalId, won: optionalId, lost: optionalId }),
+  stageIds: z.object({ new: optionalId, site_visit: optionalId, quoted: optionalId, follow_up: optionalId, won: optionalId, lost: optionalId }),
   opportunitySyncMode: mode,
   businessName: z.string().trim().min(1, "Enter the business name").max(80),
   maxPerContactPerDay: z.number().int().min(1, "At least 1").max(20, "At most 20"),

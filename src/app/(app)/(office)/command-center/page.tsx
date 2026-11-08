@@ -106,7 +106,7 @@ export default async function CommandCenterPage() {
       .gte("scheduled_start", nyDayRangeUtc(lastMonthStart).start.toISOString())
       .lt("scheduled_start", nyDayRangeUtc(lastMonthSameDay).end.toISOString()),
     supabase.from("leads").select("created_at, first_response_at").gte("created_at", nyDayRangeUtc(addDays(today, -29)).start.toISOString()),
-    supabase.from("leads").select("id", { count: "exact", head: true }).in("stage", ["new", "contacted", "quoted"]),
+    supabase.from("leads").select("id", { count: "exact", head: true }).in("stage", ["new", "site_visit", "quoted", "follow_up"]),
     supabase.from("leads").select("created_at").eq("stage", "new").is("first_response_at", null).order("created_at"),
     supabase
       .from("invoices")
@@ -120,7 +120,7 @@ export default async function CommandCenterPage() {
       .not("account_id", "is", null)
       .gte("accepted_at", nyDayRangeUtc(monthStart).start.toISOString()),
     supabase.from("subcontractors").select("id, display_name, coi_expires_on").eq("status", "active").lte("coi_expires_on", in30).order("coi_expires_on"),
-    supabase.from("leads").select("next_follow_up_on").in("stage", ["new", "contacted", "quoted"]).lt("next_follow_up_on", today).order("next_follow_up_on"),
+    supabase.from("leads").select("next_follow_up_on").in("stage", ["new", "site_visit", "quoted", "follow_up"]).lt("next_follow_up_on", today).order("next_follow_up_on"),
     loadFinanceMonths(supabase, 6),
     loadGrowthSnapshot(supabase),
     loadChannelStream(supabase, today),

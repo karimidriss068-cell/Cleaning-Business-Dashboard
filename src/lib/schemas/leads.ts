@@ -35,7 +35,7 @@ export type CreateLeadInput = z.input<typeof createLeadSchema>;
 export const moveLeadSchema = z.object({
   leadId: z.string().uuid(),
   expectedUpdatedAt: z.string().datetime({ offset: true }),
-  stage: z.enum(["new", "contacted", "quoted", "won", "lost"]),
+  stage: z.enum(["new", "site_visit", "quoted", "follow_up", "won", "lost"]),
   lostReason: z.preprocess(blank, z.string().trim().min(3, "Say briefly why").max(300).optional()),
 });
 

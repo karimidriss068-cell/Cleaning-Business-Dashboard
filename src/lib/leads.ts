@@ -4,11 +4,14 @@
 
 import type { LeadStage } from "@/lib/status";
 
-/** Board order. Stored values stay new/contacted/quoted/won/lost; labels are the business words. */
-export const LEAD_STAGES: LeadStage[] = ["new", "contacted", "quoted", "won", "lost"];
-export const OPEN_STAGES: LeadStage[] = ["new", "contacted", "quoted"];
+/**
+ * Pipeline order. Stored values are new/site_visit/quoted/follow_up/won/lost; labels are the business words
+ * (Lead, Site visit, Bid sent, Follow-up, Won, Lost). The old "contacted" value is gone from the data.
+ */
+export const LEAD_STAGES: LeadStage[] = ["new", "site_visit", "quoted", "follow_up", "won", "lost"];
+export const OPEN_STAGES: LeadStage[] = ["new", "site_visit", "quoted", "follow_up"];
 
-export const stageLabel: Record<LeadStage, string> = { new: "New", contacted: "Contacted", quoted: "Quote sent", won: "Booked", lost: "Lost" };
+export const stageLabel: Record<LeadStage, string> = { new: "Lead", site_visit: "Site visit", quoted: "Bid sent", follow_up: "Follow-up", won: "Won", lost: "Lost" };
 
 export const SERVICE_TYPES = ["residential", "recurring", "move_out", "commercial"] as const;
 export type ServiceType = (typeof SERVICE_TYPES)[number];

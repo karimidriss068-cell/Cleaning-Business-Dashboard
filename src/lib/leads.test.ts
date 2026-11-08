@@ -25,13 +25,16 @@ describe("planStageMove", () => {
   it("does nothing when the stage is unchanged", () => expect(planStageMove("new", "new")).toEqual({ kind: "noop" }));
   it("applies forward and backward moves directly", () => {
     expect(planStageMove("new", "quoted")).toEqual({ kind: "apply", stage: "quoted" });
-    expect(planStageMove("won", "contacted")).toEqual({ kind: "apply", stage: "contacted" });
+    expect(planStageMove("won", "site_visit")).toEqual({ kind: "apply", stage: "site_visit" });
     expect(planStageMove("lost", "new")).toEqual({ kind: "apply", stage: "new" });
   });
   it("asks for a reason before Lost", () => expect(planStageMove("quoted", "lost")).toEqual({ kind: "needs_reason", stage: "lost" }));
   it("labels the stages the way the business says them", () => {
-    expect(stageLabel.quoted).toBe("Quote sent");
-    expect(stageLabel.won).toBe("Booked");
+    expect(stageLabel.new).toBe("Lead");
+    expect(stageLabel.site_visit).toBe("Site visit");
+    expect(stageLabel.quoted).toBe("Bid sent");
+    expect(stageLabel.follow_up).toBe("Follow-up");
+    expect(stageLabel.won).toBe("Won");
   });
 });
 
@@ -39,7 +42,7 @@ describe("followUpStatus", () => {
   const today = "2026-11-02";
   it("flags overdue, today and upcoming for open leads", () => {
     expect(followUpStatus("2026-11-01", "new", today)).toBe("overdue");
-    expect(followUpStatus("2026-11-02", "contacted", today)).toBe("today");
+    expect(followUpStatus("2026-11-02", "site_visit", today)).toBe("today");
     expect(followUpStatus("2026-11-03", "quoted", today)).toBe("upcoming");
   });
   it("ignores closed leads and missing dates", () => {

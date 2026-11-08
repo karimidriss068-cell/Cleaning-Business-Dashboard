@@ -307,7 +307,7 @@ try {
   await toast(page, "Decision deleted");
 
   // -- a lead's channel and creative can be corrected from the lead
-  const { data: leadRows } = await db.from("leads").select("id, channel, creative, contact:contacts(first_name)").in("stage", ["new", "contacted", "quoted"]).gte("id", SEED_LO).lt("id", SEED_HI).limit(1);
+  const { data: leadRows } = await db.from("leads").select("id, channel, creative, contact:contacts(first_name)").in("stage", ["new", "site_visit", "quoted", "follow_up"]).gte("id", SEED_LO).lt("id", SEED_HI).limit(1);
   const lead = leadRows[0];
   leadRestore = { id: lead.id, channel: lead.channel, creative: lead.creative };
   await page.goto(`${base}/leads`, { waitUntil: "networkidle" });

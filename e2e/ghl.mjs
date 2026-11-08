@@ -240,7 +240,7 @@ try {
   // -- stage changes in GHL: applied, and not echoed back
   ghl.opps.set("e2e-ghl-o1", { id: "e2e-ghl-o1", contactId: c1.id, pipelineStageId: "stg-quo", status: "open" });
   await post(event("opportunity", { opportunityId: "e2e-ghl-o1" }));
-  check("GHL stage change moves the lead to Quote sent", (await leadOf(c1.id)).l?.stage === "quoted");
+  check("GHL stage change moves the lead to Bid sent", (await leadOf(c1.id)).l?.stage === "quoted");
   const echo = (await db.from("sync_queue").select("id").eq("provider", "ghl").eq("entity_id", l.id)).data;
   check("a change that came from GHL is not sent back", (echo ?? []).length === 0);
 

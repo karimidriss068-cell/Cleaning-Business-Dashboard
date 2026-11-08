@@ -4,7 +4,7 @@ import { KanbanSquare, UserX } from "lucide-react";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { addDays, nyToday } from "@/lib/format";
-import { followUpStatus, sourceLabel, winRatePercent, type LeadSource } from "@/lib/leads";
+import { followUpStatus, OPEN_STAGES, sourceLabel, winRatePercent, type LeadSource } from "@/lib/leads";
 import { loadLeads } from "@/lib/leads-data";
 import { PageHeader } from "@/components/shell/page-header";
 import { EmptyState } from "@/components/system/empty-state";
@@ -43,7 +43,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
     supabase.rpc("lead_conversion_by_source", { p_from: addDays(today, -89), p_to: today }),
   ]);
   if (report.error) throw new Error(`Conversion report failed: ${report.error.message}`);
-  const open = leads.filter((l) => ["new", "contacted", "quoted"].includes(l.stage));
+  const open = leads.filter((l) => OPEN_STAGES.includes(l.stage));
   const overdue = open.filter((l) => followUpStatus(l.nextFollowUpOn, l.stage, today) === "overdue").length;
   const rows = (report.data ?? []).map((r) => ({ source: r.source, leads: Number(r.leads), booked: Number(r.booked), lost: Number(r.lost), open: Number(r.open) }));
   const dataKey = leads.reduce((h, l) => (h * 31 + [...`${l.id}${l.updatedAt}`].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7)) | 0, 7).toString(36);

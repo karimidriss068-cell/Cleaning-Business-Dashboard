@@ -72,7 +72,7 @@ await page.getByRole("heading", { level: 1, name: "Leads & Pipeline" }).waitFor(
 await page.waitForTimeout(600);
 const cols = await page.locator('[data-testid="board"] [data-stage]').count();
 check("board shows five stage columns", cols === 5, String(cols));
-check("stages use the business words", (await page.locator('[data-testid="board"]').innerText()).includes("Quote sent") && (await page.locator('[data-testid="board"]').innerText()).includes("Booked"));
+check("stages use the business words", (await page.locator('[data-testid="board"]').innerText()).includes("Bid sent") && (await page.locator('[data-testid="board"]').innerText()).includes("Won"));
 
 async function drag(leadId, stage) {
   const card = page.locator(`[data-testid="board"] [data-lead-card="${leadId}"]`);
@@ -86,14 +86,14 @@ async function drag(leadId, stage) {
   await page.mouse.up();
 }
 
-// 1. drag New -> Contacted
+// 1. drag Lead -> Site visit
 await card_visible(pick.id);
 async function card_visible(id) { await page.locator(`[data-testid="board"] [data-lead-card="${id}"]`).scrollIntoViewIfNeeded(); }
-await drag(pick.id, "contacted");
+await drag(pick.id, "site_visit");
 await page.waitForTimeout(1500);
 let row = await stageOf(pick.id);
-check("dragging a card changes its stage in the database", row.stage === "contacted", row.stage);
-check("the card sits in the Contacted column", (await page.locator(`[data-stage="contacted"] [data-lead-card="${pick.id}"]`).count()) === 1);
+check("dragging a card changes its stage in the database", row.stage === "site_visit", row.stage);
+check("the card sits in the Site visit column", (await page.locator(`[data-stage="site_visit"] [data-lead-card="${pick.id}"]`).count()) === 1);
 const { count: moves } = await db.from("activities").select("id", { count: "exact", head: true }).eq("lead_id", pick.id).eq("type", "status_change").or(NOT_SEED);
 check("the move is on the lead's timeline", moves === 1, String(moves));
 
@@ -101,7 +101,7 @@ check("the move is on the lead's timeline", moves === 1, String(moves));
 await drag(pick.id, "lost");
 await page.waitForTimeout(700);
 check("dropping on Lost asks for a reason", await page.getByLabel(/Why was it lost/).isVisible().catch(() => false));
-check("the lead has not moved yet", (await stageOf(pick.id)).stage === "contacted");
+check("the lead has not moved yet", (await stageOf(pick.id)).stage === "site_visit");
 await page.getByLabel(/Why was it lost/).fill("Chose a cheaper company");
 await page.getByRole("button", { name: "Move lead" }).click();
 await page.waitForTimeout(1500);
@@ -111,7 +111,7 @@ check("Lost is saved with its reason", row.stage === "lost" && row.lost_reason =
 // 3. keyboard path: Move… menu back to New
 await page.getByRole("button", { name: `Move ${pickName}` }).first().focus();
 await page.keyboard.press("Enter");
-await page.getByRole("radio", { name: /^New/ }).click();
+await page.getByRole("radio", { name: /^Lead/ }).click();
 await page.getByRole("button", { name: "Move lead" }).click();
 await page.waitForTimeout(1500);
 check("the Move… sheet works from the keyboard-reachable button", (await stageOf(pick.id)).stage === "new");
@@ -168,10 +168,10 @@ await phone.goto(`${base}/leads`, { waitUntil: "networkidle" });
 await phone.waitForTimeout(600);
 check("phone shows the stage-grouped list, not the board", (await phone.getByTestId("lead-list").isVisible()) && !(await phone.getByTestId("board").isVisible()));
 await phone.getByTestId("lead-list").getByRole("button", { name: `Move ${pickName}` }).click();
-await phone.getByRole("radio", { name: /^Contacted/ }).click();
+await phone.getByRole("radio", { name: /^Site visit/ }).click();
 await phone.getByRole("button", { name: "Move lead" }).click();
 await phone.waitForTimeout(1500);
-check("the phone Move sheet changes the stage", (await stageOf(pick.id)).stage === "contacted");
+check("the phone Move sheet changes the stage", (await stageOf(pick.id)).stage === "site_visit");
 const overflow = await phone.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 check("no horizontal scroll on the phone", overflow <= 0, String(overflow));
 await pctx.close();

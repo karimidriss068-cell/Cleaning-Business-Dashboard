@@ -65,7 +65,7 @@ const SERVICE_OPTIONS = [
 
 const BOARD: { stage: LeadStage; cards: { name: string; service: string; value: number | null; age: string; source: string }[] }[] = [
   { stage: "new", cards: [{ name: "Nadia Rivera", service: "Deep clean · 2BR", value: 31000, age: "12m", source: "google" }, { name: "Omar Ali", service: "Standard · 1BR", value: null, age: "40m", source: "nextdoor" }] },
-  { stage: "contacted", cards: [{ name: "Chloe Murphy", service: "Move-out · 3BR", value: 52000, age: "1d", source: "meta" }] },
+  { stage: "site_visit", cards: [{ name: "Chloe Murphy", service: "Move-out · 3BR", value: 52000, age: "1d", source: "meta" }] },
   { stage: "quoted", cards: [{ name: "Bay Ridge Coworking", service: "Office · 12 visits/mo", value: 432000, age: "3d", source: "referral" }, { name: "Ethan Kim", service: "Deep clean · 3BR", value: 38500, age: "2d", source: "yelp" }] },
   { stage: "won", cards: [{ name: "Leah Goldberg", service: "Standard · biweekly", value: 19500, age: "5d", source: "repeat" }] },
 ];

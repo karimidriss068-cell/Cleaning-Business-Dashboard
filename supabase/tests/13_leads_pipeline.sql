@@ -56,9 +56,9 @@ begin
 
   -- stage moves: stale guard, lost reason, timestamps, timeline
   select updated_at into ts from public.leads where id = l1;
-  begin perform public.move_lead_stage(l1, ts - interval '1 second', 'contacted'); r := r || 'STALE ALLOWED(BAD); ';
+  begin perform public.move_lead_stage(l1, ts - interval '1 second', 'site_visit'); r := r || 'STALE ALLOWED(BAD); ';
   exception when sqlstate 'KC001' then r := r || 'STALE refused; '; end;
-  ts := public.move_lead_stage(l1, ts, 'contacted');
+  ts := public.move_lead_stage(l1, ts, 'site_visit');
   r := r || case when (select first_response_at is not null from public.leads where id = l1) then 'FIRST_RESPONSE ok; ' else 'FIRST_RESPONSE ALLOWED(BAD); ' end;
   begin perform public.move_lead_stage(l1, ts, 'lost'); r := r || 'LOST_NO_REASON ALLOWED(BAD); ';
   exception when sqlstate 'KC005' then r := r || 'LOST_NO_REASON refused; '; end;
@@ -83,7 +83,7 @@ begin
   select count(*) into n from public.activities where lead_id = l1 and subject = 'Lead updated';
   r := r || case when n = 1 then 'UPDATE_LOGGED ok; ' else 'UPDATE_LOGGED ALLOWED(BAD); ' end;
 
-  -- convert: customer + draft quote + item, lead contacted, idempotent
+  -- convert: customer + draft quote + item, stage unchanged, idempotent
   select updated_at into ts from public.leads where id = l1;
   begin perform public.convert_lead(l1, ts - interval '1 second'); r := r || 'CONVERT_STALE ALLOWED(BAD); ';
   exception when sqlstate 'KC001' then r := r || 'CONVERT_STALE refused; '; end;
@@ -96,7 +96,7 @@ begin
   select count(*) into n from public.properties where contact_id = c1;
   r := r || case when n = 1 then 'CONVERT_PROPERTY ok; ' else 'CONVERT_PROPERTY ALLOWED(BAD) ' || n || '; ' end;
   select stage into s from public.leads where id = l1;
-  r := r || case when s = 'contacted' then 'CONVERT_STAGE ok; ' else 'CONVERT_STAGE ALLOWED(BAD) ' || s || '; ' end;
+  r := r || case when s = 'new' then 'CONVERT_STAGE ok; ' else 'CONVERT_STAGE ALLOWED(BAD) ' || s || '; ' end;
   res := public.convert_lead(l1, ts);
   select count(*) into n from public.quotes where lead_id = l1;
   r := r || case when (res->>'already')::boolean and n = 1 then 'CONVERT_IDEMPOTENT ok; ' else 'CONVERT_IDEMPOTENT ALLOWED(BAD); ' end;

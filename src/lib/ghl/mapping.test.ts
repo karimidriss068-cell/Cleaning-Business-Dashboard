@@ -20,7 +20,7 @@ describe("stages", () => {
     expect(opportunityPatch("quoted", ids)).toEqual({ pipelineStageId: "s-quo", status: "open" });
     expect(opportunityPatch("won", ids)).toEqual({ pipelineStageId: "s-won", status: "won" });
     expect(opportunityPatch("lost", { won: "s-won" })).toEqual({ status: "lost" });
-    expect(opportunityPatch("contacted", {})).toBeNull();
+    expect(opportunityPatch("site_visit", {})).toBeNull();
   });
   it("keeps only known stages with string ids", () => {
     expect(parseStageIds({ new: "a", won: 5, bogus: "x", lost: "" })).toEqual({ new: "a" });

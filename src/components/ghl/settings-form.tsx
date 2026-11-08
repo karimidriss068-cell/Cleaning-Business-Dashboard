@@ -11,15 +11,15 @@ import { Label } from "@/components/ui/label";
 import { GlassPanel } from "@/components/system/glass-panel";
 import { fieldErrors, useFinanceAction } from "@/components/invoices/use-finance-action";
 
-const STAGES = ["new", "contacted", "quoted", "won", "lost"] as const;
+const STAGES = ["new", "site_visit", "quoted", "follow_up", "won", "lost"] as const;
 
 /** The pipeline mapping, whether stage changes are sent to GHL, and the text limits. */
 export function GhlSettingsForm({ settings }: { settings: GhlPageData["settings"] }) {
   const { run, pending } = useFinanceAction();
   const [pipelineId, setPipelineId] = useState(settings.pipelineId);
   const [stageIds, setStageIds] = useState<Record<(typeof STAGES)[number], string>>({
-    new: settings.stageIds.new ?? "", contacted: settings.stageIds.contacted ?? "", quoted: settings.stageIds.quoted ?? "",
-    won: settings.stageIds.won ?? "", lost: settings.stageIds.lost ?? "",
+    new: settings.stageIds.new ?? "", site_visit: settings.stageIds.site_visit ?? "", quoted: settings.stageIds.quoted ?? "",
+    follow_up: settings.stageIds.follow_up ?? "", won: settings.stageIds.won ?? "", lost: settings.stageIds.lost ?? "",
   });
   const [syncMode, setSyncMode] = useState(settings.opportunitySyncMode);
   const [business, setBusiness] = useState(settings.businessName);

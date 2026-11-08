@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       accounts: {
         Row: {
+          account_type: string | null
           created_at: string
           id: string
           industry: string | null
@@ -24,6 +25,7 @@ export type Database = {
           notes: string | null
           payment_terms: Database["public"]["Enums"]["payment_terms"]
           primary_contact_id: string | null
+          referral_source: string | null
           renewal_date: string | null
           status: Database["public"]["Enums"]["account_status"]
           stripe_customer_id: string | null
@@ -32,6 +34,7 @@ export type Database = {
           walkthrough_at: string | null
         }
         Insert: {
+          account_type?: string | null
           created_at?: string
           id?: string
           industry?: string | null
@@ -40,6 +43,7 @@ export type Database = {
           notes?: string | null
           payment_terms?: Database["public"]["Enums"]["payment_terms"]
           primary_contact_id?: string | null
+          referral_source?: string | null
           renewal_date?: string | null
           status?: Database["public"]["Enums"]["account_status"]
           stripe_customer_id?: string | null
@@ -48,6 +52,7 @@ export type Database = {
           walkthrough_at?: string | null
         }
         Update: {
+          account_type?: string | null
           created_at?: string
           id?: string
           industry?: string | null
@@ -56,6 +61,7 @@ export type Database = {
           notes?: string | null
           payment_terms?: Database["public"]["Enums"]["payment_terms"]
           primary_contact_id?: string | null
+          referral_source?: string | null
           renewal_date?: string | null
           status?: Database["public"]["Enums"]["account_status"]
           stripe_customer_id?: string | null
@@ -1841,14 +1847,17 @@ export type Database = {
       }
       leads: {
         Row: {
+          account_id: string | null
           bathrooms: number | null
           bedrooms: number | null
+          bid_due_on: string | null
           campaign_id: string | null
           channel: string
           closed_at: string | null
           contact_id: string
           created_at: string
           creative: string | null
+          expected_value_cents: number | null
           external_id: string | null
           first_response_at: string | null
           ghl_opportunity_id: string | null
@@ -1860,21 +1869,26 @@ export type Database = {
           requested_date: string | null
           service_id: string | null
           service_type: Database["public"]["Enums"]["lead_service_type"] | null
+          site_visit_at: string | null
           source: string | null
           sqft: number | null
           stage: Database["public"]["Enums"]["lead_stage"]
           stage_changed_at: string
           updated_at: string
+          win_probability_bps: number | null
         }
         Insert: {
+          account_id?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
+          bid_due_on?: string | null
           campaign_id?: string | null
           channel?: string
           closed_at?: string | null
           contact_id: string
           created_at?: string
           creative?: string | null
+          expected_value_cents?: number | null
           external_id?: string | null
           first_response_at?: string | null
           ghl_opportunity_id?: string | null
@@ -1886,21 +1900,26 @@ export type Database = {
           requested_date?: string | null
           service_id?: string | null
           service_type?: Database["public"]["Enums"]["lead_service_type"] | null
+          site_visit_at?: string | null
           source?: string | null
           sqft?: number | null
           stage?: Database["public"]["Enums"]["lead_stage"]
           stage_changed_at?: string
           updated_at?: string
+          win_probability_bps?: number | null
         }
         Update: {
+          account_id?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
+          bid_due_on?: string | null
           campaign_id?: string | null
           channel?: string
           closed_at?: string | null
           contact_id?: string
           created_at?: string
           creative?: string | null
+          expected_value_cents?: number | null
           external_id?: string | null
           first_response_at?: string | null
           ghl_opportunity_id?: string | null
@@ -1912,13 +1931,22 @@ export type Database = {
           requested_date?: string | null
           service_id?: string | null
           service_type?: Database["public"]["Enums"]["lead_service_type"] | null
+          site_visit_at?: string | null
           source?: string | null
           sqft?: number | null
           stage?: Database["public"]["Enums"]["lead_stage"]
           stage_changed_at?: string
           updated_at?: string
+          win_probability_bps?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "leads_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "leads_campaign_id_fkey"
             columns: ["campaign_id"]
@@ -3951,7 +3979,14 @@ export type Database = {
         | "cancelled"
         | "no_access"
       lead_service_type: "residential" | "recurring" | "move_out" | "commercial"
-      lead_stage: "new" | "contacted" | "quoted" | "won" | "lost"
+      lead_stage:
+        | "new"
+        | "site_visit"
+        | "contacted"
+        | "quoted"
+        | "follow_up"
+        | "won"
+        | "lost"
       marketing_platform:
         | "meta"
         | "google"
@@ -4162,7 +4197,15 @@ export const Constants = {
         "no_access",
       ],
       lead_service_type: ["residential", "recurring", "move_out", "commercial"],
-      lead_stage: ["new", "contacted", "quoted", "won", "lost"],
+      lead_stage: [
+        "new",
+        "site_visit",
+        "contacted",
+        "quoted",
+        "follow_up",
+        "won",
+        "lost",
+      ],
       marketing_platform: [
         "meta",
         "google",

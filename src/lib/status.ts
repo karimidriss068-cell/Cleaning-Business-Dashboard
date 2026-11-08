@@ -5,7 +5,7 @@
 export type Tone = "neutral" | "info" | "success" | "warning" | "danger" | "secondary";
 
 export type JobStatus = "scheduled" | "in_progress" | "completed" | "cancelled" | "no_access";
-export type LeadStage = "new" | "contacted" | "quoted" | "won" | "lost";
+export type LeadStage = "new" | "site_visit" | "quoted" | "follow_up" | "won" | "lost";
 export type InvoiceStatus = "draft" | "sent" | "partially_paid" | "paid" | "overdue" | "void" | "uncollectible";
 export type PayoutStatus = "draft" | "approved" | "paid" | "void";
 
@@ -18,8 +18,9 @@ const jobTones: Record<JobStatus, Tone> = {
 };
 const leadTones: Record<LeadStage, Tone> = {
   new: "info",
-  contacted: "neutral",
+  site_visit: "info",
   quoted: "secondary",
+  follow_up: "warning",
   won: "success",
   lost: "neutral",
 };
@@ -85,10 +86,11 @@ export const jobLabel: Record<JobStatus, string> = {
   no_access: "No access",
 };
 export const leadLabel: Record<LeadStage, string> = {
-  new: "New",
-  contacted: "Contacted",
-  quoted: "Quote sent",
-  won: "Booked",
+  new: "Lead",
+  site_visit: "Site visit",
+  quoted: "Bid sent",
+  follow_up: "Follow-up",
+  won: "Won",
   lost: "Lost",
 };
 

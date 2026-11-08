@@ -120,7 +120,7 @@ begin
     values (c, p, sv, 'FREQ=WEEKLY', v_today - 5, '09:00', 180, 18000);
   -- an unanswered-then-slow lead from a referral
   insert into public.leads (contact_id, source, stage, first_response_at, created_at)
-    values (c2, 'referral', 'contacted', now() - interval '2 hours' + interval '90 minutes', now() - interval '2 hours') returning id into l2;
+    values (c2, 'referral', 'site_visit', now() - interval '2 hours' + interval '90 minutes', now() - interval '2 hours') returning id into l2;
   -- two referral leads lost after contact: one went through Quote sent first, one never did
   insert into public.leads (contact_id, source, stage, first_response_at, created_at, closed_at, lost_reason)
     values (c2, 'referral', 'lost', now(), now() - interval '3 hours', now(), 'Too expensive') returning id into l3;

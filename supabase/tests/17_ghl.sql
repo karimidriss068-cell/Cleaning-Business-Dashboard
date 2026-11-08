@@ -83,7 +83,7 @@ begin
   perform set_config('app.ghl_origin', 'off', true);
   perform set_config('request.jwt.claims', json_build_object('sub', staff, 'role', 'authenticated')::text, true);
   execute 'set local role authenticated';
-  perform public.move_lead_stage(l, (select updated_at from public.leads where id = l), 'contacted');
+  perform public.move_lead_stage(l, (select updated_at from public.leads where id = l), 'site_visit');
   perform public.move_lead_stage(l, (select updated_at from public.leads where id = l), 'quoted');
   execute 'reset role';
   select count(*) into n from public.sync_queue where provider = 'ghl' and status = 'pending' and entity_id = l; r := r || 'app-stage-change-queued-once=' || n || ' ';

@@ -2,9 +2,9 @@ import type { GhlContact, GhlOpportunity } from "@/lib/ghl/schemas";
 
 // Pure mapping between GHL records and our rows. No I/O, so it is tested directly.
 
-export type LeadStage = "new" | "contacted" | "quoted" | "won" | "lost";
+export type LeadStage = "new" | "site_visit" | "quoted" | "follow_up" | "won" | "lost";
 export type StageIds = Partial<Record<LeadStage, string>>;
-const STAGES: LeadStage[] = ["new", "contacted", "quoted", "won", "lost"];
+const STAGES: LeadStage[] = ["new", "site_visit", "quoted", "follow_up", "won", "lost"];
 
 /** Our stage for a GHL opportunity: its won/lost status first, else its pipeline stage by the saved mapping. */
 export function stageFromOpportunity(opp: Pick<GhlOpportunity, "status" | "pipelineStageId">, stageIds: StageIds): LeadStage | null {

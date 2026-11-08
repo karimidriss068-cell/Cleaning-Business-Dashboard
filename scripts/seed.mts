@@ -362,7 +362,7 @@ function crewPick(key: CrewKey, count: number): Sub[] {
 type Customer = { contactId: string; first: string; borough: Borough; propertyId?: string; bedrooms: number;
   bathrooms: number; won: boolean; quoteId?: string; leadCreated: Date; phone: string };
 const customers: Customer[] = [];
-const stagePlan = [...Array(35).fill("won"), ...Array(12).fill("quoted"), ...Array(10).fill("contacted"),
+const stagePlan = [...Array(35).fill("won"), ...Array(12).fill("quoted"), ...Array(10).fill("site_visit"),
   ...Array(8).fill("new"), ...Array(15).fill("lost")] as string[];
 const lostReasons = ["Price too high", "Went with another company", "No response after quote", "Only wanted same-day", "Outside service area"];
 const accessNotes = ["Doorman building – keys at front desk", "Lockbox on gate, code 4417", "Client works from home; ring 3B",
@@ -402,7 +402,7 @@ for (const [i, stage] of stagePlan.entries()) {
     source: ({ meta: "instagram", google: "google", referral: "referral" } as Record<string, string>)[source] ?? "other", ghl_opportunity_id: null, notes: null, created_at: iso(created),
     service_type: service === "move" ? "move_out" : "residential", stage_changed_at: iso(firstResponse ?? created),
     closed_at: stage === "won" || stage === "lost" ? iso(plusMinutes(created, int(1500, 8000))) : null,
-    next_follow_up_on: stage === "new" || stage === "contacted" || stage === "quoted" ? addDays(today, int(-3, 4)) : null,
+    next_follow_up_on: stage === "new" || stage === "site_visit" || stage === "quoted" ? addDays(today, int(-3, 4)) : null,
   });
   add("activities", { id: seedId(T.activities), type: "note", direction: "inbound", subject: "Web form",
     body: `${svc[service].name} request, ${bedrooms}BR/${bathrooms}BA`, occurred_at: iso(created), actor_user_id: null,
@@ -427,9 +427,9 @@ for (const [i, stage] of stagePlan.entries()) {
       bedrooms, bathrooms: String(bathrooms), access_instructions: pick(accessNotes), is_active: true });
     customer.propertyId = propertyId;
   }
-  if (stage === "won" || stage === "quoted" || (stage === "contacted" && chance(0.3))) {
+  if (stage === "won" || stage === "quoted" || (stage === "site_visit" && chance(0.3))) {
     const quoteId = seedId(T.quotes);
-    const status = stage === "won" ? "accepted" : stage === "contacted" ? "draft" : pick(["sent", "sent", "sent", "expired", "declined"]);
+    const status = stage === "won" ? "accepted" : stage === "site_visit" ? "draft" : pick(["sent", "sent", "sent", "expired", "declined"]);
     const sentAt = plusMinutes(firstResponse ?? created, int(30, 600));
     add("quotes", {
       id: quoteId, lead_id: leadId, contact_id: contactId, account_id: null, property_id: customer.propertyId ?? null,
