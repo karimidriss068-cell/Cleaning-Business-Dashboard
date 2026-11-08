@@ -65,7 +65,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
           <EmptyState icon={KanbanSquare} title="No opportunities yet">Add one with New lead, or press Cmd+K and choose New lead.</EmptyState>
         </div>
       ) : (
-        <LeadsClient key={dataKey} initialLeads={leads} team={team} today={today} now={now.toISOString()} openId={openId ?? null} />
+        <LeadsClient key={dataKey} initialLeads={leads} team={team} today={today} now={now.toISOString()} openId={openId ?? null} canBid={profile.role === "owner" || profile.role === "admin"} />
       )}
 
       <section aria-label="Conversion by source" className="rounded-md border glass-card">

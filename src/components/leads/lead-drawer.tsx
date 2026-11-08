@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { ArrowRightLeft, ArrowRightLeft as ChangeIcon, Mail, MessageSquare, Phone, StickyNote, UserCheck } from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { BOROUGHS, SOURCES, boroughLabel, formatPhone, sourceLabel, stageLabel } from "@/lib/leads";
 import { DEFAULT_WIN_BPS } from "@/lib/pipeline";
-import { formatNyDateTime, nyWallClock, nyWallTimeToUtc, parseDollarsToCents } from "@/lib/format";
-import { leadTone } from "@/lib/status";
+import { formatCents, formatNyDateTime, nyWallClock, nyWallTimeToUtc, parseDollarsToCents } from "@/lib/format";
+import { bidLabel, leadTone, type BidStatusKey } from "@/lib/status";
 import type { LeadRow, TeamMember, TimelineEntry } from "@/lib/leads-data";
-import { addLeadNote, convertLead, getLeadTimeline, updateLead } from "@/app/actions/leads";
+import { addLeadNote, getLeadTimeline, updateLead } from "@/app/actions/leads";
 import { setLeadAttribution } from "@/app/actions/growth";
 import { setSmsConsent } from "@/app/actions/ghl";
 import { CHANNELS, channelLabel } from "@/lib/schemas/growth";
@@ -25,6 +26,8 @@ const typeIcon = { call: Phone, sms: MessageSquare, email: Mail, note: StickyNot
 
 type Props = {
   lead: LeadRow | null;
+  /** Owners and admins build bids; everyone else just sees whether one exists. */
+  canBid: boolean;
   team: TeamMember[];
   today: string;
   onClose: () => void;
@@ -43,7 +46,7 @@ export function LeadDrawer(props: Props) {
   );
 }
 
-function LeadBody({ lead, team, today, onMove, onChanged }: Props & { lead: LeadRow }) {
+function LeadBody({ lead, team, today, canBid, onMove, onChanged }: Props & { lead: LeadRow }) {
   const [pending, start] = useTransition();
   const [timeline, setTimeline] = useState<TimelineEntry[] | null>(null);
   const [version, setVersion] = useState(0);
@@ -179,20 +182,6 @@ function LeadBody({ lead, team, today, onMove, onChanged }: Props & { lead: Lead
     });
   }
 
-  function convert() {
-    start(async () => {
-      const res = await convertLead({ leadId: lead.id, expectedUpdatedAt: lead.updatedAt, companyName: lead.serviceType === "commercial" ? form.firstName + (form.lastName ? ` ${form.lastName}` : "") : "" });
-      if (!res.ok) return void toast.error(res.code === "stale" ? "Lead changed by someone else" : "Couldn't create the account", { description: res.message });
-      onChanged(lead.id, {
-        quote: { id: res.quoteId, number: res.quoteNumber, status: "draft" },
-        stage: res.stage as LeadRow["stage"],
-        updatedAt: res.updatedAt,
-      });
-      toast.success(res.already ? `Bid #${res.quoteNumber} already open` : `Account created, draft bid #${res.quoteNumber} opened`, { description: "Add scope and pricing when you build the bid." });
-      reload();
-    });
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-2">
@@ -205,18 +194,23 @@ function LeadBody({ lead, team, today, onMove, onChanged }: Props & { lead: Lead
         </Button>
       </div>
 
-      <section aria-label="Account" className="rounded-md border border-hairline bg-surface-raised/50 p-3 text-sm">
-        {lead.quote ? (
-          <p className="text-ink">
-            Account created, <strong className="font-semibold">draft bid #{lead.quote.number}</strong> <span className="text-ink-muted">({lead.quote.status})</span>
-          </p>
-        ) : lead.stage === "lost" ? (
-          <p className="text-ink-muted">Reopen this opportunity before creating the account.</p>
-        ) : (
+      <section aria-label="Bid" className="rounded-md border border-hairline bg-surface-raised/50 p-3 text-sm" data-testid="lead-bid">
+        {lead.bid ? (
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-ink-muted">Create the company account and open a draft bid.</p>
-            <Button type="button" onClick={convert} disabled={pending} className="h-11 md:h-9">Create account and bid</Button>
+            <p className="text-ink">
+              <strong className="font-semibold">Bid {lead.bid.number}</strong> <span className="text-ink-muted">({bidLabel[lead.bid.status as BidStatusKey] ?? lead.bid.status}{lead.bid.priceCents !== null ? `, ${formatCents(lead.bid.priceCents, { hideZeroCents: true })}` : ""})</span>
+            </p>
+            {canBid && <Button render={<Link href={`/bids/${lead.bid.id}`} />} className="h-11 md:h-9">Open bid</Button>}
           </div>
+        ) : lead.stage === "lost" ? (
+          <p className="text-ink-muted">Reopen this opportunity before bidding on it.</p>
+        ) : canBid ? (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-ink-muted">Price the scope and build the bid.</p>
+            <Button render={<Link href={`/bids/new?lead=${lead.id}`} />} className="h-11 md:h-9">Build bid</Button>
+          </div>
+        ) : (
+          <p className="text-ink-muted">No bid yet. The owner or an admin builds bids.</p>
         )}
       </section>
 

@@ -43,7 +43,7 @@ function Column({ stage, count, children }: { stage: LeadStage; count: number; c
  * card; the stage changes at once and is restored if the server refuses.
  * Dropping on Lost asks why first. Phones get the same stages as a list.
  */
-export function LeadsClient({ initialLeads, team, today, now, openId }: { initialLeads: LeadRow[]; team: TeamMember[]; today: string; now: string; openId: string | null }) {
+export function LeadsClient({ initialLeads, team, today, now, openId, canBid }: { initialLeads: LeadRow[]; team: TeamMember[]; today: string; now: string; openId: string | null; canBid: boolean }) {
   const router = useRouter();
   const [leads, setLeads] = useState(initialLeads);
   const [openLead, setOpenLead] = useState<string | null>(openId && initialLeads.some((l) => l.id === openId) ? openId : null);
@@ -141,7 +141,7 @@ export function LeadsClient({ initialLeads, team, today, now, openId }: { initia
         ))}
       </div>
 
-      <LeadDrawer lead={current} team={team} today={today} onClose={() => setOpenLead(null)} onMove={(l) => setMove({ lead: l, stage: l.stage })} onChanged={patch} />
+      <LeadDrawer lead={current} team={team} canBid={canBid} today={today} onClose={() => setOpenLead(null)} onMove={(l) => setMove({ lead: l, stage: l.stage })} onChanged={patch} />
       <MoveSheet state={move} onClose={() => setMove(null)} onSubmit={(l, s, r) => void commit(l, s, r)} />
     </>
   );

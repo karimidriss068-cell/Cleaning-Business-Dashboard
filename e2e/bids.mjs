@@ -1,5 +1,5 @@
 /**
- * Bids and projects end-to-end test (grown one step at a time): pricing rules now; the bid builder and
+ * Bids and projects end-to-end test (grown one step at a time): pricing rules and the bid builder now;
  * projects are added to this file as they land. Needs a build, no logins: it starts the app, signs in as
  * temporary owner, staff and cleaner users, and puts every row and setting back (the script refuses any
  * project but the cleaning one).
@@ -10,6 +10,11 @@
  * placeholder numbers are flagged until the first save, a save bumps the version and is logged, bad
  * numbers are explained next to their fields and change nothing, a stale save is refused, and the page
  * has no overflow on a phone.
+ *
+ * Bid builder: live price and margin as you type, a bid is saved as numbered versions (never overwritten),
+ * a price below the floor needs a reason, an older version can be loaded and saved forward, ready then
+ * sent moves the opportunity to Bid sent, the printed bid shows scope and price but no cost or margin, and
+ * staff cannot open or read bids.
  */
 import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
@@ -32,7 +37,25 @@ const password = randomBytes(18).toString("base64url");
 const { data: rulesBefore } = await db.from("pricing_rules").select("*").single();
 const { data: ratesBefore } = await db.from("pricing_space_rates").select("*");
 
+const BID_PHONE = "+13325550312";
+async function cleanBidRows() {
+  const { data: contacts } = await db.from("contacts").select("id, account_id").eq("phone", BID_PHONE);
+  for (const c of contacts ?? []) {
+    const { data: ls } = await db.from("leads").select("id").eq("contact_id", c.id);
+    for (const l of ls ?? []) {
+      await db.from("bids").delete().eq("lead_id", l.id);
+      await db.from("activities").delete().eq("lead_id", l.id);
+      await db.from("leads").delete().eq("id", l.id);
+    }
+    await db.from("activities").delete().eq("contact_id", c.id);
+    await db.from("contacts").update({ account_id: null }).eq("id", c.id);
+    if (c.account_id) { await db.from("accounts").update({ primary_contact_id: null }).eq("id", c.account_id); await db.from("accounts").delete().eq("id", c.account_id); }
+    await db.from("contacts").delete().eq("id", c.id);
+  }
+}
+
 async function cleanup() {
+  await cleanBidRows();
   await db.from("pricing_rules").update({ ...rulesBefore }).eq("id", true);
   for (const r of ratesBefore ?? []) await db.from("pricing_space_rates").update(r).eq("space_type", r.space_type);
   await db.from("finance_log").delete().in("entity", ["pricing", "bid", "project"]).gte("occurred_at", t0);
@@ -44,6 +67,11 @@ async function cleanup() {
   await db.from("subcontractors").delete().like("display_name", "E2E Bids Cleaner%");
 }
 
+await cleanBidRows();
+{
+  const { data: owned } = await db.from("contacts").select("id").eq("phone", BID_PHONE);
+  if (owned?.length) throw new Error(`refusing: ${BID_PHONE} belongs to an existing contact`);
+}
 const server = spawn("npx", ["next", "start", "-p", String(PORT)], { env: { ...process.env, NEXT_PUBLIC_APP_URL: base }, stdio: "ignore" });
 for (let i = 0; i < 60; i++) {
   if (await fetch(`${base}/login`).then((r) => r.ok).catch(() => false)) break;
@@ -135,6 +163,97 @@ try {
   await pp.goto(`${base}/settings/pricing`, { waitUntil: "networkidle" });
   check("no horizontal overflow on a phone", !(await overflow(pp)));
   await pctx.close();
+
+  // ============================================================ bid builder
+  // The pricing section left the rules at: labor $27.50, supplies 8% of labor, 35% margin target, floor 22.5%.
+  const rulesNow = await current();
+  const { data: c0 } = await db.from("contacts").insert({ first_name: "Dana", last_name: "Bidder", phone: BID_PHONE, type: "commercial" }).select("id").single();
+  const { data: lead } = await db.from("leads").insert({ contact_id: c0.id, service_type: "commercial", stage: "site_visit", source: "referral" }).select("*").single();
+  const bctx = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  const bp = await signIn(bctx, owner, /command-center/);
+  await bp.goto(`${base}/leads?lead=${lead.id}`, { waitUntil: "networkidle" });
+  check("an owner sees Build bid in the opportunity drawer", await bp.getByRole("link", { name: "Build bid" }).isVisible());
+  await bp.goto(`${base}/bids/new?lead=${lead.id}`, { waitUntil: "networkidle" });
+  check("the builder opens for the opportunity", (await bp.locator("h1").innerText()) === "New bid");
+  await bp.locator("#bid-title").fill("E2E whole building");
+  await bp.locator("#bid-company").fill("E2E Atlas Builders");
+  await bp.locator('[id^="area-label-"]').first().fill("Whole building");
+  await bp.getByRole("combobox", { name: /Kind of space for Whole building/ }).click();
+  await bp.getByRole("option", { name: "Post-construction" }).click();
+  await bp.locator('[id^="area-sqft-"]').first().fill("120000");
+  await sleep(500);
+  check("the price and margin update as you type", (await bp.getByTestId("bid-price").innerText()) === "$9,138.47" && /35% margin/.test(await bp.getByTestId("bid-margin").innerText()), await bp.getByTestId("bid-summary").innerText());
+  check("the summary shows your cost lines and hours", /Labor[\s\S]*\$5,500[\s\S]*Supplies and equipment[\s\S]*\$440[\s\S]*Your cost[\s\S]*\$5,940/.test(await bp.getByTestId("bid-summary").innerText()));
+  await bp.getByTestId("bid-save").click();
+  await bp.waitForURL(/\/bids\/[0-9a-f-]{36}$/, { timeout: 20000 });
+  const bidId = bp.url().split("/").pop();
+  const { data: bid } = await db.from("bids").select("*").eq("id", bidId).single();
+  const { data: v1 } = await db.from("bid_versions").select("*").eq("bid_id", bidId).eq("version", 1).single();
+  check("version 1 is saved with the cost, price, margin and the rules version it used", bid.current_version === 1 && v1.cost_cents === 594000 && v1.price_cents === 913847 && v1.margin_bps === 3500 && v1.rules_version === rulesNow.version, JSON.stringify(v1));
+  const { data: lead1 } = await db.from("leads").select("account_id").eq("id", lead.id).single();
+  const { data: acct } = await db.from("accounts").select("name").eq("id", lead1.account_id).single();
+  check("the company account was created and linked", acct?.name === "E2E Atlas Builders");
+
+  // below the floor needs a reason
+  await bp.locator("#ov-price").fill("5000");
+  await sleep(400);
+  check("a price below the floor is flagged", await bp.getByText("Below your floor").first().isVisible());
+  check("saving is blocked until a reason is given", await bp.getByTestId("bid-save").isDisabled());
+  await bp.locator("#bid-reason").fill("E2E: anchor client");
+  await bp.getByTestId("bid-save").click();
+  await bp.getByText("Saved version 2").waitFor({ timeout: 15000 });
+  const { data: v2 } = await db.from("bid_versions").select("*").eq("bid_id", bidId).eq("version", 2).single();
+  check("version 2 keeps the reason and version 1 is untouched", v2.floor_override_reason === "E2E: anchor client" && v2.price_cents === 500000 && v2.margin_bps < 2250 && (await db.from("bid_versions").select("price_cents").eq("bid_id", bidId).eq("version", 1).single()).data.price_cents === 913847);
+  await sleep(600);
+  check("both versions are listed", (await bp.getByTestId("bid-versions").getByText(/^Version \d/).count()) === 2);
+
+  // load version 1 and save it forward as version 3
+  await bp.getByTestId("bid-versions").getByRole("button", { name: "Load" }).click();
+  await sleep(400);
+  check("an old version loads into the form", (await bp.getByTestId("bid-price").innerText()) === "$9,138.47");
+  await bp.getByTestId("bid-save").click();
+  await bp.getByText("Saved version 3").waitFor({ timeout: 15000 });
+  await sleep(800);
+
+  // ready, then sent: the opportunity moves to Bid sent and takes the bid's value
+  await bp.getByTestId("bid-ready").click();
+  await bp.getByText("Marked ready to send").waitFor({ timeout: 15000 });
+  await bp.getByTestId("bid-sent").click();
+  await bp.getByText(/Marked as sent/).waitFor({ timeout: 15000 });
+  const { data: sentBid } = await db.from("bids").select("status, sent_at, valid_until").eq("id", bidId).single();
+  const { data: lead2 } = await db.from("leads").select("stage, expected_value_cents").eq("id", lead.id).single();
+  check("sent: the bid is marked sent with an expiry date", sentBid.status === "sent" && sentBid.sent_at !== null && sentBid.valid_until !== null);
+  check("sent: the opportunity moved to Bid sent and took the bid's price", lead2.stage === "quoted" && lead2.expected_value_cents === 913847, JSON.stringify(lead2));
+
+  // the printed bid
+  await bp.goto(`${base}/bids/${bidId}/print`, { waitUntil: "networkidle" });
+  const sheet = await bp.getByTestId("bid-sheet").innerText();
+  check("the printed bid shows the scope and the price", sheet.includes("Whole building") && sheet.includes("120,000") && (await bp.getByTestId("bid-sheet-total").innerText()) === "$9,138.47");
+  check("the printed bid shows no cost, margin or rules", !/margin|your cost|\$5,940|supplies|labor|floor/i.test(sheet), sheet.slice(0, 200));
+  check("the printed bid has terms", sheet.includes("Terms"));
+  await bctx.close();
+
+  // phone
+  const bpc = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  const bpp = await signIn(bpc, owner, /command-center/);
+  await bpp.goto(`${base}/bids/${bidId}`, { waitUntil: "networkidle" });
+  check("no horizontal overflow on the builder on a phone", !(await overflow(bpp)));
+  await bpc.close();
+
+  // staff can't open or read bids
+  const stctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const stp = await signIn(stctx, staff, /command-center/);
+  await stp.goto(`${base}/bids/${bidId}`);
+  await stp.waitForURL(/\/leads/, { timeout: 10000 }).catch(() => {});
+  check("staff opening a bid are sent to the pipeline", new URL(stp.url()).pathname === "/leads");
+  await stp.goto(`${base}/leads?lead=${lead.id}`, { waitUntil: "networkidle" });
+  check("staff see no Build bid link", (await stp.getByRole("link", { name: /Build bid|Open bid/ }).count()) === 0);
+  const sdb2 = createClient(url, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+  await sdb2.auth.signInWithPassword({ email: staff.email, password });
+  const { data: sb } = await sdb2.from("bids").select("id");
+  const { data: sv } = await sdb2.from("bid_versions").select("id");
+  check("staff's own API session reads no bids or versions", (sb ?? []).length === 0 && (sv ?? []).length === 0);
+  await stctx.close();
 
   // staff and cleaners
   const sctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });

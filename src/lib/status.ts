@@ -122,3 +122,9 @@ export const messageOutcomeLabel: Record<MessageOutcome, string> = { sent: "Sent
 export function messageOutcome(value: string): MessageOutcome {
   return value in messageOutcomeTone ? (value as MessageOutcome) : "failed";
 }
+
+// Bids: draft -> ready -> sent -> won/lost/expired. Always shown with the word, never colour alone.
+export type BidStatusKey = "draft" | "ready" | "sent" | "won" | "lost" | "expired";
+export const bidLabel: Record<BidStatusKey, string> = { draft: "Draft", ready: "Ready to send", sent: "Sent", won: "Won", lost: "Lost", expired: "Expired" };
+const bidTones: Record<BidStatusKey, Tone> = { draft: "neutral", ready: "info", sent: "secondary", won: "success", lost: "neutral", expired: "warning" };
+export const bidTone = (s: BidStatusKey): Tone => bidTones[s];

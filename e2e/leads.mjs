@@ -7,7 +7,7 @@
  *
  * As office staff on desktop: sees the six stages, that a residential opportunity is hidden, drags one
  * between stages, adds one with quick add (Cmd+K), sees the duplicate warning, saves the bid fields
- * (value, bid due date, site visit, chance), creates the account and a draft bid, and drags to Lost
+ * (value, bid due date, site visit, chance), shows Build bid, and drags to Lost
  * (which asks why). On a phone: moves one with the Move sheet. As a cleaner: cannot reach or read them.
  */
 import { spawn } from "node:child_process";
@@ -92,7 +92,7 @@ let browser = null;
 const errors = [];
 let pick;
 try {
-  const staff = await make("staff");
+  const staff = await make("admin");
   const cleaner = await (async () => {
     const { data: sub, error } = await db.from("subcontractors").insert({ display_name: "E2E Leads Cleaner", pay_rate_bps: 4000, status: "active" }).select("id").single();
     if (error) throw error;
@@ -199,7 +199,7 @@ check("Add lead stays disabled until acknowledged", await page.getByRole("button
 await page.keyboard.press("Escape");
 await page.waitForTimeout(400);
 
-// 6. convert
+// 6. the bid link and the timeline
 await page.locator(`[data-testid="board"] [data-lead-card="${newLead.id}"]`).getByRole("button", { name: /^Eli E2E Tester/ }).click();
 // 5b. bid fields
 await page.locator("#ld-value").fill("abc");
@@ -216,14 +216,7 @@ const saved = await stageOf(newLead.id);
 check("the bid fields are saved in cents and New York time", saved.expected_value_cents === 825000 && saved.bid_due_on === "2099-02-01" && saved.win_probability_bps === 4000 && new Date(saved.site_visit_at).toISOString() === "2099-01-20T19:30:00.000Z", JSON.stringify([saved.expected_value_cents, saved.bid_due_on, saved.win_probability_bps, saved.site_visit_at]));
 // The drawer closes after a save, so reopen the card to carry on.
 await page.locator(`[data-testid="board"] [data-lead-card="${newLead.id}"]`).getByRole("button", { name: /^Eli E2E Tester/ }).click();
-await page.getByRole("button", { name: "Create account and bid" }).click();
-await page.waitForTimeout(2200);
-const { data: quote } = await db.from("quotes").select("id, status, contact_id").eq("lead_id", newLead.id).maybeSingle();
-const { data: cust } = await db.from("contacts").select("customer_since").eq("id", made[0].id).single();
-check("creating the account opens a draft bid", quote?.status === "draft" && quote.contact_id === made[0].id);
-check("creating the account marks the contact as a customer", cust.customer_since !== null);
-check("the drawer now shows the bid", await page.getByText(/draft bid #\d+/i).first().isVisible().catch(() => false));
-check("the timeline records the conversion", (await page.getByTestId("timeline").innerText()).includes("Converted to customer"));
+check("an admin sees Build bid in the drawer", await page.getByRole("link", { name: "Build bid" }).isVisible().catch(() => false));
 await page.getByLabel("Activity text").fill("Called, wants Tuesday morning");
 await page.getByRole("button", { name: "Log it" }).click();
 await page.waitForTimeout(1500);

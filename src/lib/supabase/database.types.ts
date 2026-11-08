@@ -390,6 +390,146 @@ export type Database = {
           },
         ]
       }
+      bid_versions: {
+        Row: {
+          bid_id: string
+          cost_cents: number
+          cost_lines: Json
+          created_at: string
+          created_by: string | null
+          floor_override_reason: string | null
+          id: string
+          inputs: Json
+          margin_bps: number
+          price_cents: number
+          rules_snapshot: Json
+          rules_version: number
+          version: number
+        }
+        Insert: {
+          bid_id: string
+          cost_cents: number
+          cost_lines: Json
+          created_at?: string
+          created_by?: string | null
+          floor_override_reason?: string | null
+          id?: string
+          inputs: Json
+          margin_bps: number
+          price_cents: number
+          rules_snapshot: Json
+          rules_version: number
+          version: number
+        }
+        Update: {
+          bid_id?: string
+          cost_cents?: number
+          cost_lines?: Json
+          created_at?: string
+          created_by?: string | null
+          floor_override_reason?: string | null
+          id?: string
+          inputs?: Json
+          margin_bps?: number
+          price_cents?: number
+          rules_snapshot?: Json
+          rules_version?: number
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bid_versions_bid_id_fkey"
+            columns: ["bid_id"]
+            isOneToOne: false
+            referencedRelation: "bids"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bid_versions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      bids: {
+        Row: {
+          account_id: string
+          bid_number: number
+          contact_id: string | null
+          created_at: string
+          created_by: string | null
+          current_version: number
+          id: string
+          lead_id: string
+          sent_at: string | null
+          status: string
+          title: string
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          account_id: string
+          bid_number?: never
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_version?: number
+          id?: string
+          lead_id: string
+          sent_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          account_id?: string
+          bid_number?: never
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_version?: number
+          id?: string
+          lead_id?: string
+          sent_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bids_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bids_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bids_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "bids_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       board_sessions: {
         Row: {
           advisor_outputs: Json
@@ -3813,6 +3953,21 @@ export type Database = {
         }
         Returns: undefined
       }
+      save_bid_version: {
+        Args: {
+          p_bid_id?: string
+          p_company_name?: string
+          p_cost_lines: Json
+          p_expected_rules_version: number
+          p_expected_version?: number
+          p_floor_override_reason?: string
+          p_inputs: Json
+          p_lead_id?: string
+          p_price_cents: number
+          p_title: string
+        }
+        Returns: Json
+      }
       save_board_session: {
         Args: {
           p_advisor_outputs: Json
@@ -3925,6 +4080,15 @@ export type Database = {
         Returns: string
       }
       set_ai_kill_switch: { Args: { p_on: boolean }; Returns: undefined }
+      set_bid_status: {
+        Args: {
+          p_bid_id: string
+          p_expected_updated_at: string
+          p_status: string
+          p_valid_until?: string
+        }
+        Returns: Json
+      }
       set_checklist_item: {
         Args: { p_done: boolean; p_item_id: string }
         Returns: undefined

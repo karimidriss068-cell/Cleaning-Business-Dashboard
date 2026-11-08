@@ -27,7 +27,23 @@ let subId = null;
 const shots = process.env.E2E_SHOTS_DIR;
 const only = process.env.SCREENS_ONLY?.split(",");
 
+const SCREEN_PHONES = ["+13325550314", "+13325550315"];
+async function cleanBidFixtures() {
+  for (const phone of SCREEN_PHONES) {
+    const { data: contacts } = await db.from("contacts").select("id, account_id").eq("phone", phone);
+    for (const c of contacts ?? []) {
+      const { data: ls } = await db.from("leads").select("id").eq("contact_id", c.id);
+      for (const l of ls ?? []) { await db.from("bids").delete().eq("lead_id", l.id); await db.from("activities").delete().eq("lead_id", l.id); await db.from("leads").delete().eq("id", l.id); }
+      await db.from("activities").delete().eq("contact_id", c.id);
+      await db.from("contacts").update({ account_id: null }).eq("id", c.id);
+      if (c.account_id) { await db.from("accounts").update({ primary_contact_id: null }).eq("id", c.account_id); await db.from("accounts").delete().eq("id", c.account_id); }
+      await db.from("contacts").delete().eq("id", c.id);
+    }
+  }
+}
+
 async function cleanup() {
+  await cleanBidFixtures();
   for (const u of users) {
     await db.from("user_preferences").delete().eq("user_id", u.id);
     await db.from("profiles").delete().eq("user_id", u.id);
@@ -60,6 +76,20 @@ try {
     return { id: data.user.id, email };
   };
   const owner = await make("owner");
+  // A bid to open and an opportunity to start one for, so the bid screens are audited like the rest.
+  {
+    const { data: ct } = await db.from("contacts").insert({ first_name: "Screens", last_name: "Bidder", phone: SCREEN_PHONES[0], type: "commercial" }).select("id").single();
+    const { data: ac } = await db.from("accounts").insert({ name: "Screens Builders", status: "prospect", primary_contact_id: ct.id }).select("id").single();
+    await db.from("contacts").update({ account_id: ac.id }).eq("id", ct.id);
+    const { data: ld } = await db.from("leads").insert({ contact_id: ct.id, account_id: ac.id, service_type: "commercial", stage: "quoted", source: "referral" }).select("id").single();
+    const { data: bd } = await db.from("bids").insert({ lead_id: ld.id, account_id: ac.id, contact_id: ct.id, title: "Screens whole building", status: "draft", current_version: 1 }).select("id").single();
+    const rules = (await db.rpc("pricing_rules_snapshot")).data ?? { version: 1 };
+    const { data: pr } = await db.from("pricing_rules").select("*").single();
+    await db.from("bid_versions").insert({ bid_id: bd.id, version: 1, inputs: { areas: [{ label: "Whole building", spaceType: "office", sqft: 40000 }], cleans: 2, crewSize: 2, rush: false, overrides: {} }, cost_lines: [{ label: "Labor", cents: 133333 }, { label: "Supplies and equipment", cents: 10667 }], cost_cents: 144000, price_cents: 240000, margin_bps: 4000, rules_version: pr.version, rules_snapshot: rules });
+    const { data: ct2 } = await db.from("contacts").insert({ first_name: "Screens", last_name: "Fresh", phone: SCREEN_PHONES[1], type: "commercial" }).select("id").single();
+    const { data: ld2 } = await db.from("leads").insert({ contact_id: ct2.id, service_type: "commercial", stage: "site_visit", source: "referral" }).select("id").single();
+    OFFICE.push(`/bids/${bd.id}`, `/bids/new?lead=${ld2.id}`, `/bids/${bd.id}/print`);
+  }
   const { data: sub, error: se } = await db.from("subcontractors").insert({ display_name: "E2E Screens Cleaner", pay_rate_bps: 4000, status: "active" }).select("id").single();
   if (se) throw se;
   subId = sub.id;
