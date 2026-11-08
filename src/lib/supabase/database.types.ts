@@ -2469,6 +2469,86 @@ export type Database = {
           },
         ]
       }
+      pricing_rules: {
+        Row: {
+          confirmed_at: string | null
+          contingency_bps: number
+          crew_size_default: number
+          id: boolean
+          labor_rate_cents: number
+          margin_floor_bps: number
+          margin_target_bps: number
+          materials_bps: number
+          minimum_project_cents: number
+          rush_multiplier_bps: number
+          selling_rate_cents: number
+          travel_cents: number
+          updated_at: string
+          updated_by: string | null
+          version: number
+        }
+        Insert: {
+          confirmed_at?: string | null
+          contingency_bps?: number
+          crew_size_default?: number
+          id?: boolean
+          labor_rate_cents?: number
+          margin_floor_bps?: number
+          margin_target_bps?: number
+          materials_bps?: number
+          minimum_project_cents?: number
+          rush_multiplier_bps?: number
+          selling_rate_cents?: number
+          travel_cents?: number
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Update: {
+          confirmed_at?: string | null
+          contingency_bps?: number
+          crew_size_default?: number
+          id?: boolean
+          labor_rate_cents?: number
+          margin_floor_bps?: number
+          margin_target_bps?: number
+          materials_bps?: number
+          minimum_project_cents?: number
+          rush_multiplier_bps?: number
+          selling_rate_cents?: number
+          travel_cents?: number
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_rules_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      pricing_space_rates: {
+        Row: {
+          productivity_sqft_per_hour: number
+          rate_per_ksqft_cents: number
+          space_type: string
+        }
+        Insert: {
+          productivity_sqft_per_hour: number
+          rate_per_ksqft_cents: number
+          space_type: string
+        }
+        Update: {
+          productivity_sqft_per_hour?: number
+          rate_per_ksqft_cents?: number
+          space_type?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -3663,6 +3743,7 @@ export type Database = {
           subcontractor_name: string
         }[]
       }
+      pricing_rules_snapshot: { Args: never; Returns: Json }
       reassign_job: {
         Args: {
           p_crew_id: string
@@ -3825,6 +3906,10 @@ export type Database = {
       save_message_template: {
         Args: { p_body: string; p_key: string; p_mode: string }
         Returns: undefined
+      }
+      save_pricing_rules: {
+        Args: { p_expected_version: number; p_rules: Json }
+        Returns: number
       }
       save_tier_settings: {
         Args: {

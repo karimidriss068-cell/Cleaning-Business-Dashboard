@@ -42,7 +42,7 @@ for (let i = 0; i < 60; i++) {
   await sleep(1000);
 }
 
-const OFFICE = ["/leads", "/schedule", "/invoices", "/payouts", "/settings", "/settings/integrations", "/settings/ai-usage", "/board", "/board/preview", "/growth/settings", "/automations", "/marketing", "/crews"];
+const OFFICE = ["/leads", "/schedule", "/invoices", "/payouts", "/settings", "/settings/integrations", "/settings/ai-usage", "/settings/pricing", "/board", "/board/preview", "/growth/settings", "/automations", "/marketing", "/crews"];
 const CREW = ["/my-jobs", "/my-jobs/pay", "/settings"];
 const PUBLIC = ["/login", "/lead-form"];
 

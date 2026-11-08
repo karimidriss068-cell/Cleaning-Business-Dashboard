@@ -34,6 +34,19 @@ export default async function SettingsPage() {
       </section>
       {canEditFinance && (
         <Link
+          href="/settings/pricing"
+          className="kc-enter flex items-center justify-between gap-3 rounded-lg border glass-card p-5 outline-none transition-colors hover:border-brand focus-visible:ring-2 focus-visible:ring-ring"
+          style={{ "--i": 2 } as React.CSSProperties}
+        >
+          <span>
+            <span className="block font-heading text-lg font-medium text-ink">Pricing rules</span>
+            <span className="block text-[13px] text-ink-muted">Labor, supplies, margin target and floor, and a rate for each kind of space.</span>
+          </span>
+          <ArrowRight className="size-4 shrink-0 text-ink-muted" aria-hidden />
+        </Link>
+      )}
+      {canEditFinance && (
+        <Link
           href="/settings/integrations"
           className="kc-enter flex items-center justify-between gap-3 rounded-lg border glass-card p-5 outline-none transition-colors hover:border-brand focus-visible:ring-2 focus-visible:ring-ring md:p-6"
           style={{ "--i": 2 } as React.CSSProperties}

@@ -19,7 +19,8 @@
     "e2e:board": "node e2e/board.mjs",
     "e2e:vault": "node e2e/vault.mjs",
     "e2e:board-preview": "node e2e/board-preview.mjs",
-    "e2e:screens": "node e2e/screens.mjs"
+    "e2e:screens": "node e2e/screens.mjs",
+    "e2e:bids": "node e2e/bids.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
