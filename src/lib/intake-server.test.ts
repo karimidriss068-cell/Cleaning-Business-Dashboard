@@ -3,7 +3,7 @@ import { CONSENT_VERSION, CONSENT_WORDING } from "@/lib/intake";
 import { clientIp, handleIntake, hashKey, MAX_BODY_BYTES, type IntakeDeps } from "@/lib/intake-server";
 
 const SALT = "test-salt-0123456789";
-const good = { name: "Maria Del Rio", phone: "(332) 555-0101", email: "maria@example.com", borough: "queens", serviceType: "residential", consent: true, consentVersion: CONSENT_VERSION, elapsedMs: 6000, turnstileToken: "tok" };
+const good = { name: "Maria Del Rio", phone: "(332) 555-0101", email: "maria@example.com", borough: "queens", serviceType: "commercial", consent: true, consentVersion: CONSENT_VERSION, elapsedMs: 6000, turnstileToken: "tok" };
 const jsonHeaders = (extra: Record<string, string> = {}) => new Headers({ "content-type": "application/json", "x-real-ip": "203.0.113.7", ...extra });
 const noon = () => new Date("2026-11-04T17:00:00Z");
 
@@ -51,7 +51,7 @@ describe("a good submission", () => {
     expect(r.status).toBe(200);
     expect(r.body).toEqual({ ok: true, message: "We'll reach out within 15 minutes." });
     const [c] = s.intakeCalls();
-    expect(c.args).toMatchObject({ p_first_name: "Maria", p_last_name: "Del Rio", p_phone: "+13325550101", p_email: "maria@example.com", p_service_type: "residential", p_borough: "queens", p_consent: true });
+    expect(c.args).toMatchObject({ p_first_name: "Maria", p_last_name: "Del Rio", p_phone: "+13325550101", p_email: "maria@example.com", p_service_type: "commercial", p_borough: "queens", p_consent: true });
   });
   it("stores the server's own consent wording, not text from the browser, and a hashed address", async () => {
     const s = setup();

@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { BOROUGHS, SERVICE_TYPES, normalizeEmail, normalizeUsPhone } from "@/lib/leads";
+import { BOROUGHS, normalizeEmail, normalizeUsPhone } from "@/lib/leads";
+import { SHOWN_SERVICE_TYPES } from "@/config/business";
 
 // Shared by the public form (browser) and POST /api/public/leads (server): the contract,
 // the consent wording and the reply promise live in one place so they can't drift apart.
@@ -48,7 +49,7 @@ export const intakeSchema = z
     phone: z.string().trim().max(30).refine((v) => normalizeUsPhone(v) !== null, "That isn't a valid US phone number").optional(),
     email: z.string().trim().max(254).refine((v) => z.string().email().safeParse(normalizeEmail(v)).success, "That email address isn't valid").optional(),
     borough: z.enum(BOROUGHS, { message: "Choose your borough" }),
-    serviceType: z.enum(SERVICE_TYPES, { message: "Choose a service" }),
+    serviceType: z.enum(SHOWN_SERVICE_TYPES, { message: "This form is for commercial cleaning bids" }),
     consent: z.boolean(),
     consentVersion: z.string().max(40).optional(),
     page: z

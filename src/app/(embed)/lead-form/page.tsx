@@ -3,7 +3,7 @@ import { LeadForm } from "@/components/intake/lead-form";
 import { GlassPanel } from "@/components/system/glass-panel";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Get a cleaning quote", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "Request a commercial cleaning bid", robots: { index: false, follow: false } };
 
 /** The embeddable lead form. The Turnstile site key is public by design; the secret never leaves the server. */
 export default function LeadFormPage() {
@@ -13,7 +13,7 @@ export default function LeadFormPage() {
   if (!live) {
     return (
       <GlassPanel level="card" className="space-y-2 p-6 text-center">
-        <h1 className="font-heading text-xl font-semibold text-ink">Get a cleaning quote</h1>
+        <h1 className="font-heading text-xl font-semibold text-ink">Request a commercial cleaning bid</h1>
         <p className="text-sm text-ink-muted">This form isn&apos;t available right now. Please call us and we&apos;ll help you directly.</p>
       </GlassPanel>
     );

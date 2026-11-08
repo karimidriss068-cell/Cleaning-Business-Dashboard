@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { ArrowRightLeft, ArrowRightLeft as ChangeIcon, Mail, MessageSquare, Phone, StickyNote, UserCheck } from "lucide-react";
 import { toast } from "sonner";
-import { BOROUGHS, SERVICE_TYPES, SOURCES, boroughLabel, formatPhone, serviceTypeLabel, sourceLabel, stageLabel } from "@/lib/leads";
-import { formatNyDateTime } from "@/lib/format";
+import { BOROUGHS, SOURCES, boroughLabel, formatPhone, sourceLabel, stageLabel } from "@/lib/leads";
+import { DEFAULT_WIN_BPS } from "@/lib/pipeline";
+import { formatNyDateTime, nyWallClock, nyWallTimeToUtc, parseDollarsToCents } from "@/lib/format";
 import { leadTone } from "@/lib/status";
 import type { LeadRow, TeamMember, TimelineEntry } from "@/lib/leads-data";
 import { addLeadNote, convertLead, getLeadTimeline, updateLead } from "@/app/actions/leads";
@@ -18,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Drawer } from "@/components/system/drawer";
 import { StatusPill } from "@/components/system/status-pill";
-import { FollowUpPill } from "./lead-card";
+import { BidDuePill, FollowUpPill } from "./lead-card";
 
 const typeIcon = { call: Phone, sms: MessageSquare, email: Mail, note: StickyNote, meeting: UserCheck, status_change: ChangeIcon } as const;
 
@@ -36,7 +37,7 @@ type Props = {
 export function LeadDrawer(props: Props) {
   const { lead, onClose } = props;
   return (
-    <Drawer open={lead !== null} onOpenChange={(o) => !o && onClose()} title={lead?.name ?? "Lead"} description={lead ? `${serviceTypeLabel[lead.serviceType]} · ${lead.source ? (sourceLabel[lead.source as keyof typeof sourceLabel] ?? lead.source) : "no source"}` : undefined}>
+    <Drawer open={lead !== null} onOpenChange={(o) => !o && onClose()} title={lead?.accountName ?? lead?.name ?? "Opportunity"} description={lead ? `${lead.source ? (sourceLabel[lead.source as keyof typeof sourceLabel] ?? lead.source) : "no source"}` : undefined}>
       {lead && <LeadBody key={lead.id} {...props} lead={lead} />}
     </Drawer>
   );
@@ -54,7 +55,11 @@ function LeadBody({ lead, team, today, onMove, onChanged }: Props & { lead: Lead
     addressLine1: lead.addressLine1 ?? "",
     borough: lead.borough ?? "none",
     zip: lead.zip ?? "",
-    serviceType: lead.serviceType as string,
+    valueDollars: lead.expectedValueCents === null ? "" : String(lead.expectedValueCents / 100),
+    bidDueOn: lead.bidDueOn ?? "",
+    siteVisitDate: lead.siteVisitAt ? nyWallClock(lead.siteVisitAt).date : "",
+    siteVisitTime: lead.siteVisitAt ? nyWallClock(lead.siteVisitAt).time : "",
+    winPct: lead.winProbabilityBps === null ? "" : String(lead.winProbabilityBps / 100),
     source: lead.source ?? "other",
     ownerId: lead.ownerId ?? "none",
     nextFollowUpOn: lead.nextFollowUpOn ?? "",
@@ -97,7 +102,6 @@ function LeadBody({ lead, team, today, onMove, onChanged }: Props & { lead: Lead
     };
   }, [lead.id, lead.updatedAt, version]);
 
-  const serviceItems = SERVICE_TYPES.map((s) => ({ value: s, label: serviceTypeLabel[s] }));
   const channelItems = CHANNELS.map((c) => ({ value: c, label: channelLabel[c] }));
   const sourceItems = SOURCES.map((s) => ({ value: s, label: sourceLabel[s] }));
   const boroughItems = [{ value: "none", label: "Not set" }, ...BOROUGHS.map((b) => ({ value: b, label: boroughLabel(b) }))];
@@ -106,6 +110,13 @@ function LeadBody({ lead, team, today, onMove, onChanged }: Props & { lead: Lead
   function save(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    const valueCents = form.valueDollars.trim() === "" ? null : parseDollarsToCents(form.valueDollars);
+    if (form.valueDollars.trim() !== "" && (valueCents === null || valueCents < 0)) return setError("Enter the project value in dollars, for example 7500.");
+    const winPct = form.winPct.trim() === "" ? null : Number(form.winPct);
+    if (winPct !== null && (!Number.isFinite(winPct) || winPct < 0 || winPct > 100)) return setError("Chance of winning is a percentage from 0 to 100.");
+    if (form.siteVisitDate && !/^\d{2}:\d{2}$/.test(form.siteVisitTime || "09:00")) return setError("Enter the site visit time as hours and minutes.");
+    const siteVisitAt = form.siteVisitDate ? nyWallTimeToUtc(form.siteVisitDate, form.siteVisitTime || "09:00").toISOString() : null;
+    const winBps = winPct === null ? null : Math.round(winPct * 100);
     start(async () => {
       const res = await updateLead({
         leadId: lead.id,
@@ -118,11 +129,14 @@ function LeadBody({ lead, team, today, onMove, onChanged }: Props & { lead: Lead
           address_line1: form.addressLine1.trim() || null,
           borough: form.borough === "none" ? null : form.borough,
           zip: form.zip.trim() || null,
-          service_type: form.serviceType,
           source: form.source,
           owner_id: form.ownerId === "none" ? null : form.ownerId,
           next_follow_up_on: form.nextFollowUpOn || null,
           notes: form.notes.trim() || null,
+          expected_value_cents: valueCents,
+          bid_due_on: form.bidDueOn || null,
+          site_visit_at: siteVisitAt,
+          win_probability_bps: winBps,
         },
       });
       if (!res.ok) {
@@ -141,14 +155,17 @@ function LeadBody({ lead, team, today, onMove, onChanged }: Props & { lead: Lead
         addressLine1: form.addressLine1.trim() || null,
         borough: form.borough === "none" ? null : form.borough,
         zip: form.zip.trim() || null,
-        serviceType: form.serviceType as LeadRow["serviceType"],
         source: form.source,
+        expectedValueCents: valueCents,
+        bidDueOn: form.bidDueOn || null,
+        siteVisitAt,
+        winProbabilityBps: winBps,
         ownerId: owner?.id ?? null,
         ownerName: owner?.name ?? null,
         nextFollowUpOn: form.nextFollowUpOn || null,
         notes: form.notes.trim() || null,
       });
-      toast.success("Lead saved");
+      toast.success("Saved");
     });
   }
 
@@ -165,13 +182,13 @@ function LeadBody({ lead, team, today, onMove, onChanged }: Props & { lead: Lead
   function convert() {
     start(async () => {
       const res = await convertLead({ leadId: lead.id, expectedUpdatedAt: lead.updatedAt, companyName: lead.serviceType === "commercial" ? form.firstName + (form.lastName ? ` ${form.lastName}` : "") : "" });
-      if (!res.ok) return void toast.error(res.code === "stale" ? "Lead changed by someone else" : "Couldn't convert", { description: res.message });
+      if (!res.ok) return void toast.error(res.code === "stale" ? "Lead changed by someone else" : "Couldn't create the account", { description: res.message });
       onChanged(lead.id, {
         quote: { id: res.quoteId, number: res.quoteNumber, status: "draft" },
         stage: res.stage as LeadRow["stage"],
         updatedAt: res.updatedAt,
       });
-      toast.success(res.already ? `Quote #${res.quoteNumber} already open` : `Customer created, quote #${res.quoteNumber} opened`, { description: "Draft quote with the service as its first line." });
+      toast.success(res.already ? `Bid #${res.quoteNumber} already open` : `Account created, draft bid #${res.quoteNumber} opened`, { description: "Add scope and pricing when you build the bid." });
       reload();
     });
   }
@@ -180,6 +197,7 @@ function LeadBody({ lead, team, today, onMove, onChanged }: Props & { lead: Lead
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-2">
         <StatusPill tone={leadTone(lead.stage)}>{stageLabel[lead.stage]}</StatusPill>
+        <BidDuePill lead={lead} today={today} />
         <FollowUpPill lead={lead} today={today} />
         {lead.stage === "lost" && lead.lostReason && <span className="text-[13px] text-ink-muted">Reason: {lead.lostReason}</span>}
         <Button type="button" variant="secondary" size="sm" onClick={() => onMove(lead)} className="ml-auto h-11 md:h-8">
@@ -187,17 +205,17 @@ function LeadBody({ lead, team, today, onMove, onChanged }: Props & { lead: Lead
         </Button>
       </div>
 
-      <section aria-label="Customer" className="rounded-md border border-hairline bg-surface-raised/50 p-3 text-sm">
+      <section aria-label="Account" className="rounded-md border border-hairline bg-surface-raised/50 p-3 text-sm">
         {lead.quote ? (
           <p className="text-ink">
-            Customer, <strong className="font-semibold">quote #{lead.quote.number}</strong> <span className="text-ink-muted">({lead.quote.status})</span>
+            Account created, <strong className="font-semibold">draft bid #{lead.quote.number}</strong> <span className="text-ink-muted">({lead.quote.status})</span>
           </p>
         ) : lead.stage === "lost" ? (
-          <p className="text-ink-muted">Reopen this lead before converting it.</p>
+          <p className="text-ink-muted">Reopen this opportunity before creating the account.</p>
         ) : (
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-ink-muted">Turn this into a customer and start a quote.</p>
-            <Button type="button" onClick={convert} disabled={pending} className="h-11 md:h-9">Convert to customer</Button>
+            <p className="text-ink-muted">Create the company account and open a draft bid.</p>
+            <Button type="button" onClick={convert} disabled={pending} className="h-11 md:h-9">Create account and bid</Button>
           </div>
         )}
       </section>
@@ -215,9 +233,23 @@ function LeadBody({ lead, team, today, onMove, onChanged }: Props & { lead: Lead
           <Field id="ld-zip" label="ZIP"><Input id="ld-zip" inputMode="numeric" value={form.zip} onChange={set("zip")} className="h-11 md:h-9" /></Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <PickField label="Service" items={serviceItems} value={form.serviceType} onChange={(v) => setForm((f) => ({ ...f, serviceType: v }))} />
           <PickField label="Source" items={sourceItems} value={form.source} onChange={(v) => setForm((f) => ({ ...f, source: v }))} />
         </div>
+        <fieldset className="space-y-3 rounded-md border border-hairline p-3" aria-label="Bid details">
+          <legend className="px-1 text-[13px] font-medium text-ink">Bid</legend>
+          <div className="grid grid-cols-2 gap-3">
+            <Field id="ld-value" label="Project value ($)"><Input id="ld-value" inputMode="decimal" placeholder="7500" value={form.valueDollars} onChange={set("valueDollars")} className="h-11 md:h-9" /></Field>
+            <Field id="ld-bid-due" label="Bid due"><Input id="ld-bid-due" type="date" value={form.bidDueOn} onChange={set("bidDueOn")} className="h-11 md:h-9" /></Field>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field id="ld-visit-date" label="Site visit"><Input id="ld-visit-date" type="date" value={form.siteVisitDate} onChange={set("siteVisitDate")} className="h-11 md:h-9" /></Field>
+            <Field id="ld-visit-time" label="Visit time"><Input id="ld-visit-time" type="time" value={form.siteVisitTime} onChange={set("siteVisitTime")} className="h-11 md:h-9" /></Field>
+          </div>
+          <Field id="ld-win" label="Chance of winning (%)">
+            <Input id="ld-win" inputMode="decimal" placeholder={`${DEFAULT_WIN_BPS[lead.stage] / 100} (stage estimate)`} value={form.winPct} onChange={set("winPct")} className="h-11 md:h-9" />
+          </Field>
+          <p className="text-[12px] text-ink-muted">Stage estimates are placeholders until enough bids have closed. Your own number overrides them.</p>
+        </fieldset>
         <div className="grid grid-cols-2 gap-3">
           <PickField label="Owner" items={ownerItems} value={form.ownerId} onChange={(v) => setForm((f) => ({ ...f, ownerId: v }))} />
           <Field id="ld-follow" label="Next follow-up"><Input id="ld-follow" type="date" value={form.nextFollowUpOn} onChange={set("nextFollowUpOn")} className="h-11 md:h-9" /></Field>

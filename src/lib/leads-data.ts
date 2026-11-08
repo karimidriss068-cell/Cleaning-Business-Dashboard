@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import type { LeadStage } from "@/lib/status";
 import type { ServiceType } from "@/lib/leads";
+import { SHOWN_SERVICE_TYPES } from "@/config/business";
 
 export type LeadRow = {
   id: string;
@@ -32,6 +33,13 @@ export type LeadRow = {
   ownerName: string | null;
   nextFollowUpOn: string | null;
   lostReason: string | null;
+  /** Bid fields: when the bid is due, the site visit, what it is worth in cents, the owner's own chance (null = stage default) and the company. */
+  bidDueOn: string | null;
+  siteVisitAt: string | null;
+  expectedValueCents: number | null;
+  winProbabilityBps: number | null;
+  accountId: string | null;
+  accountName: string | null;
   quote: { id: string; number: number; status: string } | null;
 };
 
@@ -39,13 +47,13 @@ export type TimelineEntry = { id: string; type: string; direction: string | null
 export type TeamMember = { id: string; name: string };
 
 const SELECT =
-  "id, updated_at, created_at, stage, stage_changed_at, contact_id, service_type, source, channel, creative, notes, owner_id, next_follow_up_on, lost_reason, " +
+  "id, updated_at, created_at, stage, stage_changed_at, contact_id, service_type, source, channel, creative, notes, owner_id, next_follow_up_on, lost_reason, bid_due_on, site_visit_at, expected_value_cents, win_probability_bps, account_id, account:accounts(name), " +
   "contact:contacts(first_name, last_name, phone, email, borough, address_line1, zip, sms_consent), quotes(id, quote_number, status, created_at)";
 
-/** Every lead for the board (closed ones only from the last 60 days), newest activity first. */
+/** Every opportunity for the pipeline (closed ones only from the last 60 days), newest activity first. Only the service types the business sells now are shown. */
 export async function loadLeads(supabase: SupabaseClient<Database>, since: string): Promise<{ leads: LeadRow[]; team: TeamMember[] }> {
   const [leadsRes, teamRes, optOutRes] = await Promise.all([
-    supabase.from("leads").select(SELECT).or(`stage.in.(new,contacted,quoted),closed_at.gte.${since}`).order("stage_changed_at", { ascending: false }).limit(500),
+    supabase.from("leads").select(SELECT).in("service_type", [...SHOWN_SERVICE_TYPES]).or(`stage.in.(new,site_visit,quoted,follow_up),closed_at.gte.${since}`).order("stage_changed_at", { ascending: false }).limit(500),
     supabase.from("profiles").select("user_id, full_name, role").in("role", ["owner", "admin", "staff"]).order("full_name"),
     supabase.from("opt_outs").select("value").eq("channel", "sms"),
   ]);
@@ -58,6 +66,7 @@ export async function loadLeads(supabase: SupabaseClient<Database>, since: strin
   const rows = (leadsRes.data ?? []) as unknown as Array<{
     id: string; updated_at: string; created_at: string; stage: LeadStage; stage_changed_at: string; contact_id: string; service_type: ServiceType | null;
     source: string | null; channel: string; creative: string | null; notes: string | null; owner_id: string | null; next_follow_up_on: string | null; lost_reason: string | null;
+    bid_due_on: string | null; site_visit_at: string | null; expected_value_cents: number | null; win_probability_bps: number | null; account_id: string | null; account: { name: string } | null;
     contact: { first_name: string; last_name: string | null; phone: string | null; email: string | null; borough: string | null; address_line1: string | null; zip: string | null; sms_consent: boolean } | null;
     quotes: { id: string; quote_number: number; status: string; created_at: string }[];
   }>;
@@ -78,7 +87,7 @@ export async function loadLeads(supabase: SupabaseClient<Database>, since: strin
       borough: l.contact?.borough ?? null,
       addressLine1: l.contact?.address_line1 ?? null,
       zip: l.contact?.zip ?? null,
-      serviceType: l.service_type ?? "residential",
+      serviceType: l.service_type ?? "commercial",
       source: l.source,
       channel: l.channel,
       creative: l.creative,
@@ -89,6 +98,12 @@ export async function loadLeads(supabase: SupabaseClient<Database>, since: strin
       ownerName: l.owner_id ? (names.get(l.owner_id) ?? null) : null,
       nextFollowUpOn: l.next_follow_up_on,
       lostReason: l.lost_reason,
+      bidDueOn: l.bid_due_on,
+      siteVisitAt: l.site_visit_at,
+      expectedValueCents: l.expected_value_cents === null ? null : Number(l.expected_value_cents),
+      winProbabilityBps: l.win_probability_bps,
+      accountId: l.account_id,
+      accountName: l.account?.name ?? null,
       quote: q ? { id: q.id, number: Number(q.quote_number), status: q.status } : null,
     };
   });

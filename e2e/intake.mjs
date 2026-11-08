@@ -112,7 +112,7 @@ for (let i = 0; i < 60; i++) {
 let ipn = 0;
 const newIp = () => `203.0.113.${(ipn = ipn + 1)}`;
 const good = (i, over = {}) => ({
-  name: "E2E Intake", phone: phone(i), email: undefined, borough: "queens", serviceType: "residential",
+  name: "E2E Intake", phone: phone(i), email: undefined, borough: "queens", serviceType: "commercial",
   consent: true, consentVersion: undefined, elapsedMs: 5000, turnstileToken: "good-token", utm: {}, ...over,
 });
 const consentVersion = readFileSync("src/lib/intake.ts", "utf8").match(/CONSENT_VERSION = "([^"]+)"/)[1];
@@ -160,7 +160,7 @@ try {
   check("texting switched on for the new contact, sourced from the web form", c1?.sms_consent === true && c1?.sms_consent_source === "web_form");
 
   // -- duplicate: same person, same answer, nothing doubled
-  const r1b = await post(good(1, { name: "Maria D", serviceType: "recurring" }));
+  const r1b = await post(good(1, { name: "Maria D", serviceType: "commercial" }));
   const j1b = await r1b.json();
   check("duplicate: same 200 answer as a new lead", r1b.status === 200 && JSON.stringify(j1b) === JSON.stringify(j1));
   const { data: samePhone } = await db.from("contacts").select("id").eq("phone", e164(1));
@@ -184,7 +184,7 @@ try {
   for (const [label, body] of [
     ["not JSON", "{nope"], ["empty object", {}], ["blank name", good(4, { name: " " })], ["bad phone", good(4, { phone: "12" })],
     ["bad email", good(4, { phone: undefined, email: "nope", consent: false })], ["unknown borough", good(4, { borough: "mars" })],
-    ["unknown service", good(4, { serviceType: "x" })], ["unknown field", good(4, { admin: true })], ["link as name", good(4, { name: "see http://spam.example" })],
+    ["unknown service", good(4, { serviceType: "x" })], ["residential is hidden", good(4, { serviceType: "residential" })], ["unknown field", good(4, { admin: true })], ["link as name", good(4, { name: "see http://spam.example" })],
     ["huge body", good(4, { name: "x".repeat(20000) })],
   ]) {
     const r = await post(body);
@@ -274,7 +274,7 @@ try {
     const page = await ctx.newPage();
     watch(page);
     await page.goto(`http://127.0.0.1:${HOST_PORT}/?utm_source=google&utm_medium=cpc&utm_campaign=${encodeURIComponent(CAMPAIGN)}`, { waitUntil: "networkidle" });
-    const frame = page.frameLocator("iframe[title='Get a cleaning quote']");
+    const frame = page.frameLocator("iframe[title='Request a commercial cleaning bid']");
     await frame.getByLabel("Your name").waitFor({ timeout: 15000 });
     const h = await page.locator("iframe").evaluate((f) => f.getBoundingClientRect().height);
     check("embedded: the frame is sized to the form (no inner scroll)", h > 300 && h < 1400, h);

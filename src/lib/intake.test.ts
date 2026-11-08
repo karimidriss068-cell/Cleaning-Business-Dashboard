@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CONSENT_VERSION, intakeSchema, replyExpectation, splitName } from "@/lib/intake";
 
-const valid = { name: "Maria Del Rio", phone: "(332) 555-0101", email: "maria@example.com", borough: "queens", serviceType: "residential", consent: true, consentVersion: CONSENT_VERSION };
+const valid = { name: "Maria Del Rio", phone: "(332) 555-0101", email: "maria@example.com", borough: "queens", serviceType: "commercial", consent: true, consentVersion: CONSENT_VERSION };
 
 describe("intakeSchema", () => {
   it("accepts a normal submission", () => {
@@ -25,6 +25,8 @@ describe("intakeSchema", () => {
     expect(intakeSchema.safeParse({ ...valid, email: "nope" }).success).toBe(false);
     expect(intakeSchema.safeParse({ ...valid, borough: "mars" }).success).toBe(false);
     expect(intakeSchema.safeParse({ ...valid, serviceType: "window_washing" }).success).toBe(false);
+    // Residential work is hidden in the app, so the public form refuses it too.
+    expect(intakeSchema.safeParse({ ...valid, serviceType: "residential" }).success).toBe(false);
   });
   it("refuses a link as a name and a blank name", () => {
     expect(intakeSchema.safeParse({ ...valid, name: "visit http://spam.example" }).success).toBe(false);

@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import Script from "next/script";
 import { CheckCircle2, Loader2 } from "lucide-react";
-import { BOROUGHS, SERVICE_TYPES, boroughLabel, serviceTypeLabel } from "@/lib/leads";
+import { BOROUGHS, boroughLabel } from "@/lib/leads";
 import { CONSENT_VERSION, CONSENT_WORDING, HONEYPOT_FIELD, intakeSchema, type IntakeResponse } from "@/lib/intake";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,7 +21,6 @@ declare global {
   }
 }
 
-const serviceItems = SERVICE_TYPES.map((s) => ({ value: s, label: serviceTypeLabel[s] }));
 const boroughItems = BOROUGHS.map((b) => ({ value: b, label: boroughLabel(b) }));
 const UTM_KEYS = ["source", "medium", "campaign", "term", "content"] as const;
 
@@ -46,7 +45,8 @@ export function LeadForm({ siteKey }: { siteKey: string | null }) {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [borough, setBorough] = useState("");
-  const [serviceType, setServiceType] = useState("residential");
+  // Residential work is hidden (src/config/business.ts); the form takes commercial bid requests only.
+  const serviceType = "commercial";
   const [consent, setConsent] = useState(false);
   const [trap, setTrap] = useState("");
   const [token, setToken] = useState<string | null>(null);
@@ -158,8 +158,8 @@ export function LeadForm({ siteKey }: { siteKey: string | null }) {
       <GlassPanel level="card" className="p-5 sm:p-8">
         <form onSubmit={submit} noValidate className="space-y-5" aria-describedby={errors.form ? `${uid}-form-error` : undefined}>
           <div className="space-y-1">
-            <h1 className="font-heading text-2xl font-semibold text-ink">Get a cleaning quote</h1>
-            <p className="text-sm text-ink-muted">Tell us a little about what you need. It takes under a minute.</p>
+            <h1 className="font-heading text-2xl font-semibold text-ink">Request a commercial cleaning bid</h1>
+            <p className="text-sm text-ink-muted">Tell us about the building or project. It takes under a minute.</p>
           </div>
 
           <div className="space-y-1.5">
@@ -181,7 +181,7 @@ export function LeadForm({ siteKey }: { siteKey: string | null }) {
             </div>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid gap-5">
             <div className="space-y-1.5">
               <Label id={`${uid}-borough-l`}>Borough</Label>
               <Select items={boroughItems} value={borough || null} onValueChange={(v) => v && setBorough(v)}>
@@ -189,13 +189,6 @@ export function LeadForm({ siteKey }: { siteKey: string | null }) {
                 <SelectContent>{boroughItems.map((b) => <SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>)}</SelectContent>
               </Select>
               {err("borough") && <p role="alert" className="text-[13px] text-danger">{err("borough")}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label id={`${uid}-service-l`}>Service</Label>
-              <Select items={serviceItems} value={serviceType} onValueChange={(v) => v && setServiceType(v)}>
-                <SelectTrigger className="h-12 w-full" aria-labelledby={`${uid}-service-l`} data-testid="service"><SelectValue /></SelectTrigger>
-                <SelectContent>{serviceItems.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
-              </Select>
             </div>
           </div>
 
@@ -219,7 +212,7 @@ export function LeadForm({ siteKey }: { siteKey: string | null }) {
 
           {errors.form && <p id={`${uid}-form-error`} role="alert" className="text-sm text-danger" data-testid="form-error">{errors.form}</p>}
           <Button type="submit" disabled={pending} className="h-14 w-full text-base" data-testid="submit">
-            {pending ? <><Loader2 className="animate-spin" aria-hidden /> Sending…</> : "Request my quote"}
+            {pending ? <><Loader2 className="animate-spin" aria-hidden /> Sending…</> : "Request a bid"}
           </Button>
         </form>
       </GlassPanel>

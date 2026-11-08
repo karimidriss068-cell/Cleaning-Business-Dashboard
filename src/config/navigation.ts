@@ -38,7 +38,7 @@ export type NavItem = {
 /** Office navigation, in DESIGN.md order. */
 const allOfficeNav: NavItem[] = [
   { href: "/command-center", label: "Command Center", short: "Home", icon: Gauge, tab: true, section: "Operate", keywords: "dashboard home today" },
-  { href: "/leads", label: "Leads & Pipeline", short: "Leads", icon: KanbanSquare, tab: true, section: "Operate", keywords: "pipeline quotes prospects" },
+  { href: "/leads", label: "Pipeline", short: "Pipeline", icon: KanbanSquare, tab: true, section: "Operate", keywords: "pipeline leads bids prospects opportunities" },
   { href: "/schedule", label: "Schedule", short: "Schedule", icon: CalendarDays, tab: true, section: "Operate", keywords: "calendar jobs dispatch" },
   { href: "/crews", label: "Crews", short: "Crews", icon: Users, section: "Operate", keywords: "subcontractors team cleaners" },
   { href: "/sales", label: "Sales", short: "Sales", icon: Handshake, section: "Operate", keywords: "dials sms close rate reps bots pipeline forecast", prototype: true },

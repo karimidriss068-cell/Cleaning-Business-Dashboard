@@ -23,7 +23,7 @@ function Column({ stage, count, children }: { stage: LeadStage; count: number; c
     <section
       ref={setNodeRef}
       data-stage={stage}
-      aria-label={`${stageLabel[stage]}, ${count} lead${count === 1 ? "" : "s"}`}
+      aria-label={`${stageLabel[stage]}, ${count} ${count === 1 ? "opportunity" : "opportunities"}`}
       className={cn(
         "flex min-h-[320px] min-w-0 flex-col rounded-md border glass-flat transition-colors duration-fast",
         isOver && "bg-brand/[0.06] shadow-[inset_0_0_0_1px_var(--kc-accent)]",
@@ -107,7 +107,7 @@ export function LeadsClient({ initialLeads, team, today, now, openId }: { initia
   return (
     <>
       <DndContext sensors={sensors} collisionDetection={pointerWithin} autoScroll={false} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setDragging(null)}>
-        <div className="hidden grid-cols-5 items-start gap-3 md:grid" data-testid="board">
+        <div className="hidden items-start gap-3 md:grid md:grid-cols-3 xl:grid-cols-6" data-testid="board">
           {LEAD_STAGES.map((s) => (
             <Column key={s} stage={s} count={byStage.get(s)?.length ?? 0}>
               {(byStage.get(s) ?? []).map((l) => card(l, true))}

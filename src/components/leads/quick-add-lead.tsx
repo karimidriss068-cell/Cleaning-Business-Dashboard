@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { TriangleAlert } from "lucide-react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
-import { BOROUGHS, SERVICE_TYPES, SOURCES, boroughLabel, formatPhone, serviceTypeLabel, sourceLabel } from "@/lib/leads";
+import { BOROUGHS, SOURCES, boroughLabel, formatPhone, sourceLabel } from "@/lib/leads";
 import type { DuplicateMatch } from "@/lib/schemas/leads";
 import { stageLabel } from "@/lib/leads";
 import type { LeadStage } from "@/lib/status";
@@ -55,8 +55,9 @@ function QuickAddForm({ onDone }: { onDone: () => void }) {
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [serviceType, setServiceType] = useState<string>("residential");
-  const [source, setSource] = useState<string>("google");
+  // Residential work is hidden (src/config/business.ts), so everything entered here is commercial.
+  const serviceType = "commercial";
+  const [source, setSource] = useState<string>("referral");
   const [borough, setBorough] = useState<string>("none");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +78,6 @@ function QuickAddForm({ onDone }: { onDone: () => void }) {
     return () => window.clearTimeout(t);
   }, [phone, email]);
 
-  const serviceItems = SERVICE_TYPES.map((s) => ({ value: s, label: serviceTypeLabel[s] }));
   const sourceItems = SOURCES.map((s) => ({ value: s, label: sourceLabel[s] }));
   const boroughItems = [{ value: "none", label: "Not sure" }, ...BOROUGHS.map((b) => ({ value: b, label: boroughLabel(b) }))];
   const blocked = dups.length > 0 && !ack;
@@ -154,13 +154,6 @@ function QuickAddForm({ onDone }: { onDone: () => void }) {
       )}
 
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label>Service</Label>
-          <Select items={serviceItems} value={serviceType} onValueChange={(v) => v && setServiceType(v)}>
-            <SelectTrigger className="h-11 w-full md:h-9"><SelectValue /></SelectTrigger>
-            <SelectContent>{serviceItems.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
         <div className="space-y-1.5">
           <Label>Source</Label>
           <Select items={sourceItems} value={source} onValueChange={(v) => v && setSource(v)}>

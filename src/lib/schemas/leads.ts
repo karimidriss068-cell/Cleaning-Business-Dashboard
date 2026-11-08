@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { BOROUGHS, SERVICE_TYPES, SOURCES, normalizeEmail, normalizeUsPhone } from "@/lib/leads";
+import { SHOWN_SERVICE_TYPES } from "@/config/business";
 
 const blank = (v: unknown) => (typeof v === "string" && v.trim() === "" ? undefined : v);
 const optionalText = (max: number) => z.preprocess(blank, z.string().trim().max(max).optional());
@@ -20,7 +21,7 @@ export const createLeadSchema = z
     lastName: optionalText(80),
     phone: phoneField,
     email: emailField,
-    serviceType: z.enum(SERVICE_TYPES),
+    serviceType: z.enum(SHOWN_SERVICE_TYPES),
     source: z.enum(SOURCES),
     borough: z.preprocess(blank, z.enum(BOROUGHS).optional()),
     addressLine1: optionalText(160),
@@ -56,6 +57,10 @@ export const updateLeadSchema = z.object({
       owner_id: z.string().uuid().nullable(),
       next_follow_up_on: day.nullable(),
       notes: z.string().trim().max(2000).nullable(),
+      bid_due_on: day.nullable(),
+      site_visit_at: z.string().datetime({ offset: true }).nullable(),
+      expected_value_cents: z.number().int().min(0).max(100_000_000_00).nullable(),
+      win_probability_bps: z.number().int().min(0).max(10000).nullable(),
     })
     .partial()
     .refine((p) => Object.keys(p).length > 0, "Nothing to change"),

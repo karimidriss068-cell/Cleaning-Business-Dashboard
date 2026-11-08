@@ -1,21 +1,14 @@
 "use client";
 
 import { useDraggable } from "@dnd-kit/core";
-import { ArrowRightLeft, Phone } from "lucide-react";
+import { ArrowRightLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { followUpStatus, formatPhone, serviceTypeLabel, sourceLabel, stageLabel, type LeadSource } from "@/lib/leads";
-import { leadTone, type LeadStage, type Tone } from "@/lib/status";
+import { followUpStatus, stageLabel } from "@/lib/leads";
+import { bidDueState, winProbabilityBps } from "@/lib/pipeline";
+import { formatCalendarDate, formatCents } from "@/lib/format";
+import type { LeadStage } from "@/lib/status";
 import type { LeadRow } from "@/lib/leads-data";
 import { StatusPill } from "@/components/system/status-pill";
-
-const stripe: Record<Tone, string> = {
-  info: "bg-brand",
-  secondary: "bg-accent2",
-  success: "bg-success-fill",
-  neutral: "bg-border-input",
-  warning: "bg-warning-fill",
-  danger: "bg-danger-fill",
-};
 
 export function ageLabel(iso: string, nowMs: number): string {
   const mins = Math.max(0, Math.round((nowMs - new Date(iso).getTime()) / 60000));
@@ -31,8 +24,16 @@ export function FollowUpPill({ lead, today }: { lead: Pick<LeadRow, "nextFollowU
   return null;
 }
 
+export function BidDuePill({ lead, today }: { lead: Pick<LeadRow, "bidDueOn" | "stage">; today: string }) {
+  const d = bidDueState(lead.bidDueOn, lead.stage, today);
+  if (d === "overdue") return <StatusPill tone="danger">Bid overdue</StatusPill>;
+  if (d === "today") return <StatusPill tone="warning">Bid due today</StatusPill>;
+  if (d === "soon") return <StatusPill tone="info">Bid due {formatCalendarDate(lead.bidDueOn)}</StatusPill>;
+  return null;
+}
+
 /**
- * A lead on the board. The name opens the record, Move… opens the stage
+ * An opportunity on the pipeline. The name opens the record, Move… opens the stage
  * sheet (the keyboard and phone path); on desktop the card also drags.
  */
 export function LeadCard({
@@ -53,7 +54,7 @@ export function LeadCard({
   onMove: (lead: LeadRow) => void;
 }) {
   const { attributes, listeners, setNodeRef } = useDraggable({ id: lead.id, data: { leadId: lead.id, stage: lead.stage }, disabled: !draggable });
-  const src = lead.source ? (sourceLabel[lead.source as LeadSource] ?? lead.source) : "No source";
+  const closed = lead.stage === "won" || lead.stage === "lost";
   return (
     <article
       ref={setNodeRef}
@@ -64,38 +65,33 @@ export function LeadCard({
       data-lead-card={lead.id}
       aria-label={`${lead.name}, ${stageLabel[lead.stage]}`}
       className={cn(
-        "kc-settle relative rounded-md border glass-flat py-3 pr-3 pl-4 transition-[border-color,opacity] duration-base ease-standard hover:border-brand/35",
+        "kc-settle relative rounded-md border glass-flat p-3 transition-[border-color,opacity] duration-base ease-standard hover:border-brand/35",
         draggable && "cursor-grab touch-none active:cursor-grabbing",
         dragging && "opacity-35",
       )}
     >
-      <span aria-hidden className={cn("absolute inset-y-3 left-1.5 w-[3px] rounded-full", stripe[leadTone(lead.stage)])} />
       <button type="button" onClick={() => onOpen(lead)} className="block w-full min-w-0 rounded-xs text-left outline-none focus-visible:ring-2 focus-visible:ring-ring">
-        <span className="block truncate text-sm font-medium text-ink">{lead.name}</span>
-        <span className="block truncate text-[13px] text-ink-muted">
-          {serviceTypeLabel[lead.serviceType]}
-          {lead.borough ? ` · ${lead.borough.replace("_", " ")}` : ""}
-        </span>
+        <span className="block truncate text-sm font-medium text-ink">{lead.accountName ?? lead.name}</span>
+        <span className="block truncate text-[13px] text-ink-muted">{lead.accountName ? lead.name : lead.borough ? lead.borough.replace("_", " ") : "No site yet"}</span>
       </button>
-      <div className="mt-2 space-y-1 text-[13px] text-ink-muted">
-        <span className="block truncate">
-          {src} · {ageLabel(lead.stageChangedAt, nowMs)} in stage
+      <p className="mt-2 flex items-baseline justify-between gap-2 text-[13px] text-ink-muted">
+        <span className="tabular text-ink">{lead.expectedValueCents === null ? "No value yet" : formatCents(lead.expectedValueCents, { hideZeroCents: true })}</span>
+        {!closed && lead.expectedValueCents !== null && <span className="tabular">{Math.round(winProbabilityBps(lead) / 100)}%</span>}
+      </p>
+      <div className="mt-1 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+        <span className="flex flex-wrap items-center gap-1">
+          <BidDuePill lead={lead} today={today} />
+          <FollowUpPill lead={lead} today={today} />
         </span>
-        {lead.phone && (
-          <a href={`tel:${lead.phone}`} className="inline-flex items-center gap-1 text-brand-text" aria-label={`Call ${lead.name} at ${formatPhone(lead.phone)}`} onPointerDown={(e) => e.stopPropagation()}>
-            <Phone className="size-3.5" aria-hidden />
-            <span className="tabular">{formatPhone(lead.phone)}</span>
-          </a>
-        )}
+        <span className="text-[12px] text-ink-muted tabular">{ageLabel(lead.stageChangedAt, nowMs)}</span>
       </div>
-      <div className="mt-1 flex flex-wrap items-center justify-between gap-x-2">
-        <FollowUpPill lead={lead} today={today} />
+      <div className="mt-1 flex justify-end">
         <button
           type="button"
           onClick={() => onMove(lead)}
           onPointerDown={(e) => e.stopPropagation()}
           aria-label={`Move ${lead.name}`}
-          className="ml-auto inline-flex h-11 items-center gap-1.5 rounded-sm px-3 text-[13px] font-medium text-ink-muted outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-ring md:h-8 md:px-2"
+          className="inline-flex h-11 items-center gap-1.5 rounded-sm px-3 text-[13px] font-medium text-ink-muted outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-ring md:h-8 md:px-2"
         >
           <ArrowRightLeft className="size-3.5" aria-hidden /> Move…
         </button>

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createLeadSchema, mapLeadError, moveLeadSchema, parseDuplicates } from "./leads";
 
-const base = { firstName: "Dana", serviceType: "residential", source: "google", phone: "(718) 555-0142" } as const;
+const base = { firstName: "Dana", serviceType: "commercial", source: "google", phone: "(718) 555-0142" } as const;
 
 describe("createLeadSchema", () => {
   it("accepts a phone-only lead and drops blank optional fields", () => {
