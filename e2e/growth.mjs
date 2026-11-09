@@ -39,6 +39,7 @@ const MARK = "E2E-GROWTH campaign";
 const SEED_LO = "5eed0000-0000-0000-0000-000000000000";
 const SEED_HI = "5eed0001-0000-0000-0000-000000000000";
 let leadRestore = null;
+const GROWTH_PHONE = "+13325550317";
 const t0 = new Date().toISOString();
 const nyToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date());
 
@@ -65,9 +66,14 @@ const { data: planBefore } = await db.from("channel_test_plan").select("channel,
 const { data: goalsBefore } = await db.from("goals").select("metric, period, period_start, period_end, target_value, notes, created_by").eq("metric", "revenue_cents").eq("period", "month");
 
 async function cleanup() {
-  if (leadRestore) {
-    await db.from("leads").update({ channel: leadRestore.channel, creative: leadRestore.creative }).eq("id", leadRestore.id);
-    await db.from("activities").delete().eq("lead_id", leadRestore.id).like("subject", "Attribution set to%");
+  const { data: gc } = await db.from("contacts").select("id").eq("phone", GROWTH_PHONE);
+  for (const c of gc ?? []) {
+    const { data: ls } = await db.from("leads").select("id").eq("contact_id", c.id);
+    for (const l of ls ?? []) {
+      for (const t of ["activities", "lead_events"]) await db.from(t).delete().eq("lead_id", l.id);
+      await db.from("leads").delete().eq("id", l.id);
+    }
+    await db.from("contacts").delete().eq("id", c.id);
   }
   const { data: camps } = await db.from("marketing_campaigns").select("id").like("name", `${MARK}%`);
   const ids = (camps ?? []).map((c) => `'${c.id}'`).join(",");
@@ -121,11 +127,15 @@ try {
   check("card: scale light shown to admin", (await page.getByTestId("growth-scale-light").count()) === 1);
 
   // -- /growth
-  await page.goto(`${base}/growth/settings`, { waitUntil: "networkidle" });
+  // Growth is read-only with tabbed blocks; the forms live on /growth/settings.
+  const openTab = async (name, pg = page) => { await pg.getByRole("tab", { name, exact: true }).first().click(); await pg.waitForTimeout(150); };
+  await page.goto(`${base}/growth`, { waitUntil: "networkidle" });
   check("growth page loads", (await page.getByRole("heading", { name: "Growth", level: 1 }).count()) === 1);
+  await openTab("Milestones");
   check("six milestones listed", (await page.getByTestId("milestone-list").locator("li").count()) === 6);
   check("capacity panel shows a percentage and the 80% marker text", /of capacity/.test(await page.getByTestId("capacity-panel").innerText()) && /80%/.test(await page.getByTestId("capacity-panel").innerText()));
   check("cash panel shows runway", /Runway/.test(await page.getByTestId("cash-panel").innerText()));
+  await page.goto(`${base}/growth/settings`, { waitUntil: "networkidle" });
 
   // -- assumptions: editing changes what the plan needs
   const needBefore = lastLine(await page.getByTestId("needs-residential-clients").innerText());
@@ -191,22 +201,23 @@ try {
   await page.fill("#cash-buffer", "9999999");
   await page.click('[data-testid="save-cash-settings"]');
   await toast(page, "Cash settings saved");
-  await page.reload({ waitUntil: "networkidle" });
+  await page.goto(`${base}/growth`, { waitUntil: "networkidle" });
   const light = page.getByTestId("scale-light");
   check("scale light is red when cash is under the buffer", (await light.getAttribute("data-status")) === "red");
   check("it names the cash condition as blocking", (await page.getByTestId("condition-cash").getAttribute("data-state")) === "fail" && /Blocking/.test(await page.getByTestId("condition-cash").innerText()));
   check("cash panel warns about the buffer", /minimum buffer/.test(await page.getByTestId("cash-panel").innerText()));
+  await page.goto(`${base}/growth/settings`, { waitUntil: "networkidle" });
   await page.fill("#cash-buffer", "1000");
   await page.click('[data-testid="save-cash-settings"]');
   await toast(page, "Cash settings saved");
-  await page.reload({ waitUntil: "networkidle" });
+  await page.goto(`${base}/growth`, { waitUntil: "networkidle" });
   check("cash condition passes again with a $1,000 buffer", (await page.getByTestId("condition-cash").getAttribute("data-state")) !== "fail");
   const sl = await page.getByTestId("scale-light").innerText();
   check("each of the four conditions is listed", /Lead reply time/.test(sl) && /Cleaner capacity/.test(sl) && /CAC payback/.test(sl) && /Cash buffer/.test(sl));
 
-
   // -- profit: add an expense and watch other costs and net profit move
   await page.goto(`${base}/growth`, { waitUntil: "networkidle" });
+  await openTab("Profit by month");
   check("profit panel shows the month's revenue, cleaner pay, ads, other costs, net profit and margin", await page.getByTestId("profit-panel").getByText(/Net profit/).first().isVisible() && (await page.getByTestId("profit-margin").count()) === 1);
   await page.fill("#exp-amount", "85.50");
   await page.fill("#exp-desc", "E2E-GROWTH expense");
@@ -224,22 +235,29 @@ try {
   check("expense deleted", ((await db.from("expenses").select("id").eq("description", "E2E-GROWTH expense")).data ?? []).length === 0);
 
   // -- tiers: three side by side, track another
+  await openTab("North star");
   check("three tiers are shown side by side", (await page.getByTestId("tiers-panel").locator('[data-testid^="tier-"]').count()) === 3);
   check("the base tier is the one being tracked", (await page.getByTestId("tier-base").getAttribute("data-selected")) !== null);
+  await openTab("What each tier takes");
   check("forecast shows base, strong and north star", (await page.getByTestId("forecast-panel").locator('[data-testid^="forecast-"]').count()) === 3);
+  await openTab("Gates");
   check("five go/no-go gates are shown", (await page.getByTestId("gates-panel").locator('[data-testid^="gate-"]').count()) === 5);
+  await openTab("Hire triggers");
   check("three hire triggers are shown", (await page.getByTestId("hire-triggers").locator('[data-testid^="hire-"]').count()) === 3);
+  await page.goto(`${base}/growth/settings`, { waitUntil: "networkidle" });
   await page.click('[data-testid="tier-pick-strong"]');
   await page.click('[data-testid="save-tiers"]');
   await toast(page, "Tiers saved");
   check("tracking another tier is saved", (await db.from("growth_settings").select("tier").single()).data.tier === "strong");
-  await page.reload({ waitUntil: "networkidle" });
-  check("the strong tier is now the tracked one", (await page.getByTestId("tier-strong").getAttribute("data-selected")) !== null);
   await page.fill("#tier-strong", "40000");
   await page.click('[data-testid="save-tiers"]');
   check("a strong tier at or below the base tier is rejected inline", (await page.getByText("The strong tier must be above the base tier").count()) >= 1);
+  await page.goto(`${base}/growth`, { waitUntil: "networkidle" });
+  await openTab("North star");
+  check("the strong tier is now the tracked one", (await page.getByTestId("tier-strong").getAttribute("data-selected")) !== null);
 
   // -- gates: edit a threshold
+  await openTab("Gates");
   await page.locator("summary", { hasText: "Edit the gates" }).click();
   await page.fill('[id="gate-month3/month_revenue_cents"]', "4500");
   await page.click('[data-testid="save-gates"]');
@@ -261,6 +279,7 @@ try {
   check("churn tracker shows the average and the assumption", /Average over these months/.test(await page.getByTestId("churn-tracker").innerText()));
 
   // -- channel test view and the cash buffer
+  await page.locator("summary", { hasText: "Channel test: channels side by side" }).click();
   const test = page.getByTestId("channel-test");
   check("channel test shows six channels side by side", (await test.getByTestId("channel-cards").locator('[data-testid^="channel-card-"]').count()) === 6);
   check("it shows a recommendation", (await test.getByTestId("recommendation").getAttribute("data-state")) !== null);
@@ -302,13 +321,17 @@ try {
   const { data: dl } = await db.from("growth_decisions").select("kind, decision").like("note", "E2E-GROWTH%");
   check("logging the recommendation writes a decision, and nothing else changes", dl.length === 1 && dl[0].kind === "channel", JSON.stringify(dl));
   await page.reload({ waitUntil: "networkidle" });
+  await openTab("Decision log");
   check("the decision shows in the log", (await page.getByTestId("decision-list").innerText()).includes("E2E-GROWTH keep going"));
   await page.getByRole("button", { name: /^Delete the decision/ }).first().click();
   await toast(page, "Decision deleted");
 
   // -- a lead's channel and creative can be corrected from the lead
-  const { data: leadRows } = await db.from("leads").select("id, channel, creative, contact:contacts(first_name)").in("stage", ["new", "site_visit", "quoted", "follow_up"]).gte("id", SEED_LO).lt("id", SEED_HI).limit(1);
-  const lead = leadRows[0];
+  // The app shows commercial opportunities only and the demo leads are residential, so the test makes its own.
+  const { data: owned } = await db.from("contacts").select("id").eq("phone", GROWTH_PHONE);
+  if (owned?.length) throw new Error(`refusing: ${GROWTH_PHONE} belongs to an existing contact`);
+  const { data: c0 } = await db.from("contacts").insert({ first_name: "Gail", last_name: "Growthtest", phone: GROWTH_PHONE, type: "commercial" }).select("id").single();
+  const { data: lead } = await db.from("leads").insert({ contact_id: c0.id, service_type: "commercial", stage: "new", source: "referral" }).select("id, channel, creative").single();
   leadRestore = { id: lead.id, channel: lead.channel, creative: lead.creative };
   await page.goto(`${base}/leads`, { waitUntil: "networkidle" });
   await page.locator(`[data-lead-card="${lead.id}"]`).getByRole("button").first().click();
@@ -354,14 +377,22 @@ try {
   check("staff don't see the scale light on the card", (await sp.getByTestId("growth-scale-light").count()) === 0);
   await sp.goto(`${base}/growth`, { waitUntil: "networkidle" });
   const staffText = await sp.locator("main, body").first().innerText();
+  await openTab("Milestones", sp);
   check("staff can read the plan", (await sp.getByTestId("milestone-list").locator("li").count()) === 6);
   check("staff have no save buttons or spend entry", (await sp.locator('[data-testid^="save-"], [data-testid="add-ad-spend"], [data-testid="add-campaign"]').count()) === 0);
   check("staff see no cash or scale light", (await sp.getByTestId("cash-panel").count()) === 0 && (await sp.getByTestId("scale-light").count()) === 0 && /only the owner or an admin sees it/.test(staffText));
-  check("staff fields are disabled", await sp.locator("#as-price").isDisabled());
-  check("staff see the tiers, gates, funnel and channel test", (await sp.getByTestId("tiers-panel").count()) === 1 && (await sp.getByTestId("gates-panel").count()) === 1 && (await sp.getByTestId("funnel-panel").count()) === 1 && (await sp.getByTestId("channel-test").count()) === 1);
+  await openTab("North star", sp);
+  const tiersSeen = (await sp.getByTestId("tiers-panel").count()) === 1;
+  await openTab("Gates", sp);
+  const gatesSeen = (await sp.getByTestId("gates-panel").count()) === 1;
+  await sp.locator("summary", { hasText: "Channel test: channels side by side" }).click();
+  check("staff see the tiers, gates, funnel and channel test", tiersSeen && gatesSeen && (await sp.getByTestId("funnel-panel").count()) === 1 && (await sp.getByTestId("channel-test").count()) === 1);
+  await openTab("Profit by month", sp);
   check("staff don't see profit, expenses or the cleaner-pay line", /only the owner or an admin sees it/.test(await sp.getByTestId("profit-panel").innerText()) && (await sp.getByTestId("expense-panel").count()) === 0);
   check("staff can't add an expense, edit the gates or save the test", (await sp.getByTestId("add-expense").count()) === 0 && (await sp.getByTestId("save-gates").count()) === 0 && (await sp.getByTestId("save-channel-test").count()) === 0);
   check("staff still see the recommendation, but can't log a decision", (await sp.getByTestId("recommendation").count()) === 1 && (await sp.getByTestId("log-recommendation").count()) === 0);
+  await sp.goto(`${base}/growth/settings`, { waitUntil: "networkidle" });
+  check("staff fields on the settings page are disabled", await sp.locator("#as-price").isDisabled());
   await sctx.close();
 
   // ================================================================ cleaner

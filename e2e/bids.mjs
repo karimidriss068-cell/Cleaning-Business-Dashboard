@@ -236,20 +236,22 @@ try {
   await bp.getByText("Saved version 2").waitFor({ timeout: 15000 });
   const { data: v2 } = await db.from("bid_versions").select("*").eq("bid_id", bidId).eq("version", 2).single();
   check("version 2 keeps the reason and version 1 is untouched", v2.floor_override_reason === "E2E: anchor client" && v2.price_cents === 500000 && v2.margin_bps < 2250 && (await db.from("bid_versions").select("price_cents").eq("bid_id", bidId).eq("version", 1).single()).data.price_cents === 913847);
-  await sleep(600);
+  await bp.getByTestId("bid-versions").getByText(/^Version \d/).nth(1).waitFor({ timeout: 15000 });
   check("both versions are listed", (await bp.getByTestId("bid-versions").getByText(/^Version \d/).count()) === 2);
 
   // load version 1 and save it forward as version 3
   await bp.getByTestId("bid-versions").getByRole("button", { name: "Load" }).click();
-  await sleep(400);
+  await bp.waitForFunction(() => document.querySelector('[data-testid="bid-price"]')?.textContent === "$9,138.47", null, { timeout: 15000 });
   check("an old version loads into the form", (await bp.getByTestId("bid-price").innerText()) === "$9,138.47");
   await bp.getByTestId("bid-save").click();
   await bp.getByText("Saved version 3").waitFor({ timeout: 15000 });
-  await sleep(800);
+  await bp.getByTestId("bid-versions").getByText(/^Version \d/).nth(2).waitFor({ timeout: 15000 });
+  await bp.getByTestId("bid-ready").waitFor({ state: "visible", timeout: 15000 });
 
   // ready, then sent: the opportunity moves to Bid sent and takes the bid's value
   await bp.getByTestId("bid-ready").click();
   await bp.getByText("Marked ready to send").waitFor({ timeout: 15000 });
+  await bp.getByTestId("bid-sent").waitFor({ state: "visible", timeout: 15000 });
   await bp.getByTestId("bid-sent").click();
   await bp.getByText(/Marked as sent/).waitFor({ timeout: 15000 });
   const { data: sentBid } = await db.from("bids").select("status, sent_at, valid_until").eq("id", bidId).single();
